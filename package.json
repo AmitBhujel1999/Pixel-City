@@ -1,0 +1,15 @@
+{
+  "name": "pixel-city",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pixel City - a 3D city builder for Android",
+  "scripts": {
+    "sync": "cap sync android",
+    "build:apk": "cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  }
+}

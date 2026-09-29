@@ -1,4 +1,4 @@
-name: Build Pixel City APK
+name: Build Pixel's City APK
 
 on:
   push:
@@ -31,22 +31,78 @@ jobs:
       - name: Copy the game into the Android project
         run: npx cap sync android
 
+      - name: Name the app Pixel's City and sign it with the permanent key
+        run: |
+          python3 - <<'PY'
+          import re
+          p='android/app/src/main/res/values/strings.xml'; s=open(p).read()
+          s=re.sub(r'(<string name="(?:app_name|title_activity_main)">)[^<]*(</string>)', lambda m: m.group(1)+"Pixel\\'s City"+m.group(2), s)
+          open(p,'w').write(s)
+          p='android/app/build.gradle'; s=open(p).read()
+          s=s.replace('applicationId "com.ameet.pixelcity"','applicationId "com.ameet.pixelscity"')
+          s+="\nandroid { signingConfigs { debug { storeFile file('pixels-city.keystore'); storePassword 'android'; keyAlias 'androiddebugkey'; keyPassword 'android' } } }\n"
+          open(p,'w').write(s)
+          PY
+          cat > ks.b64 <<'KS'
+          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
+          KS
+          base64 -d ks.b64 > android/app/pixels-city.keystore
+          grep applicationId android/app/build.gradle
+          grep app_name android/app/src/main/res/values/strings.xml
+
       - name: Build the APK
         run: |
           chmod +x android/gradlew
           cd android && ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../PixelCity.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../PixelsCity.apk
 
       - name: Save the APK with this run
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: PixelCity-apk
-          path: PixelCity.apk
+          name: PixelsCity-apk
+          path: PixelsCity.apk
 
       - name: Publish a download link (Releases)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Pixel City build ${{ github.run_number }}
-          body: Download PixelCity.apk on your Android phone and open it to install.
-          files: PixelCity.apk
+          tag_name: pixels-city-${{ github.run_number }}
+          name: Pixel's City build ${{ github.run_number }}
+          body: Download PixelsCity.apk on your Android phone and open it to install. It installs next to the old Pixel City app.
+          files: PixelsCity.apk

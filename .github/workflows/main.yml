@@ -34,12 +34,13 @@ jobs:
       - name: Name the app Pixel's City and sign it with the permanent key
         run: |
           python3 - <<'PY'
-          import re
+          import os, re
           p='android/app/src/main/res/values/strings.xml'; s=open(p).read()
           s=re.sub(r'(<string name="(?:app_name|title_activity_main)">)[^<]*(</string>)', lambda m: m.group(1)+"Pixel\\'s City"+m.group(2), s)
           open(p,'w').write(s)
           p='android/app/build.gradle'; s=open(p).read()
           s=s.replace('applicationId "com.ameet.pixelcity"','applicationId "com.ameet.pixelscity"')
+          s=s.replace('versionCode 1','versionCode '+os.environ['GITHUB_RUN_NUMBER']).replace('versionName "1.0"','versionName "1.'+os.environ['GITHUB_RUN_NUMBER']+'"')
           s+="\nandroid { signingConfigs { debug { storeFile file('pixels-city.keystore'); storePassword 'android'; keyAlias 'androiddebugkey'; keyPassword 'android' } } }\n"
           open(p,'w').write(s)
           PY

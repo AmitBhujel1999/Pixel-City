@@ -462,7 +462,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <button id="sndHint" class="card" hidden><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/></svg>Tap anywhere to turn on sound</button>
   <div id="lvlPop" class="card" hidden role="dialog" aria-label="Level up"><div class="lpBurst"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#f2c14e"/></svg><b id="lpNum">2</b></div>
     <p class="lpK">Level up!</p><h2 id="lpName">Hamlet</h2><div class="lpPrize"><span>Prize money</span><b id="lpMoney" class="mono">$0</b></div><div id="lpUnl"></div><button id="lpGo">Continue</button></div>
-  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 11</p><ul><li><b>Realistic look</b><span>New grass, colour grading and haze. Roads have asphalt with cracks and paved sidewalks.</span></li><li><b>New buildings</b><span>Houses, apartments, towers, shops, offices and factories rebuilt in Blender with real detail.</span></li><li><b>Towers</b><span>Glass lobbies, balconies, roof equipment, water tanks, crowns, spires and helipads.</span></li><li><b>City services</b><span>Curved cooling towers, a water tower on legs, fire station bay doors, hospital helipads.</span></li><li><b>Trees</b><span>Leafy trees and pines on lots, streets and in the forests.</span></li><li><b>Cars and trucks</b><span>18 new vehicles: sedans, SUVs, sports cars, buses, semis, tankers and more. Wheels spin and sit on the road.</span></li><li><b>Safer driving</b><span>Vehicles stop for people crossing, brake smoothly, and buses pull into stops without sliding.</span></li><li><b>Road paint</b><span>Lane lines and crossings are painted flat on the road.</span></li><li><b>Government</b><span>New Gov button: mayor's office, post office, library, tax office, courthouse and city hall.</span></li><li><b>Move buildings</b><span>Tap a building and press Move building. Pick a new spot and confirm the fee.</span></li><li><b>Utility bills</b><span>Homes and businesses now pay for power, water and garbage. Set the rate in the Tax panel.</span></li></ul><button id="wnGo">Let's play</button></div>
+  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 12</p><ul><li><b>Realistic look</b><span>New grass, colour grading and haze. Roads have asphalt with cracks and paved sidewalks.</span></li><li><b>New buildings</b><span>Houses, apartments, towers, shops, offices and factories rebuilt in Blender with real detail.</span></li><li><b>Towers</b><span>Glass lobbies, balconies, roof equipment, water tanks, crowns, spires and helipads.</span></li><li><b>City services</b><span>Curved cooling towers, a water tower on legs, fire station bay doors, hospital helipads.</span></li><li><b>Trees</b><span>Leafy trees and pines on lots, streets and in the forests.</span></li><li><b>Cars and trucks</b><span>18 new vehicles: sedans, SUVs, sports cars, buses, semis, tankers and more. Wheels spin and sit on the road.</span></li><li><b>Safer driving</b><span>Vehicles stop for people crossing, brake smoothly, and buses pull into stops without sliding.</span></li><li><b>Road paint and lanes</b><span>Lane lines are painted flat on the road. Vehicles keep to their lanes. Highways have 4 wide lanes.</span></li><li><b>Government</b><span>New Gov button: mayor's office, post office, library, tax office, courthouse and city hall.</span></li><li><b>Move buildings</b><span>Tap a building and press Move building. Pick a new spot and confirm the fee.</span></li><li><b>Utility bills</b><span>Homes and businesses now pay for power, water and garbage. Set the rate in the Tax panel.</span></li></ul><button id="wnGo">Let's play</button></div>
   <aside id="inspect" class="card" hidden></aside>
   <aside id="agent" class="card" hidden aria-live="polite"></aside>
   <div id="menu" class="card" hidden>
@@ -696,7 +696,7 @@ const TOOLS=[
 const $=s=>document.querySelector(s);
 const ROADS=[{v:0,nm:'Street',sub:'2 lanes',cost:10,up:0.5,spd:1,col:'#6b7280',lv:1},{v:1,nm:'Dirt road',sub:'1 lane · slow · cheap',cost:4,up:0.15,spd:0.6,col:'#9a8663',lv:1},
   {v:2,nm:'One-way',sub:'2 lanes · one direction',cost:12,up:0.5,spd:1.1,col:'#5b6470',lv:7},{v:3,nm:'Avenue',sub:'4 lanes · median',cost:25,up:1.2,spd:1.25,col:'#4a5058',lv:3},
-  {v:4,nm:'Boulevard',sub:'6 lanes · tree median',cost:40,up:1.8,spd:1.3,col:'#4f7f45',lv:7},{v:5,nm:'Highway',sub:'6 lanes · fast · no buildings',cost:60,up:3,spd:1.8,col:'#3e434a',lv:15}];
+  {v:4,nm:'Boulevard',sub:'6 lanes · tree median',cost:40,up:1.8,spd:1.3,col:'#4f7f45',lv:7},{v:5,nm:'Highway',sub:'4 wide lanes · fast · no buildings',cost:60,up:3,spd:1.8,col:'#3e434a',lv:15}];
 const RI=l=>ROADS[l===6?2:(l||0)]||ROADS[0];
 const ICON={
   gov:'<svg viewBox="0 0 24 24"><path d="M12 2 2 7v2h20V7z" fill="#c9a227"/><path d="M4 10h2.5v8H4zM8.5 10H11v8H8.5zM13 10h2.5v8H13zM17.5 10H20v8h-2.5z" fill="#e8e2cf"/><path d="M2 19h20v3H2z" fill="#c9a227"/></svg>',
@@ -1034,7 +1034,7 @@ if(!SC.river){const R=8,Wc=N*R,cv=document.createElement('canvas');cv.width=cv.h
 /* the highway out of the map, through the valley */
 const hwTex=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.fillStyle='#3e434a';x.fillRect(0,0,128,64);
   const X=u=>(u+0.5)*128;x.fillStyle='#c9ccd0';x.fillRect(X(-0.025),0,0.05*128,64);x.fillStyle='#e9ebe6';for(const u of[-0.43,0.43])x.fillRect(X(u)-1.5,0,3,64);
-  for(const u of[-0.31,-0.16,0.16,0.31])x.fillRect(X(u)-1.5,8,3,26);x.fillStyle='#9aa0a8';for(const u of[-0.49,0.49])x.fillRect(X(u)-1.5,0,3,64);
+  for(const u of[-0.23,0.23])x.fillRect(X(u)-1.5,8,3,26);x.fillStyle='#9aa0a8';for(const u of[-0.49,0.49])x.fillRect(X(u)-1.5,0,3,64);
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t})();
 if(!SC.ferry){const road=new THREE.Mesh(stripGeo(-232,-HALF,0.5,hwZ,0.49,(x,z)=>Math.max(0,terrainH(x,z))+0.06,(x,s)=>[0.5+s*0.49,x]),new THREE.MeshLambertMaterial({map:hwTex}));road.receiveShadow=true;scene.add(road);
  const kerb=new THREE.Mesh(stripGeo(-232,-HALF,0.5,hwZ,0.62,(x,z)=>Math.max(0,terrainH(x,z))+0.03,(x,s)=>[0,0]),new THREE.MeshLambertMaterial({color:'#b7ab86'}));kerb.receiveShadow=true;scene.add(kerb)}
@@ -1626,7 +1626,7 @@ function buildTile0(i,anim){
         else if(AVE){along(0.09,1,0,'#c9ccd0',h,0.08);for(const s of[-1,1]){along(0.015,1,s*0.06,LINE);dashes(s*0.24)}if(!tl.w)for(const s of[-1,1])along(0.02,1,s*0.38,EDGE)}
         else if(BLV){along(0.17,1,0,'#b9bdc3',h,0.08);along(0.14,1,0,'#5c7a3c',h,0.086);for(const s of[-1,1]){dashes(s*0.2);dashes(s*0.32)}
           if(!tl.w&&(x+z)%2===0){model(g,'tree_round',{leaf:pick(['#4f7a35','#5a8638','#46702f'])},0,h+0.08,0,r()*6.3,0.34)}}
-        else if(HWY){along(0.04,1,0,'#c9ccd0',h,0.05);for(const s of[-1,1]){dashes(s*0.16);dashes(s*0.31);along(0.02,1,s*0.43,EDGE)}
+        else if(HWY){along(0.04,1,0,'#c9ccd0',h,0.05);for(const s of[-1,1]){dashes(s*0.23);along(0.02,1,s*0.44,EDGE);along(0.015,1,s*0.035,LINE)}
           if(!tl.w&&(x+z)%3===0){part(g,CYL,'#59606a',0.012,0.55,0.012,0,h+0.08,0);along(0.02,0.3,0,'#59606a',h+0.62,0.015);
             for(const s of[-1,1]){const hd=new THREE.Mesh(BOXC,lampMat);hd.scale.set(ew?0.05:0.04,0.02,ew?0.04:0.05);hd.position.set(ew?0:s*0.15,h+0.61,ew?s*0.15:0);g.add(hd);pool(ew?0:s*0.25,ew?s*0.25:0,1.3)}}}
       } else if(!inter&&!DIRT&&!HWY){
@@ -2619,7 +2619,7 @@ const VT=Object.fromEntries(VTYPES.map(t=>[t.id,t]));
 function pickType(ids){const c=VTYPES.filter(t=>ids.includes(t.id));let q=Math.random()*c.reduce((s,t)=>s+t.weight,0);for(const t of c){q-=t.weight;if(q<=0)return t}return c[0]}
 const P0=new THREE.Vector3(),P1=new THREE.Vector3(),P2=new THREE.Vector3(),_q=new THREE.Quaternion(),_s=new THREE.Vector3(1,1,1),_p=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0),_m=new THREE.Matrix4();
 const LANE=[0.17,0.1,0.14,0.26,0.3,0.3];
-function laneOf(i,c){const t=tiles[i];if(!t||t.t!==T.ROAD)return 0.17;const v=RI(t.l).v;if(v===2)return 0.14*(c.lane||1);if(v===5||v===4)return c.big?0.24:0.3+(c.lane>0?0:-0.13);return LANE[v]}
+function laneOf(i,c){const t=tiles[i];if(!t||t.t!==T.ROAD)return 0.17;const v=RI(t.l).v;if(v===2)return 0.17*(c.lane||1);if(v===5)return c.big||c.lane>0?0.33:0.13;if(v===4)return c.big||c.lane>0?0.26:0.14;if(v===3)return c.big||c.lane>0?0.31:0.15;return LANE[v]}
 function carCurve(c,t,out){
   const ax=c.a%N,az=(c.a/N)|0,bx=c.b%N,bz=(c.b/N)|0,cx=c.c%N,cz=(c.c/N)|0;
   let ix=bx-ax,iz=bz-az,ox=cx-bx,oz=cz-bz;if(!ix&&!iz){ix=ox;iz=oz}if(!ox&&!oz){ox=-ix;oz=-iz}
@@ -2672,7 +2672,7 @@ function arrive(c){const t=tiles[c.to];if(c.to<0||!t)return;
 /* traffic on the highway outside the map */
 const outCars=[];{const r=mulberry32(77);for(let k=0;k<14;k++)outCars.push({x:-232+r()*(232-HALF),dir:k%2?1:-1,sp:1.1+r()*0.6,col:CARCOL[(r()*CARCOL.length)|0],tid:['sedan','hatch','suv','van','truck','pickup','semi','wagon','tanker','sports'][(r()*10)|0]})}
 function updateOutCars(dt){if(SC.ferry)return;for(const o of outCars){o.x+=o.dir*o.sp*dt;if(o.dir>0&&o.x>-HALF-0.4)o.x=-232;if(o.dir<0&&o.x<-232)o.x=-HALF-0.4;
-  const z=hwZ(o.x),dz=(hwZ(o.x+0.1)-hwZ(o.x-0.1))/0.2,l=Math.hypot(1,dz),tx=1/l,tz=dz/l,off=0.24;
+  const z=hwZ(o.x),dz=(hwZ(o.x+0.1)-hwZ(o.x-0.1))/0.2,l=Math.hypot(1,dz),tx=1/l,tz=dz/l,off=o.big?0.33:(o.ln??=Math.random()<0.5?0.13:0.33);
   const px=o.x-tz*o.dir*off,pz=z+tx*o.dir*off,ty=VT[o.tid];if(ty.n>=138)continue;
   _p.set(px,Math.max(0,terrainH(px,pz))+0.06,pz);_q.setFromAxisAngle(_up,Math.atan2(tx*o.dir,tz*o.dir));_m.compose(_p,_q,_s);
   o.spin=(o.spin||0)+o.sp*dt/(ty.wh?ty.wh[1]:0.024);drawVehicle(ty,_m,ty.fixed||o.col,0,o.spin);if(beamN<120)beams.setMatrixAt(beamN++,_m)}}
@@ -4158,7 +4158,7 @@ function exportCity(id){if(id===curId&&G)save();const str=store('pc-city-'+id);i
 $('#importBtn').onclick=()=>codeBox('import','','Paste a save code you exported from Pixel City on any device.');
 $('#codeText').addEventListener('keydown',e=>e.stopPropagation());
 window.__wn=()=>showWhatsNew(true);
-function showWhatsNew(force){if(!force&&store('pc-seen-update')==='11')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','11')}}
+function showWhatsNew(force){if(!force&&store('pc-seen-update')==='12')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','12')}}
 function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.theta,x:cam.target.x,z:cam.target.z};atTitle=true;$('#app').classList.add('at-title');$('#title').hidden=false;setSpeed(0);$('#paused').hidden=true;inspect(-1);deselect();setTool(TOOLS[0]);
   for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel'])$(m).hidden=true;ov.user=null;applyOverlay();cam.dist=95;cam.phi=0.9;cam.target.set(0,0,6);zoomGoal=null;updateCamera();renderCities();
   $('#newName').value='';homePanel(null);syncHome();}

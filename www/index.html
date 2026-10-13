@@ -551,7 +551,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <button id="sndHint" class="card" hidden><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/></svg>Tap anywhere to turn on sound</button>
   <div id="lvlPop" class="card" hidden role="dialog" aria-label="Level up"><div class="lpBurst"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#f2c14e"/></svg><b id="lpNum">2</b></div>
     <p class="lpK">Level up!</p><h2 id="lpName">Hamlet</h2><div class="lpPrize"><span>Prize money</span><b id="lpMoney" class="mono">$0</b></div><div id="lpUnl"></div><button id="lpGo">Continue</button></div>
-  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 19</p><ul><li><b>Realistic buildings</b><span>New European, American and Asian homes, shops, offices and industry, real farms, darker roofs and softer night windows. Pick a style in settings.</span></li><li><b>Realistic vehicles</b><span>Remodelled cars, buses, trucks, trains, jets and helicopters. Cleaner roads with white lines.</span></li><li><b>Water and ports</b><span>Wider rivers, moving river water, sea waves and beaches. Island ferry port with car park, taxis, cruise ship, marina, yachts, jet skis and fishing boats.</span></li><li><b>Stadiums and football</b><span>Real-size football stadium plus Camp Nou, Hassan II, Bernabeu (roof opens and closes) and Emirates replicas with car parks. Your city club plays matches.</span></li><li><b>Real-size airports</b><span>Bigger international and domestic airports with taxiways and gates. Follow any flight from the airport card.</span></li><li><b>Easier building</b><span>Curve handle for roads, zones one tile from the road, hills turned off for now, cinematic city tour with video recording.</span></li><li><b>New look</b><span>New app icon, splash screen and moving city pictures on the start screen.</span></li></ul><button id="wnGo">Let's play</button></div>
+  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 20</p><ul><li><b>Fewer crashes on phones</b><span>Island and Ocean coast maps use far less memory: palm trees and cacti are now drawn like other trees. Big island cities use about a third less memory.</span></li></ul><button id="wnGo">Let's play</button></div>
   <aside id="inspect" class="card" hidden></aside>
   <aside id="agent" class="card" hidden aria-live="polite"></aside>
   <div id="menu" class="card" hidden>
@@ -2129,16 +2129,16 @@ function meshesFrom(list){/* list: array of bucket maps -> Group with one mesh p
 }
 /* tree tiles: one InstancedMesh per tree model part for the whole map (patch_treeinst.py) */
 const TI={dirty:true,M:null,mats:{},A:new Map(),da:new Set(),
-  ok(){return!SC.trees||SC.trees==='pine'},
-  kinds:[['tree_pine',['#2f5634','#3a6440','#2c4f30','#41683d'],0.5],['tree_round',['#4f7a35','#5a8638','#46702f','#638c3e','#6e8a3a'],0.44],['tree_tall',['#4a7433','#557d36','#5f8a3c'],0.5]],
+  ok(){return true},
+  kinds:[['tree_pine',['#2f5634','#3a6440','#2c4f30','#41683d'],0.5],['tree_round',['#4f7a35','#5a8638','#46702f','#638c3e','#6e8a3a'],0.44],['tree_tall',['#4a7433','#557d36','#5f8a3c'],0.5],['tree_palm',['#3f9a4a','#4aa653','#358a41'],1],['tree_cactus',['#5f8a3a','#6d9a44','#577f34'],1]],
   init(cap){if(this.M)for(const k of this.M)for(const im of k.ims){scene.remove(im);im.dispose()}
     this.cap=cap;this.M=this.kinds.map(([nm])=>({nm,ims:glbParts(nm).map(p=>{let m;if(p.m==='leaf'){m=this.mats.leaf||(this.mats.leaf=new THREE.MeshLambertMaterial({color:'#ffffff'}));m.userData.snowK=0.55;if(window.__snowPending&&!window.__snowPending.includes(m))window.__snowPending.push(m)}
         else m=mat(MODEL_COL[p.m]||'#5a4632');
         const im=new THREE.InstancedMesh(p.geo,m,cap);im.castShadow=true;im.receiveShadow=true;im.frustumCulled=false;im.userData.leaf=p.m==='leaf';if(im.userData.leaf){im.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(cap*3).fill(0.4),3);m.needsUpdate=true}im.count=0;scene.add(im);return im})}))},
   rebuild(){this.dirty=false;if(!this.ok()){if(this.M)for(const k of this.M)for(const im of k.ims)im.count=0;return}
-    const L=[[],[],[]],_m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3(),c=new THREE.Color();
+    const L=[[],[],[],[],[]],_m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3(),c=new THREE.Color();
     for(const i of OWNIDX){const tl=tiles[i];if(tl.t!==T.TREE)continue;const r=mulberry32(tl.seed+tl.l*977+tl.t*131),x=i%N,z=(i/N)|0,wx=x-HALF+0.5,wz=z-HALF+0.5,n=1+((r()*3)|0);
-      for(let k=0;k<n;k++){const px=(r()-0.5)*0.6,pz=(r()-0.5)*0.6,sc=0.9+r()*0.6,ry=r()*6.3;let kind=0;if(!(SC.trees==='pine'||r()>=0.55))kind=r()<0.7?1:2;
+      for(let k=0;k<n;k++){const px=(r()-0.5)*0.6,pz=(r()-0.5)*0.6,sc=0.9+r()*0.6,ry=r()*6.3;let kind=TI.pick(r,i);
         const cols=this.kinds[kind][1];L[kind].push(wx+px,wz+pz,ry,sc*this.kinds[kind][2],cols[(r()*cols.length)|0])}}
     const need=Math.max(...L.map(a=>a.length/5));if(!this.M||need>this.cap)this.init(Math.ceil(Math.max(256,need)*1.3));
     L.forEach((a,kind)=>{const n=a.length/5;for(const im of this.M[kind].ims){for(let j=0;j<n;j++){_p.set(a[j*5],0.03,a[j*5+1]);_q.setFromEuler(_e.set(0,a[j*5+2],0));_s.setScalar(a[j*5+3]);_m.compose(_p,_q,_s);im.setMatrixAt(j,_m);
@@ -2150,12 +2150,12 @@ TI.lo={};TI.loGeo=function(nm,p,sph){if(p.m!=='leaf')return null;let b=this.lo[n
 TI.rebuild=function(){this.dirty=false;const all=!this.da.size,areas=all?[...OWN]:[...this.da];this.da.clear();
   for(const a of(all?[...this.A.keys()]:areas)){const g=this.A.get(a);if(g){scene.remove(g);g.traverse(o=>{if(o.isInstancedMesh)o.dispose()});this.A.delete(a)}}
   if(!this.ok())return;const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3(),c=new THREE.Color();
-  for(const a of areas){if(!OWN.has(a))continue;const L=[[],[],[]];
+  for(const a of areas){if(!OWN.has(a))continue;const L=[[],[],[],[],[]];
     areaTiles(a,i=>{const tl=tiles[i];if(tl.t!==T.TREE)return;const r=mulberry32(tl.seed+tl.l*977+tl.t*131),x=i%N,z=(i/N)|0,wx=x-HALF+0.5,wz=z-HALF+0.5,n=1+((r()*3)|0);
-      for(let k=0;k<n;k++){const px=(r()-0.5)*0.6,pz=(r()-0.5)*0.6,sc=0.9+r()*0.6,ry=r()*6.3;let kind=0;if(!(SC.trees==='pine'||r()>=0.55))kind=r()<0.7?1:2;
+      for(let k=0;k<n;k++){const px=(r()-0.5)*0.6,pz=(r()-0.5)*0.6,sc=0.9+r()*0.6,ry=r()*6.3;let kind=TI.pick(r,i);
         const cols=this.kinds[kind][1];L[kind].push(wx+px,wz+pz,ry,sc*this.kinds[kind][2],cols[(r()*cols.length)|0])}});
     const g=new THREE.Group();this.A.set(a,g);scene.add(g);const TC=60,cells=new Map();
-    L.forEach((all,kind)=>{for(let j=0;j<all.length;j+=5){const key=Math.floor((all[j]+HALF)/TC)+','+Math.floor((all[j+1]+HALF)/TC);let e=cells.get(key);if(!e){e=[[],[],[]];cells.set(key,e)}e[kind].push(all[j],all[j+1],all[j+2],all[j+3],all[j+4])}});
+    L.forEach((all,kind)=>{for(let j=0;j<all.length;j+=5){const key=Math.floor((all[j]+HALF)/TC)+','+Math.floor((all[j+1]+HALF)/TC);let e=cells.get(key);if(!e){e=[[],[],[],[],[]];cells.set(key,e)}e[kind].push(all[j],all[j+1],all[j+2],all[j+3],all[j+4])}});
     for(const[key,CLs]of cells){const[kx,kz]=key.split(',').map(Number),cx=kx*TC+TC/2-HALF,cz=kz*TC+TC/2-HALF;
     CLs.forEach((arr,kind)=>{const n=arr.length/5;if(!n)return;
       for(const p of glbParts(this.kinds[kind][0])){const leaf=p.m==='leaf',geo=areaGeo(p.geo,a);geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(cx,1,cz),TC*0.72+2);
@@ -2163,6 +2163,8 @@ TI.rebuild=function(){this.dirty=false;const all=!this.da.size,areas=all?[...OWN
         if(leaf)im.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(n*3),3);
         for(let j=0;j<n;j++){_p.set(arr[j*5],0.03,arr[j*5+1]);_q.setFromEuler(_e.set(0,arr[j*5+2],0));_s.setScalar(arr[j*5+3]);_m.compose(_p,_q,_s);im.setMatrixAt(j,_m);if(leaf)im.setColorAt(j,c.set(arr[j*5+4]))}
         im.castShadow=true;im.receiveShadow=true;im.matrixAutoUpdate=false;im.userData.cx=geo.boundingSphere.center.x;im.userData.hi=geo;im.userData.lo=TI.loGeo(this.kinds[kind][0],p,geo.boundingSphere);im.userData.cz=geo.boundingSphere.center.z;g.add(im)}})}}_cvT=0};
+/*PC_PALMINST*/
+TI.pick=function(r,i){if(SC.trees==='cactus')return nearRiver(i)?3:4;if(SC.trees==='palm'&&r()<0.6)return 3;let k=0;if(!(SC.trees==='pine'||r()>=0.55))k=r()<0.7?1:2;return k};
 /* the city is drawn in 8x8-tile blocks: each block is a handful of draw calls */
 const CH=8,NC=Math.ceil(N/CH),chunkG=new Array(NC*NC).fill(null),dirtyChunks=new Set();
 const chunkOf=i=>Math.floor((i/N|0)/CH)*NC+Math.floor((i%N)/CH);
@@ -2200,6 +2202,19 @@ const archGlass=new THREE.MeshLambertMaterial({color:'#2f3d4a',emissive:'#ffffff
 archGlass.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWpG;').replace(/}\s*$/,'vWpG=(modelMatrix*vec4(transformed,1.0)).xyz;\n}');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWpG;\nfloat aH(vec3 c){return fract(sin(dot(c,vec3(12.9898,78.233,37.719)))*43758.5453);}').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{vec3 c=vec3(floor((vWpG.x+vWpG.z)*9.0),floor(vWpG.y*5.0),floor(vWpG.x*1.3)*7.0+floor(vWpG.z*1.3));float h=aH(c),h2=aH(c+17.0);float on=step(h,0.3);vec3 tint=h2<0.5?vec3(1.0,0.8,0.5):(h2<0.8?vec3(1.0,0.92,0.75):vec3(0.75,0.85,1.0));totalEmissiveRadiance*=on*tint*(0.45+0.45*fract(h2*7.3));}')};archGlass.customProgramCacheKey=()=>'archGlass';
 
 const modelCache={};
+/* palm and cactus parts for instanced tree tiles (patch_palminst.py) */
+(function(){const M=new THREE.Matrix4(),E=new THREE.Euler();
+  const merge=list0=>{const list=list0.map(g=>g.index?g.toNonIndexed():g);let n=0;for(const g of list)n+=g.attributes.position.count;const P=new Float32Array(n*3),Nn=new Float32Array(n*3);let o=0;
+    for(const g of list){P.set(g.attributes.position.array,o);Nn.set(g.attributes.normal.array,o);o+=g.attributes.position.array.length}
+    const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(P.subarray(0,o),3));out.setAttribute('normal',new THREE.BufferAttribute(Nn.subarray(0,o),3));return out};
+  const cyl=(r0,r1,h,x,y,z)=>new THREE.CylinderGeometry(r1,r0,h,6,1,false).translate(x,y+h/2,z);
+  const trunk=cyl(0.026,0.018,0.34,0,0,0),fr=[];
+  for(let k=0;k<6;k++){const a=k/6*Math.PI*2,b=new THREE.BoxGeometry(0.2,0.012,0.05);b.applyMatrix4(M.makeRotationFromEuler(E.set(0,a,-0.4)));b.translate(Math.cos(a)*0.09,0.32,-Math.sin(a)*0.09);fr.push(b)}
+  MODEL_COL.palmtrunk='#8a6b4a';
+  modelCache.tree_palm=[{geo:merge([trunk]),m:'palmtrunk'},{geo:merge(fr),m:'leaf'}];
+  modelCache.tree_cactus=[{geo:merge([cyl(0.03,0.03,0.28,0,0,0),cyl(0.018,0.018,0.08,0.055,0.1,0),new THREE.BoxGeometry(0.05,0.03,0.03).translate(0.03,0.115,0)]),m:'leaf'}];
+})();
+
 const ROOFM=new Set(['wall','wall2','stone','siding','brick','concrete','render','plaster']);
 function glbParts(name){
   if(modelCache[name])return modelCache[name];
@@ -7350,7 +7365,7 @@ function exportCity(id){if(id===curId&&G)save();const str=store('pc-city-'+id);i
 $('#importBtn').onclick=()=>codeBox('import','','Paste a save code you exported from Pixel City on any device.');
 $('#codeText').addEventListener('keydown',e=>e.stopPropagation());
 window.__wn=()=>showWhatsNew(true);
-function showWhatsNew(force){if(!force&&store('pc-seen-update')==='19')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','19')}}
+function showWhatsNew(force){if(!force&&store('pc-seen-update')==='20')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','20')}}
 function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.theta,x:cam.target.x,z:cam.target.z};atTitle=true;$('#app').classList.add('at-title');$('#title').hidden=false;setSpeed(0);$('#paused').hidden=true;inspect(-1);deselect();setTool(TOOLS[0]);
   for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel','#tranPanel','#budPanel'])$(m).hidden=true;ov.user=null;applyOverlay();cam.dist=95;cam.phi=0.9;{const f=G?cityFocus():{x:0,z:6};cam.target.set(f.x,0,f.z)}zoomGoal=null;updateCamera();renderCities();
   $('#newName').value='';homePanel(null);syncHome();}

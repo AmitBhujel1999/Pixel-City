@@ -551,7 +551,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <button id="sndHint" class="card" hidden><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/></svg>Tap anywhere to turn on sound</button>
   <div id="lvlPop" class="card" hidden role="dialog" aria-label="Level up"><div class="lpBurst"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#f2c14e"/></svg><b id="lpNum">2</b></div>
     <p class="lpK">Level up!</p><h2 id="lpName">Hamlet</h2><div class="lpPrize"><span>Prize money</span><b id="lpMoney" class="mono">$0</b></div><div id="lpUnl"></div><button id="lpGo">Continue</button></div>
-  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 22</p><ul><li><b>Wider avenues and boulevards</b><span>Avenues are now 24 m with 4 lanes and boulevards 36 m with 6 lanes and a planted median, like Cities: Skylines. Zoned buildings in the way of a new wide road are knocked down.</span></li><li><b>Smarter traffic</b><span>Cars move into the right lane for their turn, change lanes smoothly and drive round traffic jams when there is another way.</span></li><li><b>Service vehicles do the job</b><span>Fires, sick people and rubbish are only dealt with when the fire engine, ambulance or garbage truck gets there; then it drives back to its station. Bigger cities run more of them. Garbage trucks empty every bin round their stop.</span></li><li><b>25 new vehicles</b><span>Minivans, electric and classic cars, motorbikes, scooters, bicycles, coaches, school buses, open-top tour buses, trolleybuses, hearses, police vans, post vans and trucks, log trucks, tractors, dump trucks, container trucks, concrete mixers, car transporters, snow ploughs, road and park maintenance, pumping and rescue trucks.</span></li><li><b>Monorail, cable car, trolleybus</b><span>In the Transport panel: build monorail lines on elevated beams, cable cars between two terminals, and trolleybus lines with overhead wires. An advertising blimp now circles bigger cities.</span></li></ul><button id="wnGo">Let's play</button></div>
+  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 23</p><ul><li><b>Power lines and water pipes</b><span>At the end of the Power and Water menus. Join two separate road networks so a power plant or pump on one feeds the other.</span></li><li><b>Hydro power and river floods</b><span>Hydro power plant (140 MW, clean) next to the river. Rivers can now flood and damage buildings by the water; a hydro plant halves the chance.</span></li><li><b>Service helicopters</b><span>In bigger cities police, fire and medical helicopters fly out to some call-outs and back.</span></li><li><b>Old roads, new look</b><span>Street tool: 'Give old roads the new look' turns old grid streets into new roads with lane arrows, crossings, signs and lane rules.</span></li><li><b>Trams on curved roads</b><span>Tram rails and wires now follow curved roads. Post vans start from post offices. Up to 220 vehicles on the road at once on computers.</span></li></ul><button id="wnGo">Let's play</button></div>
   <aside id="inspect" class="card" hidden></aside>
   <aside id="agent" class="card" hidden aria-live="polite"></aside>
   <div id="menu" class="card" hidden>
@@ -2735,7 +2735,7 @@ function buildTile0(i,anim){
         part(g,CONE,'#2b2b2b',0.15,0.14,0.15,0.3,Y0,0.3);part(g,CONE,'#353535',0.1,0.1,0.1,0.18,Y0,0.38);
         slab('#6d757d',0.03,0.03,0.34,0.2,Y0+0.22,0.14,0.55);box(g,'#f7d154',0.46,0.04,0.02,-0.18,Y0+0.3,0.382,false);
         em.push([0.2,Y0+1.1,-0.18]);
-      } else if(SZ===3){box(g,'#86bd62',0.98,0.03,0.98,0,0,0,false);
+      } else if(SZ===4){hydroDraw(g,Y0);}else if(SZ===3){box(g,'#86bd62',0.98,0.03,0.98,0,0,0,false);
         part(g,CYL,'#eef0f2',0.035,1.25,0.035,0,Y0,0);box(g,'#e4e7ea',0.07,0.06,0.14,0,Y0+1.22,0.02);part(g,BALL,'#d7dbe0',0.03,0.03,0.03,0,Y0+1.25,0.1,false);
         windRotor(i,x,z,rot,Y0+1.25);
         box(g,'#c9ccd1',0.12,0.1,0.1,0.26,Y0,0.3);shrub(-0.3,0.3);shrub(0.34,-0.3);
@@ -3866,7 +3866,7 @@ function allocate(nc,prod,use,cov,roadMark,spare){const sup=new Float64Array(nc)
   for(const i of zero)if(sup[comp[access[i]]]>spare)cov[i]=1;
   return{made,need,served}}
 function utilities(){power.fill(0);water.fill(0);garbC.fill(0);const nc=labelComps();
-  const p=allocate(nc,i=>{const t=tiles[i];return t.t===T.POWER?SVI(6,t.l).mw*budOut('power'):0},SC.pw?t=>useMW(t)*SC.pw:useMW,power,U.roadPW,0.05);
+  const p=allocate(nc,i=>{const t=tiles[i];return t.t===T.POWER?(SVI(6,t.l).river&&!nearRiver(i)?0:SVI(6,t.l).mw)*budOut('power'):0},SC.pw?t=>useMW(t)*SC.pw:useMW,power,U.roadPW,0.05);
   Object.assign(U.pw,p,{short:p.need>p.made+1e-6});
   const w=allocate(nc,i=>tiles[i].t===T.WATER?waterOut(i)*budOut('water'):0,useL,water,U.roadWT,200);
   Object.assign(U.wt,w,{short:w.need>w.made+1e-6});
@@ -4838,7 +4838,7 @@ function updateTrains(dt){if(!G||!tiles.length)return;RAILS.chk-=dt;
 const JAMA=new Set();
 function updateCars(dt){updateHeli(dt);
   const h=hour(),rush=(h>=7&&h<9.5)||(h>=16.5&&h<19)?1.3:h<5.5||h>=23?0.35:1;
-  const want=Math.min(100,Math.floor(S.pop/14*rush*trCarK()),Math.floor(S.roads/3));
+  const want=Math.min(NETCARCAP,Math.floor(S.pop/14*rush*trCarK()),Math.floor(S.roads/3));
   if(cars.length+PK.n<want&&Math.random()<0.3)spawnCar();
   if(lotusOK()&&Math.random()<dt*0.3&&cars.filter(c=>c.role==='air'&&c.toAir).length<8)spawnAir();if(Math.random()<dt*0.25)domSpawn();if(Math.random()<dt*stadRate())stadSpawn();
   if(cargoOK()&&Math.random()<dt*0.25&&cars.filter(c=>c.toCargo).length<6)spawnCargo();
@@ -7392,7 +7392,7 @@ function exportCity(id){if(id===curId&&G)save();const str=store('pc-city-'+id);i
 $('#importBtn').onclick=()=>codeBox('import','','Paste a save code you exported from Pixel City on any device.');
 $('#codeText').addEventListener('keydown',e=>e.stopPropagation());
 window.__wn=()=>showWhatsNew(true);
-function showWhatsNew(force){if(!force&&store('pc-seen-update')==='22')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','22')}}
+function showWhatsNew(force){if(!force&&store('pc-seen-update')==='23')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','23')}}
 function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.theta,x:cam.target.x,z:cam.target.z};atTitle=true;$('#app').classList.add('at-title');$('#title').hidden=false;setSpeed(0);$('#paused').hidden=true;inspect(-1);deselect();setTool(TOOLS[0]);
   for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel','#tranPanel','#budPanel'])$(m).hidden=true;ov.user=null;applyOverlay();cam.dist=95;cam.phi=0.9;{const f=G?cityFocus():{x:0,z:6};cam.target.set(f.x,0,f.z)}zoomGoal=null;updateCamera();renderCities();
   $('#newName').value='';homePanel(null);syncHome();}
@@ -8915,6 +8915,13 @@ const nvRescue=[];
 {const _dh=disHit;disHit=function(i){const r=_dh(i);if(r&&nvRescue.length<8&&Math.random()<0.4)nvRescue.push(i);return r}}
 {const _uc=updateCars;updateCars=function(dt){_uc(dt);nvTick(dt)}}
 /* hearses are proper hearses now */
+const NETCARCAP=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)?110:220;
+/* post vans and trucks start from post offices when the city has one */
+let nvPostT=0,nvPosts=[];
+{const _nt=nvTick;nvTick=function(dt){_nt(dt);if(!G||!S.lists)return;nvPostT-=dt;if(nvPostT>0)return;nvPostT=5;
+  nvPosts=[];for(const i of S.svc&&S.svc[T.GOV]||[]){const t=tiles[i];const sv=SVI(T.GOV,t.l);if(sv&&sv.gov==='post'&&access[i]>=0)nvPosts.push(i)}
+  if(!nvPosts.length||nvCount('postvan')+nvCount('posttruck')>=Math.min(8,2*nvPosts.length)||Math.random()>0.5)return;
+  const po=nvPosts[(Math.random()*nvPosts.length)|0],L=S.lists,to=Math.random()<0.7?nvOf(L.home):nvOf(L.shop);nvTrip(access[po],to,Math.random()<0.2?'posttruck':'postvan')}}
 
 /* ---------- trolleybuses, monorail, cable car and the blimp (patch_net.py, models from vehicles3.py / transit2.py) ----------
    Trolleybus lines: drawn with the line tool like bus lines; trolleybuses run them and overhead wires follow the route.
@@ -9014,6 +9021,138 @@ function txMonth(){if(!G||!G.tx)return;const T_=G.tx,pop=S.pop||0;let inc=0,up=0
   d.querySelector('#tbNew').onclick=()=>{tp.hidden=true;setTool(TOOLS.find(t=>t.id==='line'));TL.type='trolley';tlBar()};
   d.querySelector('#monoNew').onclick=()=>{tp.hidden=true;txStart('mono')};d.querySelector('#cableNew').onclick=()=>{tp.hidden=true;txStart('cable')};
   const del=d.querySelector('#txDel');if(del)del.onclick=()=>{const T2=txG();const a=T2.mono[T2.mono.length-1],b=T2.cable[T2.cable.length-1];if(a&&(!b||a.id>b.id))T2.mono.pop();else T2.cable.pop();txBuild();renderTransport();sfx('doze')}}}
+/* ---- service helicopters: in bigger cities some fire, ambulance and police call-outs also send a helicopter from the
+   station; it climbs, flies over, hovers or circles, then flies back and lands ---- */
+const SVH=[],SVHC={fire:['#c8202a','#f4f4f0'],ambulance:['#f4f4f0','#c8202a'],police:['#1f2d4d','#f4f4f0']};
+function svhMake(role){const g=new THREE.Group(),body=new THREE.Group(),rot=new THREE.Group(),tail=new THREE.Group(),c=SVHC[role];
+  model(body,'heli_body',{paint:c[0],paint2:c[1]},0,0,0);model(rot,'heli_rotor',null,0,0,0);model(tail,'heli_tail',null,0,0,0);
+  rot.position.set(0,0.26,0);tail.position.set(0.012,0.15,-0.33);body.add(rot);body.add(tail);g.add(body);g.scale.setScalar(1.25);world.add(g);return{g,rot,tail}}
+{const _dp=dispatch;dispatch=function(role,type,target){const ok=_dp(role,type,target);
+  if(ok&&SVHC[role]&&(S.pop||0)>=2000&&SVH.filter(h=>h.role===role).length<2&&Math.random()<0.25){const st=nearestStation(type,target);if(st>=0){const[sx,sz]=wpos(st),[tx,tz]=wpos(target);const y0=Math.max(0.15,(tiles[st].top||0)+0.05);SVH.push({role,m:svhMake(role),sx,sz,tx,tz,x:sx,z:sz,y:y0,y0,ph:'up',t:0,ang:0})}}
+  return ok}}
+function svhTick(dt){for(let k=SVH.length-1;k>=0;k--){const h=SVH[k],m=h.m;m.rot.rotation.y+=dt*30;m.tail.rotation.x+=dt*40;h.t+=dt;
+  const fly=(x,z,sp)=>{const dx=x-h.x,dz=z-h.z,d=Math.hypot(dx,dz);if(d<0.05)return true;const s=Math.min(d,sp*dt);h.x+=dx/d*s;h.z+=dz/d*s;h.yaw=Math.atan2(dx,dz);return false};
+  if(h.ph==='up'){h.y=Math.min(3,h.y+dt*1.2);if(h.y>=3)h.ph='go'}
+  else if(h.ph==='go'){if(fly(h.tx,h.tz,3.2)){h.ph='hover';h.t=0}}
+  else if(h.ph==='hover'){h.ang+=dt*(h.role==='police'?0.8:0.25);const r=h.role==='police'?2:0.6;h.x=h.tx+Math.cos(h.ang)*r;h.z=h.tz+Math.sin(h.ang)*r;h.yaw=h.ang+Math.PI;h.y=h.role==='fire'?1.6:2.4;if(h.t>12)h.ph='back'}
+  else if(h.ph==='back'){h.y=Math.min(3,h.y+dt);if(fly(h.sx,h.sz,3.2))h.ph='down'}
+  else if(h.ph==='down'){h.y-=dt*0.9;if(h.y<=h.y0){world.remove(m.g);SVH.splice(k,1);continue}}
+  m.g.position.set(h.x,h.y,h.z);m.g.rotation.y=h.yaw||0;m.g.rotation.z=h.ph==='go'||h.ph==='back'?0.12:0}}
+{const _uc2=updateCars;updateCars=function(dt){_uc2(dt);svhTick(dt)}}
+/* ---- tram track on network roads: rails, wires and poles follow the road's curve instead of the tile grid ---- */
+{const _td=tramDraw;tramDraw=function(){
+  /* the old drawer only knows the grid: hide network tiles from it, then draw those along their segments */
+  const keep={};if(G&&G.tram&&G.net&&G.net.s.length){const M=netMap();for(const k in G.tram){if(k==='idx')continue;if(M.TR[+k]){keep[k]=G.tram[k];delete G.tram[k]}}}
+  _td();for(const k in keep)G.tram[k]=keep[k];if(!G||!G.tram||!Object.keys(keep).length)return;
+  const M=netMap(),R=[],Wr=[],poles=[];
+  for(const g of M.geo.values()){if(g.kind!=='road'||g.sg.e)continue;const lane=Math.min(0.2,(NETLN[g.sg.t|0]||NETLN[0])[0]),hw=netHW(g.sg.t);
+    for(let k=0;k<g.ext.length;k++){const j=g.ext[k];if(!G.tram[j])continue;const s0=g.e0[k],s1=g.e1[k];
+      for(let s=s0;s<s1-1e-4;s+=0.1){const s2=Math.min(s1,s+0.1),a=cvAt(g,s),b=cvAt(g,s2),na=[-a[3],a[2]],nb=[-b[3],b[2]];
+        for(const sd of[-1,1]){for(const gg of[-0.04,0.04]){const o=sd*lane+gg;R.push([a[0]+na[0]*o,a[1]+na[1]*o,b[0]+nb[0]*o,b[1]+nb[1]*o])}const o=sd*lane;Wr.push([a[0]+na[0]*o,a[1]+na[1]*o,b[0]+nb[0]*o,b[1]+nb[1]*o])}}
+      if(k%2===0){const q=cvAt(g,(s0+s1)/2);poles.push([q[0]-q[3]*(hw-0.04),q[1]+q[2]*(hw-0.04),Math.atan2(q[2],q[3])])}}}
+  const strip=(L,w,y,col)=>{const V=[],I=[];let q=0;for(const[x0,z0,x1,z1]of L){const dx=x1-x0,dz=z1-z0,l=Math.hypot(dx,dz)||1,nx=-dz/l*w/2,nz=dx/l*w/2;
+      V.push(x0+nx,y,z0+nz,x0-nx,y,z0-nz,x1+nx,y,z1+nz,x1-nx,y,z1-nz);I.push(q,q+1,q+2,q+1,q+3,q+2);q+=4}
+    const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(V,3));bg.setIndex(I);bg.computeVertexNormals();
+    const m=new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3});const o=new THREE.Mesh(bg,m);o.frustumCulled=false;return o};
+  if(R.length)TRMG.add(strip(R,0.016,0.0615,'#b4bac2'));if(Wr.length)TRMG.add(strip(Wr,0.004,0.27,'#2a2d33'));
+  for(const[x,z,ry]of poles){const gg=new THREE.Group();gg.position.set(x,0,z);gg.rotation.y=ry-Math.PI/2;model(gg,'tram_pole',{metal:'#7d838c'},0,0.03,0);TRMG.add(gg)}}}
+
+/* ---------- convert old grid roads to the road network (patch_net.py) ----------
+   Streets, one-ways and dirt roads laid with the old tile builder become network segments (straight runs between
+   junctions, bends and ends), so they get the new look: lane arrows, crossings, signs, trees, smooth junctions and lane
+   rules. Avenues, boulevards and highways stay as they are (widening them would knock down the buildings beside them),
+   and so do bridges, curved grid roads, level crossings and the highway entry. Button in the road tool bar. */
+const NCV_ONE={2:[1,0],6:[-1,0],7:[0,1],8:[0,-1]};
+function netConvOK(i){const t=tiles[i];if(!t||t.lock||t.t!==T.ROAD||t.w)return false;const v=RI(t.l).v;if(v!==0&&v!==1&&v!==2)return false;
+  if(i===ENTRY||rxAt(i))return false;const M=netMap();if(M.T[i])return false;if(G.cv&&G.cv.length&&cvMap().road.has(i))return false;return true}
+function netConvCount(){let n=0;for(const i of OWNIDX)if(netConvOK(i))n++;return n}
+function netConvert(){if(!G)return 0;const net=netG(),ok=new Uint8Array(N*N);let any=0;for(const i of OWNIDX)if(netConvOK(i)){ok[i]=1;any++}if(!any)return 0;
+  const nb=i=>{const x=i%N,z=(i/N)|0,o=[];for(const[dx,dz]of D4)if(inB(x+dx,z+dz)){const j=idx(x+dx,z+dz);if(tiles[j].t===T.ROAD&&canMove(i,j,'any')!==false)o.push([j,dx,dz])}return o};
+  const isNode=i=>{const L=nb(i);if(L.length!==2)return true;const[a,b]=L;if(a[1]!==-b[1]||a[2]!==-b[2])return true;if(!ok[a[0]]||!ok[b[0]])return true;const v=RI(tiles[i].l).v;if(RI(tiles[a[0]].l).v!==v||RI(tiles[b[0]].l).v!==v)return true;return false};
+  const nodeOf=new Map(),mk=i=>{if(nodeOf.has(i))return nodeOf.get(i);const[x,z]=wpos(i),id=net.id++;net.n[id]=[x,z];nodeOf.set(i,id);return id};
+  const done=new Set();let segs=0;
+  for(const i of OWNIDX){if(!ok[i]||!isNode(i))continue;
+    for(const[j0,dx,dz]of nb(i)){if(!ok[j0])continue;const key=Math.min(i,j0)+':'+Math.max(i,j0);if(done.has(key))continue;
+      let cur=j0,prev=i;const run=[i];while(true){done.add(Math.min(prev,cur)+':'+Math.max(prev,cur));run.push(cur);if(!ok[cur]||isNode(cur))break;const nx=nb(cur).find(q=>q[0]!==prev);if(!nx)break;prev=cur;cur=nx[0]}
+      const end=run[run.length-1];if(!ok[end])continue;if(run.length<2)continue;
+      const v=RI(tiles[run[1]].l).v,t=tiles[run[1]].l;let a=i,b=end;
+      if(v===2){const d=NCV_ONE[t]||[1,0],ax=a%N,az=(a/N)|0,bx=b%N,bz=(b/N)|0;if(Math.sign(bx-ax)!==d[0]||Math.sign(bz-az)!==d[1]){const q=a;a=b;b=q}}
+      const A=mk(a),B=mk(b),[x0,z0]=wpos(a),[x1,z1]=wpos(b),l=bzLine([x0,z0],[x1,z1]);net.s.push({id:net.id++,k:'road',t:v,a:A,b:B,c1:l[1],c2:l[2]});segs++;
+      for(const j of run)if(ok[j]&&RI(tiles[j].l).v===2)tiles[j].l=2}}
+  netVer++;netRebuild();const redo=new Set();for(const i of OWNIDX)if(ok[i])redo.add(i);netRedraw(redo);netLotsUpdate();recompute();S=stats();hud();return segs}
+/* the button */
+{const _cb=cvBar;cvBar=function(){_cb();const d=$('#cvBar');if(!d||d.hidden||(tool&&tool.id==='rail'))return;const n=netConvCount();if(!n)return;
+  const s=document.createElement('span');s.style.cssText='grid-column:1/-1;display:flex;gap:6px;align-items:center';
+  s.innerHTML=`<button id="ncvBtn" style="height:32px;padding:0 10px">Give old roads the new look</button><span style="color:var(--muted)">${n} tiles</span>`;d.appendChild(s);
+  s.querySelector('#ncvBtn').onclick=()=>{const k=netConvert();toast(k?`Converted ${k} road pieces. Avenues, boulevards, highways, bridges and curved roads stay as they were.`:'Nothing to convert.');sfx('road');cvBar()}}}
+
+/* ---------- power lines and water pipes (patch_net.py) ----------
+   Power and water already reach buildings through connected roads (each road network shares what its plants and pumps
+   make). A power line or a water pipe joins two road networks, so a plant on one can feed the other, as in Cities:
+   Skylines. Built from the Power and Water menus: tap the start and the end (each within 4 tiles of a road). Power lines
+   stand on pylons; pipes are underground and show while the tool is on. */
+var UL={mode:null,a:null,prev:null,grp:null,ver:''};
+const ulG=()=>{if(!G.ul)G.ul=[];return G.ul};
+const ULC={power:{u:40,nm:'Power line'},water:{u:60,nm:'Water pipe'}};
+/* nearest road of a world point (within 4 tiles), or -1 */
+function ulRoad(p){const j=netTile(p[0],p[1]);return j<0?-1:feedRoad(j)}
+/* merge the road networks a line or pipe joins, only while sharing out power / water */
+{const _al=allocate;allocate=function(nc,prod,use,cov,roadMark,spare){const kind=cov===power?'power':cov===water?'water':null;const L=kind&&G&&G.ul?G.ul.filter(l=>l.k===kind):[];if(!L.length)return _al(nc,prod,use,cov,roadMark,spare);
+  const par=new Int32Array(nc);for(let k=0;k<nc;k++)par[k]=k;const f=k=>{while(par[k]!==k){par[k]=par[par[k]];k=par[k]}return k};
+  for(const l of L){const a=ulRoad(l.a),b=ulRoad(l.b);if(a<0||b<0||comp[a]<0||comp[b]<0)continue;const x=f(comp[a]),y=f(comp[b]);if(x!==y)par[x]=y}
+  const save=comp.slice();for(const i of OWNIDX)if(comp[i]>=0)comp[i]=f(comp[i]);try{return _al(nc,prod,use,cov,roadMark,spare)}finally{comp.set(save)}}}
+function ulDraw(){const key=JSON.stringify(G&&G.ul||[])+(UL.mode||'');if(key===UL.ver&&UL.grp&&UL.src===G)return;UL.ver=key;UL.src=G;
+  if(UL.grp){world.remove(UL.grp);UL.grp.traverse(o=>{if(o.geometry&&o.geometry.userData.ul)o.geometry.dispose()})}UL.grp=new THREE.Group();world.add(UL.grp);if(!G||!G.ul)return;
+  const W=[],g=new THREE.Group();
+  for(const l of G.ul){const dx=l.b[0]-l.a[0],dz=l.b[1]-l.a[1],L=Math.hypot(dx,dz);if(L<0.3)continue;const ux=dx/L,uz=dz/L,ry=Math.atan2(ux,uz);
+    if(l.k==='power'){const n=Math.max(1,Math.ceil(L/3)),tops=[];for(let k=0;k<=n;k++){const s=L*k/n,x=l.a[0]+ux*s,z=l.a[1]+uz*s;model(g,'cable_pylon',{steel:'#8d949b'},x,0,z,ry,0.75);tops.push([x,z])}
+      for(let k=0;k<n;k++)for(const sd of[-0.12,0.12]){const[ax,az]=tops[k],[bx,bz]=tops[k+1];for(let q=0;q<8;q++){const t0=q/8,t1=(q+1)/8,sag=t=>0.95-0.1*Math.sin(Math.PI*t);W.push(ax+(bx-ax)*t0-uz*sd,sag(t0),az+(bz-az)*t0+ux*sd,ax+(bx-ax)*t1-uz*sd,sag(t1),az+(bz-az)*t1+ux*sd)}}}
+    else if(UL.mode==='water'){const m=new THREE.Mesh(BOXC,new THREE.MeshBasicMaterial({color:'#3fa0e8',transparent:true,opacity:0.7,depthTest:false}));m.scale.set(0.12,0.02,L);m.position.set((l.a[0]+l.b[0])/2,0.09,(l.a[1]+l.b[1])/2);m.rotation.y=ry;m.renderOrder=8;UL.grp.add(m)}}
+  if(g.children.length){const d=bakeData(g);UL.grp.add(meshesFrom([d.buckets]))}
+  if(W.length){const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(W,3));bg.userData.ul=1;UL.grp.add(new THREE.LineSegments(bg,new THREE.LineBasicMaterial({color:'#2a2d31'})))}}
+function ulBar(){let d=$('#ulBar');if(!d){d=document.createElement('div');d.id='ulBar';d.className='card';d.style.cssText='position:absolute;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(var(--barH) + var(--sb) + 8px);z-index:8;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:12px;max-width:min(360px,calc(100vw - 24px))';document.body.appendChild(d)}
+  d.hidden=!UL.mode;if(!UL.mode)return;const c=ULC[UL.mode];
+  d.innerHTML=`<b>${c.nm} · ${fmt(c.u)} a tile</b><span style="color:var(--muted)">${UL.a?'Tap where it ends.':'Tap where it starts.'} Each end must be within 4 tiles of a road. It joins two road networks so they share ${UL.mode==='power'?'power':'water'}.</span><span style="display:flex;gap:6px"><button id="ulUndo" ${G.ul&&G.ul.some(l=>l.k===UL.mode)?'':'disabled'}>Remove last</button><button id="ulDone">Done</button></span>`;
+  d.querySelector('#ulDone').onclick=ulStop;d.querySelector('#ulUndo').onclick=()=>{const L=ulG();for(let k=L.length-1;k>=0;k--)if(L[k].k===UL.mode){L.splice(k,1);break}recompute();S=stats();hud();ulDraw();ulBar();sfx('doze')}}
+function ulStart(k){setTool(TOOLS[0]);UL.mode=k;UL.a=null;ulDraw();ulBar()}
+function ulStop(){UL.mode=null;UL.a=null;ulDraw();ulBar()}
+function ulTap(x,z){const p=[x,z],j=netTile(x,z);if(j<0||tiles[j].lock){toast('That land is not yours yet.');sfx('err');return}if(ulRoad(p)<0){toast('Each end must be within 4 tiles of a road.');sfx('err');return}
+  if(!UL.a){UL.a=p;sfx('ui');ulBar();return}const L=Math.hypot(x-UL.a[0],z-UL.a[1]);if(L<1){toast('Drag it further.');return}const cost=Math.round(L*ULC[UL.mode].u);
+  if(cost>G.money){toast(`That costs ${fmt(cost)}, but you have ${fmt(G.money)}.`);sfx('err');return}G.money-=cost;ulG().push({k:UL.mode,a:UL.a,b:p});UL.a=null;recompute();S=stats();hud();ulDraw();ulBar();sfx('build')}
+canvas.addEventListener('pointerdown',e=>{if(!UL.mode||e.button!==0)return;const g=groundAt(e.clientX,e.clientY);if(!g)return;e.stopImmediatePropagation();e.preventDefault();ulTap(g.x,g.z)},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UL.mode){ulStop();e.stopPropagation()}},true);
+{const _uc3=updateCars;updateCars=function(dt){_uc3(dt);if(G&&(G.ul||UL.grp))ulDraw()}}
+/* buttons at the end of the Power and Water menus */
+{const _ssmU=showSizeMenu;showSizeMenu=function(tl){_ssmU(tl);const k=tl&&tl.id==='power'?'power':tl&&tl.id==='water'?'water':null;if(!k)return;const m=$('#sizeMenu');
+  m.insertAdjacentHTML('beforeend',`<button data-ulk="${k}"><b>${ULC[k].nm}</b><span>Joins two road networks so they share ${k==='power'?'electricity':'water'}</span><span class="cost">${fmt(ULC[k].u)} a tile</span></button>`);
+  m.querySelector('button[data-ulk]').onclick=()=>{m.hidden=true;ulStart(k);toast(`${ULC[k].nm}: tap the start, then the end.`)}}}
+
+/* ---------- hydro power and river floods (patch_net.py) ----------
+   Hydro power plant: Power menu, must stand next to the river, 140 MW, clean. River floods: a new disaster on river maps:
+   the river rises over its banks for a while, low buildings near the water are damaged and roads by the river close.
+   A hydro plant upstream (it holds the water back) halves the chance. */
+SV[T.POWER].sizes.push({nm:'Hydro power plant',tag:'River',cost:20000,up:220,mw:140,lv:15,tier:2,river:1,clean:1,eff:'Makes 140 MW · clean · must stand next to the river'});
+SV[T.POWER].order.push(4);
+{const _svc=ICO3.svc;ICO3.svc=function(t,l){if(t===T.POWER&&l===4)return'<svg viewBox="0 0 80 64" width="80" height="64"><rect x="0" y="40" width="80" height="24" fill="#3f8fd0"/><path d="M8 40 L20 14 H60 L72 40 Z" fill="#c9c6bf"/><rect x="24" y="18" width="32" height="10" fill="#8d949b"/><path d="M30 40 v12 M40 40 v14 M50 40 v12" stroke="#fff" stroke-width="3"/></svg>';return _svc(t,l)}}
+function hydroDraw(g,Y0){/* concrete dam wall across the lot, turbine hall on top, spillway foam, switchyard */
+  box(g,'#bdbab2',0.98,0.32,0.34,0,0,-0.1);box(g,'#a9a59c',0.98,0.04,0.38,0,0.32,-0.1,false);
+  box(g,'#8d949b',0.5,0.14,0.2,-0.18,0.36,-0.1);box(g,'#3f8fd0',0.5,0.02,0.2,-0.18,0.5,-0.1,false);
+  for(const x of[-0.3,-0.1,0.1,0.3])box(g,'#f4f6f8',0.09,0.2,0.04,x,0.02,-0.29,false);
+  box(g,'#e8eef4',0.98,0.03,0.2,0,0,-0.38,false);
+  for(const x of[0.18,0.32])part(g,CYL,'#6d757d',0.015,0.28,0.015,x,0.36,0.08,false);box(g,'#6d757d',0.2,0.015,0.015,0.25,0.62,0.08,false);box(g,'#f7d154',0.96,0.03,0.02,0,0.33,0.07,false)}
+/* ---- floods ---- */
+var FLOOD=null;
+function floodStart(){if(!SC.river||FLOOD)return;const g=new THREE.Group();world.add(g);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(2*HALF,1,256,1).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:'#6a8796',transparent:true,opacity:0.0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4}));
+  const pa=m.geometry.attributes.position;for(let k=0;k<pa.count;k++){const x=pa.getX(k),z=pa.getZ(k);pa.setZ(k,riverZ(x)+z*2*(RIVW+2.6))}pa.needsUpdate=true;m.geometry.computeVertexNormals();
+  m.position.y=0.05;m.renderOrder=3;m.frustumCulled=false;m.material.defines={NO_TERRAIN:''};g.add(m);FLOOD={g,m,t:0,T:28,hit:new Set()};notify('<b>The river is flooding!</b> Buildings by the water may be damaged. A hydro power plant upstream holds the water back.','adv sos');sfx('alarm')}
+function floodTick(dt){if(!FLOOD)return;const f=FLOOD;f.t+=dt;const k=f.t<4?f.t/4:f.t>f.T-6?Math.max(0,(f.T-f.t)/6):1;f.m.material.opacity=0.8*k;f.m.position.y=0.06+0.05*k;
+  if(f.t>4&&f.t<f.T-6&&Math.random()<dt*3){const x=(Math.random()-0.5)*2*HALF*0.98,z=riverZ(x)+(Math.random()<0.5?-1:1)*(RIVW+0.3+Math.random()*2.2),j=netTile(x,z);
+    if(j>=0&&!f.hit.has(j)){f.hit.add(j);const t=tiles[j];if(t.t>=2&&t.t<=4&&t.l>0&&Math.random()<0.35){t.l=Math.max(0,t.l-1);buildTile(j)}}}
+  if(f.t>=f.T){world.remove(f.g);f.m.geometry.dispose();FLOOD=null;recompute();S=stats();hud();notify('<b>The flood is over.</b> Damaged buildings will be rebuilt.')}}
+{const _dm=disMonth;disMonth=function(){_dm();if(!G||!disOn()||!SC.river||(S.pop||0)<2000||FLOOD)return;
+  let hydro=false;for(const i of S.svc&&S.svc[T.POWER]||[])if(tiles[i].l===4&&nearRiver(i))hydro=true;if(Math.random()<(hydro?1/96:1/48))floodStart()}}
+{const _uc4=updateCars;updateCars=function(dt){_uc4(dt);floodTick(dt)}}
 
 /* ---------- boot ---------- */
 function start(data){applyGrade();

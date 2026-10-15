@@ -81,6 +81,34 @@ body.cine #cineStop{display:block}#cineStop .dot{display:inline-block;width:8px;
 @keyframes cineBlink{50%{opacity:.2}}
 </style>
 </head><body>
+<style>
+#loadScr{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:radial-gradient(ellipse at 50% 35%,#1d3a4f 0%,#0e141b 70%);color:#e8eef3;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;transition:opacity .45s;text-align:center;padding:24px}
+#loadScr.done{opacity:0;pointer-events:none}
+#loadScr h1{margin:0;font-size:clamp(30px,7vw,54px);letter-spacing:.02em;font-weight:800}
+#loadScr h1 span{color:#8be0c9}
+#loadScr .lsub{opacity:.75;font-size:14px;margin-top:-10px}
+#loadScr .lspin{width:46px;height:46px;border-radius:50%;border:4px solid rgba(139,224,201,.2);border-top-color:#8be0c9;animation:lsSpin .9s linear infinite;will-change:transform}
+#loadScr .lbar{width:min(320px,70vw);height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;position:relative}
+#loadScr .lbar i{position:absolute;inset:0;width:40%;border-radius:3px;background:linear-gradient(90deg,#8be0c9,#6fdc8c);animation:lsBar 1.4s ease-in-out infinite;will-change:transform}
+#loadScr .lwhat{font-weight:600}
+#loadScr .ltips{position:relative;height:42px;width:min(420px,86vw);opacity:.8;font-size:13px}
+#loadScr .ltips span{position:absolute;inset:0;opacity:0;animation:lsTip 20s infinite;will-change:opacity}
+#loadScr .ltips span:nth-child(2){animation-delay:5s}#loadScr .ltips span:nth-child(3){animation-delay:10s}#loadScr .ltips span:nth-child(4){animation-delay:15s}
+@keyframes lsSpin{to{transform:rotate(360deg)}}
+@keyframes lsBar{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes lsTip{0%,2%{opacity:0}5%,22%{opacity:1}25%,100%{opacity:0}}
+</style>
+<div id="loadScr" role="status" aria-live="polite">
+  <h1>Pixel<span>'s City</span></h1><p class="lsub">City builder</p>
+  <div class="lspin"></div>
+  <div class="lbar"><i></i></div>
+  <p class="lwhat" id="lsWhat">Loading the game…</p>
+  <div class="ltips"><span>Tip: connect your first road to the glowing road end by the highway.</span><span>Tip: tap the population number to see your citizens' ages, schools and jobs.</span><span>Tip: power and water travel under your roads, so plants can sit anywhere connected.</span><span>Tip: a park gate turns nearby parks into a park area that sells tickets.</span></div>
+</div>
+<script>window.addEventListener('error',function(){var l=document.getElementById('loadScr');if(l)l.remove()});(function(){try{var go=JSON.parse(localStorage.getItem('pc-go')||'null'),el=document.getElementById('lsWhat'),M={classic:'Classic valley',snow:'Snowy mountain town',island:'Tropical island',desert:'Desert oasis',coast:'Ocean coast',bay:'Mountain bay',rich:'Rich mayor sandbox'};
+  if(go&&go.sc)el.textContent='Building '+(go.name||'your new city')+' on '+(M[go.sc]||'a new map')+'…';
+  else{var id=go&&go.id||localStorage.getItem('pc-last'),a=JSON.parse(localStorage.getItem('pc-cities')||'[]'),c=Array.isArray(a)&&a.find(function(q){return q.id===id});if(c&&c.name)el.textContent='Opening '+c.name+'…'}}catch(e){}})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#121922">
@@ -9825,8 +9853,9 @@ function start(data){applyGrade();
   if(go&&(go.sc||go.id)){$('#start').hidden=true;if(go.sc){foundCity(go.name||SC.town,null,go.tut)}else openCity(go.id)}
   else $('#start').focus();
   requestAnimationFrame(frame);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=document.getElementById('loadScr');if(l){l.classList.add('done');setTimeout(()=>l.remove(),600)}}));
 }
-try{start({})}catch(e){showErr(e)}
+try{start({})}catch(e){const l=document.getElementById('loadScr');if(l)l.remove();showErr(e)}
 })();
 </script>
 

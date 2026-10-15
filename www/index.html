@@ -82,33 +82,43 @@ body.cine #cineStop{display:block}#cineStop .dot{display:inline-block;width:8px;
 </style>
 </head><body>
 <style>
-#loadScr{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
-  background:radial-gradient(ellipse at 50% 35%,#1d3a4f 0%,#0e141b 70%);color:#e8eef3;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;transition:opacity .45s;text-align:center;padding:24px}
+#loadScr{position:fixed;inset:0;z-index:9999;overflow:hidden;background:#0e141b;color:#fff;font-family:var(--display,system-ui),system-ui,sans-serif;transition:opacity .6s ease}
 #loadScr.done{opacity:0;pointer-events:none}
-#loadScr h1{margin:0;font-size:clamp(30px,7vw,54px);letter-spacing:.02em;font-weight:800}
-#loadScr h1 span{color:#8be0c9}
-#loadScr .lsub{opacity:.75;font-size:14px;margin-top:-10px}
-#loadScr .lspin{width:46px;height:46px;border-radius:50%;border:4px solid rgba(139,224,201,.2);border-top-color:#8be0c9;animation:lsSpin .9s linear infinite;will-change:transform}
-#loadScr .lbar{width:min(320px,70vw);height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;position:relative}
-#loadScr .lbar i{position:absolute;inset:0;width:40%;border-radius:3px;background:linear-gradient(90deg,#8be0c9,#6fdc8c);animation:lsBar 1.4s ease-in-out infinite;will-change:transform}
-#loadScr .lwhat{font-weight:600}
-#loadScr .ltips{position:relative;height:42px;width:min(420px,86vw);opacity:.8;font-size:13px}
-#loadScr .ltips span{position:absolute;inset:0;opacity:0;animation:lsTip 20s infinite;will-change:opacity}
-#loadScr .ltips span:nth-child(2){animation-delay:5s}#loadScr .ltips span:nth-child(3){animation-delay:10s}#loadScr .ltips span:nth-child(4){animation-delay:15s}
-@keyframes lsSpin{to{transform:rotate(360deg)}}
-@keyframes lsBar{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+#loadScr .sbg{animation:lsKb 18s ease-out both}
+#loadScr .lshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,18,.35) 0%,rgba(8,12,18,.05) 35%,rgba(8,12,18,.25) 60%,rgba(8,12,18,.88) 100%)}
+#loadScr .llogo{position:absolute;left:0;right:0;top:24%;display:flex;flex-direction:column;align-items:center;gap:10px;animation:lsUp .9s cubic-bezier(.2,.9,.3,1) both}
+#loadScr .llogo h1{margin:0;font-weight:800;font-size:clamp(46px,11vw,110px);letter-spacing:-.02em;line-height:1;text-shadow:0 6px 26px rgba(0,0,0,.5)}
+#loadScr .llogo h1 span{color:var(--accent,#8be0c9)}
+#loadScr .llogo p{margin:0;color:#d6e0e8;font-size:14px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+#loadScr .lfoot{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(44px + env(safe-area-inset-bottom,0px));width:min(560px,86vw);display:flex;flex-direction:column;gap:10px}
+#loadScr .lrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px;font-weight:700;letter-spacing:.04em;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+#loadScr .ldots i{display:inline-block;width:5px;height:5px;margin-left:4px;border-radius:50%;background:#fff;opacity:.3;animation:lsDot 1.2s infinite}
+#loadScr .ldots i:nth-child(2){animation-delay:.2s}#loadScr .ldots i:nth-child(3){animation-delay:.4s}
+#loadScr .lbar{height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden;position:relative}
+#loadScr .lbar i{position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:2px;background:var(--accent,#8be0c9);box-shadow:0 0 10px var(--accent,#8be0c9);animation:lsBar 1.6s cubic-bezier(.45,0,.55,1) infinite;will-change:transform}
+#loadScr .ltips{position:relative;height:38px;color:rgba(255,255,255,.78);font-family:system-ui,sans-serif;font-size:13px;font-weight:400;text-align:center}
+#loadScr .ltips span{position:absolute;inset:0;opacity:0;animation:lsTip 24s infinite}
+#loadScr .ltips span:nth-child(2){animation-delay:6s}#loadScr .ltips span:nth-child(3){animation-delay:12s}#loadScr .ltips span:nth-child(4){animation-delay:18s}
+#loadScr .lcopy{position:absolute;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));text-align:center;color:rgba(255,255,255,.55);font:11.5px system-ui,sans-serif}
+@keyframes lsKb{from{transform:scale(1.12)}to{transform:scale(1.02)}}
+@keyframes lsUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes lsDot{0%,100%{opacity:.25}40%{opacity:1}}
+@keyframes lsBar{0%{transform:translateX(-100%)}100%{transform:translateX(290%)}}
 @keyframes lsTip{0%,2%{opacity:0}5%,22%{opacity:1}25%,100%{opacity:0}}
 </style>
 <div id="loadScr" role="status" aria-live="polite">
-  <h1>Pixel<span>'s City</span></h1><p class="lsub">City builder</p>
-  <div class="lspin"></div>
-  <div class="lbar"><i></i></div>
-  <p class="lwhat" id="lsWhat">Loading the game…</p>
-  <div class="ltips"><span>Tip: connect your first road to the glowing road end by the highway.</span><span>Tip: tap the population number to see your citizens' ages, schools and jobs.</span><span>Tip: power and water travel under your roads, so plants can sit anywhere connected.</span><span>Tip: a park gate turns nearby parks into a park area that sells tickets.</span></div>
+  <div class="sbg"></div><div class="lshade"></div>
+  <div class="llogo"><h1>Pixel's <span>City</span></h1><p>City builder</p></div>
+  <div class="lfoot">
+    <div class="lrow"><span id="lsWhat">Loading the game</span><span class="ldots"><i></i><i></i><i></i></span></div>
+    <div class="lbar"><i></i></div>
+    <div class="ltips"><span>Connect your first road to the glowing road end by the highway.</span><span>Tap the population number to see your citizens' ages, schools and jobs.</span><span>Power and water travel under your roads, so plants can sit anywhere connected.</span><span>A park gate turns nearby parks into a park area that sells tickets.</span></div>
+  </div>
+  <p class="lcopy">© 2026 Amit Rijal</p>
 </div>
 <script>window.addEventListener('error',function(){var l=document.getElementById('loadScr');if(l)l.remove()});(function(){try{var go=JSON.parse(localStorage.getItem('pc-go')||'null'),el=document.getElementById('lsWhat'),M={classic:'Classic valley',snow:'Snowy mountain town',island:'Tropical island',desert:'Desert oasis',coast:'Ocean coast',bay:'Mountain bay',rich:'Rich mayor sandbox'};
-  if(go&&go.sc)el.textContent='Building '+(go.name||'your new city')+' on '+(M[go.sc]||'a new map')+'…';
-  else{var id=go&&go.id||localStorage.getItem('pc-last'),a=JSON.parse(localStorage.getItem('pc-cities')||'[]'),c=Array.isArray(a)&&a.find(function(q){return q.id===id});if(c&&c.name)el.textContent='Opening '+c.name+'…'}}catch(e){}})();</script>
+  if(go&&go.sc)el.textContent='Building '+(go.name||'your new city')+' · '+(M[go.sc]||'new map');
+  else{var id=go&&go.id||localStorage.getItem('pc-last'),a=JSON.parse(localStorage.getItem('pc-cities')||'[]'),c=Array.isArray(a)&&a.find(function(q){return q.id===id});if(c&&c.name)el.textContent='Opening '+c.name}}catch(e){}})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#121922">

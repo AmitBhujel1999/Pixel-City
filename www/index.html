@@ -8116,7 +8116,7 @@ function netPlan(tl,A,B,C1,C2){const kind=NETKIND(tl),KT=NETKT(kind),M=netMap(),
     if(t.t===T.RIVER||inRiverBand(j%N,(j/N)|0)){if(t.t!==T.RIVER&&t.t!==T.EMPTY&&t.t!==T.TREE)return{bad:'Blocked by buildings. Bulldoze them first.'};continue}
     if(!(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4&&!t.l)))return{bad:'Blocked by buildings. Bulldoze them first.'}}
   /* end tiles */
-  for(const E of[A,B]){const j=netTile(E.x,E.z);if(j<0)return{bad:'Off the map.'};const t=tiles[j];if(t.lock||isEntry(j))return{bad:'That land is not yours yet. Buy the area first.'};
+  for(const E of[A,B]){const j=netTile(E.x,E.z);if(j<0)return{bad:'Off the map.'};const t=tiles[j];if(t.lock||(isEntry(j)&&!(E.grid!==undefined&&j%N===STUB-1)))return{bad:isEntry(j)?'Join the highway at the end of its road into your land.':'That land is not yours yet. Buy the area first.'};
     if(E.node===undefined&&E.seg===undefined&&E.grid===undefined){if(M.T[j])return{bad:'Too close to another '+(kind==='rail'?'track':'road')+'. Join it, or start further away.'};
       if(t.t===T.RIVER||inRiverBand(j%N,(j/N)|0)&&t.t!==T.ROAD&&t.t!==T.RAIL)return{bad:'Start and end on dry land.'};
       if(!(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4&&!t.l)||t.t===KT))return{bad:'Blocked by buildings. Bulldoze them first.'}}}

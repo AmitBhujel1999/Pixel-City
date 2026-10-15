@@ -1,0 +1,60 @@
+name: Build Pixel's City for iPhone
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install app dependencies and the iOS platform
+        run: |
+          npm ci
+          npm install --no-save @capacitor/ios@^8.5.2
+
+      - name: Make the Xcode project and copy the game in
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Name, icon and settings
+        run: |
+          P=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Pixel's City" $P || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Pixel's City" $P
+          /usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" $P || true
+          /usr/libexec/PlistBuddy -c "Add :UIStatusBarHidden bool true" $P || true
+          /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" $P || true
+          for f in ios/App/App/Assets.xcassets/AppIcon.appiconset/*.png; do cp ios-icon.png "$f"; done
+          ls ios/App/App/Assets.xcassets/AppIcon.appiconset
+
+      - name: Build the app (unsigned)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos \
+            -derivedDataPath build MARKETING_VERSION=1.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            PRODUCT_BUNDLE_IDENTIFIER=com.ameet.pixelscity \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build | tail -30
+
+      - name: Pack the .ipa
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry PixelsCity.ipa Payload
+          ls -la PixelsCity.ipa
+
+      - name: Publish a download link (Releases)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pixels-city-ios-${{ github.run_number }}
+          name: Pixel's City for iPhone, build ${{ github.run_number }}
+          body: Unsigned iPhone app. Install it from a Windows PC with Sideloadly and a free Apple ID (it must be re-installed every 7 days).
+          files: PixelsCity.ipa

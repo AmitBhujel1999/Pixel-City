@@ -1125,9 +1125,9 @@ const coastZ=x=>AREA*0.25+Math.sin(x*0.07)*3+Math.sin(x*0.027+1)*2.6;
 function seaW(x,z){x-=XS;const HALF=AREA/2;
   if(SC.sea==='island'){if(x<-HALF*0.62&&Math.abs(z-HWZ)<4.5&&x>-HALF-1)return-1;const dz=z+6,a=Math.atan2(dz,x);return Math.hypot(x*0.95,dz<0?dz/2.2:dz)-(HALF*0.8+fbm(Math.cos(a)*1.6+5,Math.sin(a)*1.6+5)*16-8)}
   if(SC.sea==='coast')return z-coastZ(x);
-  if(SC.sea==='bay'){let w=z-(86+Math.sin(x*0.045)*5+fbm(x*0.02+3,1.7)*8-4);
+  if(SC.sea==='bay'){if(z<0&&(x<0||z<-6))return Math.min(-6,z-12);let w=z-(86+Math.sin(x*0.045)*5+fbm(x*0.02+3,1.7)*8-4);
     w=Math.max(w,32*(1-Math.hypot((x-55)/(46+fbm(z*0.05,2)*6),(z-52)/40)));
-    for(const[ix,iz,r]of[[44,56,8],[72,40,5],[28,72,6],[2,108,11],[95,112,15],[-62,104,9],[170,98,13],[230,120,10]])w=Math.min(w,Math.hypot(x-ix,z-iz)-r*(0.8+0.5*fbm(x*0.12+ix,z*0.12+iz)));return w}
+    for(const[ix,iz,r]of[[44,56,8],[72,40,5],[28,72,6],[2,108,11],[95,112,15],[-62,104,9],[170,98,13],[230,120,10]]){const dd=Math.hypot(x-ix,z-iz);if(dd-r*1.3<w)w=Math.min(w,dd-r*(0.8+0.5*fbm(x*0.12+ix,z*0.12+iz)))}return w}
   if(SC.sea==='oasis'){const a=Math.atan2(z+14,x-14);return 10+fbm(Math.cos(a)*1.3+2,Math.sin(a)*1.3+9)*4-Math.hypot(x-14,(z+14)*1.15)}
   return-1}
 /* the highway into town runs up the valley from the west */
@@ -9652,12 +9652,13 @@ function hwNode(p){const id=netNodeNear(p[0],p[1]);return id}
 function hwBuilt(i){const P=hwRoute(),b=hwNode(P[i+1]);if(b===undefined||!G.net||!G.hw||!G.hw.b||!G.hw.b[i])return false;return i===0||hwNode(P[i])!==undefined}
 /* lay the pieces that fit on owned land (free); stops at the first blocked one and says where */
 function hwLay(withRamp){if(!hwOn())return{n:0};const tl=TOOLS.find(t=>t.id==='road'),keep={rt:tl.rt,lvl:NB.lvl,mode:CV.mode,ang:NB.angle,grid:NB.grid,money:G.money,lvl:G.lvl,xp:G.xp},P=hwRoute();let n=0,bad=null;if(!G.hw)G.hw={v:1,ramp:0};if(!G.hw.b)G.hw.b=[];
-  tl.rt=HWT;CV.mode='';NB.lvl=0;NB.angle=false;NB.grid=false;G.money=1e12;G.lvl=99;
+  tl.rt=HWT;CV.mode='';NB.lvl=0;NB.angle=false;NB.grid=false;G.money=1e12;G.lvl=99;const rc0=recompute,st0=stats,hd0=hud;recompute=()=>{};stats=()=>S;hud=()=>{};
   try{for(let i=0;i<P.length-1;i++){if(hwBuilt(i)||!hwOwned(i))continue;
       const end=p=>{const id=hwNode(p);if(id!==undefined)return{x:G.net.n[id][0],z:G.net.n[id][1],node:id};const s=netSnap(p[0],p[1],'road');return s.node!==undefined||s.grid!==undefined?s:{x:p[0],z:p[1]}};
       const[c1,c2]=hwCtl(i),plan=netPlan(tl,end(P[i]),end(P[i+1]),c1,c2);if(plan.bad){bad={i,why:plan.bad,p:P[i]};break}if(netBuild(tl,plan)){n++;G.hw.b[i]=1}}
     if(withRamp&&HWY.xi!=null&&!bad)hwRamps(tl)}
-  finally{tl.rt=keep.rt;NB.lvl=keep.lvl;CV.mode=keep.mode;NB.angle=keep.ang;NB.grid=keep.grid;G.money=keep.money;G.lvl=keep.lvl;G.xp=keep.xp}
+  finally{recompute=rc0;stats=st0;hud=hd0;tl.rt=keep.rt;NB.lvl=keep.lvl;CV.mode=keep.mode;NB.angle=keep.ang;NB.grid=keep.grid;G.money=keep.money;G.lvl=keep.lvl;G.xp=keep.xp}
+  recompute();S=stats();
   hwRefresh();return{n,bad}}
 /* off-ramp and on-ramp (one-way) to a junction S, and a starter street from S to the glowing end */
 function hwRamps(tl){const xi=HWY.xi,h=hwZf(xi),h1=hwNode([xi-4+0.013,hwZf(xi-4)+0.007]),h2=hwNode([xi+4+0.013,hwZf(xi+4)+0.007]);if(h1===undefined||h2===undefined)return;

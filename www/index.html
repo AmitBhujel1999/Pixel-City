@@ -551,7 +551,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <button id="sndHint" class="card" hidden><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/></svg>Tap anywhere to turn on sound</button>
   <div id="lvlPop" class="card" hidden role="dialog" aria-label="Level up"><div class="lpBurst"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#f2c14e"/></svg><b id="lpNum">2</b></div>
     <p class="lpK">Level up!</p><h2 id="lpName">Hamlet</h2><div class="lpPrize"><span>Prize money</span><b id="lpMoney" class="mono">$0</b></div><div id="lpUnl"></div><button id="lpGo">Continue</button></div>
-  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 24</p><ul><li><b>Citizens</b><span>Tap the population: ages, school level and jobs of your people, who works where, births, deaths and who moved in. A home's card lists some of the people living there.</span></li><li><b>Taxes, trade and tourism</b><span>Separate tax rates for low and high density homes and shops and for offices. Factories export spare goods and import what is missing. The Citizens panel shows trade and tourists.</span></li><li><b>Heating, snow and park areas</b><span>Boiler stations and geothermal plants heat homes on cold maps. Snow dumps send ploughs out. A park gate turns parks around it into a park area that sells tickets.</span></li><li><b>Junctions in the air and interchanges</b><span>Elevated roads can now join each other up on the deck. The road bar has a one-tap highway interchange, and old avenues and highways can be widened to the new look.</span></li><li><b>Map editor and hills</b><span>New game: open the map editor to paint forests, fertile land, oil and ore, save the map and start cities on it. Tick Hills and valleys to try a hilly city.</span></li></ul><button id="wnGo">Let's play</button></div>
+  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 25</p><ul><li><b>Starting highway</b><span>New cities get a highway right across the map, with an exit and entrance leading to a glowing starter road: connect your first road there.</span></li><li><b>Two ways in</b><span>People, trucks and tourists now come from both map edges. The east entry is where the highway meets land you do not own yet; buying land extends it for free.</span></li><li><b>Locked land and warnings</b><span>Land you do not own is a little darker. If your town has no road to the highway a warning says so, and nobody moves in until you fix it.</span></li><li><b>Old cities</b><span>Road tool: 'Build the full highway' lays it across your land for free. If something is in the way it shows the route in red where you need to clear.</span></li><li><b>Fixes</b><span>Roads can join the highway at the end of its road into your land. Info views has an Outside connections view to see how traffic reaches your city.</span></li></ul><button id="wnGo">Let's play</button></div>
   <aside id="inspect" class="card" hidden></aside>
   <aside id="agent" class="card" hidden aria-live="polite"></aside>
   <div id="menu" class="card" hidden>
@@ -4880,7 +4880,7 @@ function updateCars(dt){updateHeli(dt);
       }
     }
     const last=c.k>=c.path.length-1;
-    if(last&&!(c.to===OUT&&c.b===ENTRY))target=Math.min(target,Math.max(0.25,(0.5-c.t)*3));
+    if(last&&!(c.to===OUT&&(c.b===ENTRY||c.b===HWY.eastJ)))target=Math.min(target,Math.max(0.25,(0.5-c.t)*3));
     if(c.hold)target=0;if(c.t<0.6&&rxAt(c.c)&&(RAILS.xcl.has(c.c)||cars.some(o=>o!==c&&((o.b===c.c&&o.v<0.05)||(o.a===c.c&&o.b===c.path[c.k+2]&&o.t<0.45&&o.v<0.05)))))target=Math.min(target,Math.max(0,(0.72-c.t)*4));if(last&&c.toAir&&lotusOK()&&LOTUS.i===c.to&&LOTUS.full())target=Math.min(target,Math.max(0,(0.4-c.t)*3));if(last&&c.toCargo&&cargoOK()&&CARGO.i===c.to&&CARGO.full())target=Math.min(target,Math.max(0,(0.4-c.t)*3));if(c.wait>0){c.wait-=dt;target=0}
     /* give way to anyone walking across the lane just ahead */
     if(!c.siren&&c.wx!==undefined&&target>0){const fx=Math.sin(c.yaw),fz=Math.cos(c.yaw),reach=c.type.L/2+0.26,hw=c.type.w/2+0.07;
@@ -4912,7 +4912,7 @@ function updateCars(dt){updateHeli(dt);
       if(c.role==='bus'){const ln=c.ln,nk=(c.seg+1)%ln.segs.length,np=ln.segs[nk];
         if(!c.retire&&lineValid(ln)&&np[0]===c.b){c.seg=nk;c.path=[c.a,...np];c.k=1;c.c=np[1]??nextTile(c.b,c.a);uDetour(c);c.from=c.to;c.to=ln.stops[(nk+1)%ln.stops.length];c.wait=1.6;if(sel&&sel.a===c)selectAgent(c,true)}
         else{endAgent(c,true);cars.splice(k,1);const li=lines.indexOf(ln);if(li>=0&&!c.retire)lines.splice(li,1);continue}}
-      else{if(c.pk&&pkEnter(c)){endAgent(c,true);cars.splice(k,1);continue}if(c.to===OUT&&c.b===ENTRY)outAway(c);if(!(c.toAir&&lotusOK()&&LOTUS.i===c.to&&LOTUS.enter(c))&&!(c.toCargo&&cargoOK()&&CARGO.i===c.to&&CARGO.enter(c)))arrive(c);if(svcBack(c))continue;endAgent(c,true);cars.splice(k,1);continue}
+      else{if(c.pk&&pkEnter(c)){endAgent(c,true);cars.splice(k,1);continue}if(c.to===OUT&&c.b===ENTRY)outAway(c);else if(c.to===OUT&&c.b===HWY.eastJ)hwAway(c);if(!(c.toAir&&lotusOK()&&LOTUS.i===c.to&&LOTUS.enter(c))&&!(c.toCargo&&cargoOK()&&CARGO.i===c.to&&CARGO.enter(c)))arrive(c);if(svcBack(c))continue;endAgent(c,true);cars.splice(k,1);continue}
     }
     while(c.t>=1){c.t-=1;c.k++;c.a=c.b;c.b=c.path[c.k]??nextTile(c.b,c.a);c.c=c.path[c.k+1]??nextTile(c.b,c.a);uDetour(c);netLaneAhead(c)}
     if(c.ld){c.ld*=Math.exp(-dt*2.2);if(Math.abs(c.ld)<0.002)c.ld=0}if(queued||c.hold){c.wx=undefined;continue}
@@ -7401,7 +7401,7 @@ function exportCity(id){if(id===curId&&G)save();const str=store('pc-city-'+id);i
 $('#importBtn').onclick=()=>codeBox('import','','Paste a save code you exported from Pixel City on any device.');
 $('#codeText').addEventListener('keydown',e=>e.stopPropagation());
 window.__wn=()=>showWhatsNew(true);
-function showWhatsNew(force){if(!force&&store('pc-seen-update')==='24')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','24')}}
+function showWhatsNew(force){if(!force&&store('pc-seen-update')==='25')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','25')}}
 function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.theta,x:cam.target.x,z:cam.target.z};atTitle=true;$('#app').classList.add('at-title');$('#title').hidden=false;setSpeed(0);$('#paused').hidden=true;inspect(-1);deselect();setTool(TOOLS[0]);
   for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel','#tranPanel','#budPanel'])$(m).hidden=true;ov.user=null;applyOverlay();cam.dist=95;cam.phi=0.9;{const f=G?cityFocus():{x:0,z:6};cam.target.set(f.x,0,f.z)}zoomGoal=null;updateCamera();renderCities();
   $('#newName').value='';homePanel(null);syncHome();}
@@ -7749,7 +7749,8 @@ function netArms(nid){const j=NET.node.get(nid),arms=[];if(j===undefined)return 
     arms.push({g:null,t:t.t===T.ROAD?RI(t.l).v:0,k:t.t===T.ROAD?'road':'rail',L,at:(d,v)=>[p[0]+ux*d-uz*v,p[1]+uz*d+ux*v],dir:Math.atan2(uz,ux),ex,ez,ux,uz})}
   arms.sort((a,b)=>a.dir-b.dir);return arms}
 /* is arc length s of geo g inside the junction area of an end node (where the arms merge)? */
-function netJunc(g,s){const sg=g.sg,dead=n=>(NET.deg.get(n)||0)+netGridArms(n)===1,de=netDEs(sg.t);if((s<de&&dead(sg.a))||(s>g.L-de&&dead(sg.b)))return true;const rj=n=>netFil(n)?Math.min(netRJ(n),g.L*0.5):netRJ(n);return(s<rj(sg.a)&&(NET.deg.get(sg.a)||0)+netGridArms(sg.a)>=2&&netBent(sg.a))||(s>g.L-rj(sg.b)&&(NET.deg.get(sg.b)||0)+netGridArms(sg.b)>=2&&netBent(sg.b))}
+const netHwEnd=n=>typeof HWY!=='undefined'&&HWY.eastN===n;
+function netJunc(g,s){const sg=g.sg,dead=n=>(NET.deg.get(n)||0)+netGridArms(n)===1&&!netHwEnd(n),de=netDEs(sg.t);if((s<de&&dead(sg.a))||(s>g.L-de&&dead(sg.b)))return true;const rj=n=>netFil(n)?Math.min(netRJ(n),g.L*0.5):netRJ(n);return(s<rj(sg.a)&&(NET.deg.get(sg.a)||0)+netGridArms(sg.a)>=2&&netBent(sg.a))||(s>g.L-rj(sg.b)&&(NET.deg.get(sg.b)||0)+netGridArms(sg.b)>=2&&netBent(sg.b))}
 /* junction radius: arms meeting at a narrow angle need their sidewalks to start further out */
 const NETRJC=new Map();
 function netRJ(nid){const k=nid+':'+NET.ver;if(NETRJC.has(k))return NETRJC.get(k);const A=netArms(nid);let r=NETRJ;
@@ -7791,7 +7792,7 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
     if(kind==='rail'){netRailStrip(g,geo,sa,sb,ox,oz);netBridge(g,geo,sa,sb,ox,oz);continue}
     const v=geo.sg.t|0,cut=[sa,sb];
     /* plain look outside the junction areas, asphalt only inside them */
-    const dE=n=>(M.deg.get(n)||0)+netGridArms(n)===1,dev=netDEs(geo.sg.t),ra=dE(geo.sg.a)?dev:netFil(geo.sg.a)?Math.min(netRJ(geo.sg.a),geo.L*0.5):netRJ(geo.sg.a),rb=dE(geo.sg.b)?dev:netFil(geo.sg.b)?Math.min(netRJ(geo.sg.b),geo.L*0.5):netRJ(geo.sg.b),j0=netJunc(geo,0)&&sa<ra?Math.min(sb,ra):sa,j1=netJunc(geo,geo.L)&&sb>geo.L-rb?Math.max(j0,geo.L-rb):sb;
+    const dE=n=>(M.deg.get(n)||0)+netGridArms(n)===1&&!netHwEnd(n),dev=netDEs(geo.sg.t),ra=dE(geo.sg.a)?dev:netFil(geo.sg.a)?Math.min(netRJ(geo.sg.a),geo.L*0.5):netRJ(geo.sg.a),rb=dE(geo.sg.b)?dev:netFil(geo.sg.b)?Math.min(netRJ(geo.sg.b),geo.L*0.5):netRJ(geo.sg.b),j0=netJunc(geo,0)&&sa<ra?Math.min(sb,ra):sa,j1=netJunc(geo,geo.L)&&sb>geo.L-rb?Math.max(j0,geo.L-rb):sb;
     if(j0>sa&&!netFil(geo.sg.a))netRoadStrip(g,geo,sa,j0,ox,oz,v,false,x,z);if(j1>j0)netRoadStrip(g,geo,j0,j1,ox,oz,v,true,x,z);if(sb>j1&&!netFil(geo.sg.b))netRoadStrip(g,geo,j1,sb,ox,oz,v,false,x,z);
     netBridge(g,geo,sa,sb,ox,oz);if(!geo.sg.e){netDecor(g,geo,geo.e0[k],geo.e1[k],ox,oz,v,ra,rb);netSigns(g,geo,geo.e0[k],geo.e1[k],ox,oz,v,ra,rb)}
     /* street lights every 1.5 along the road, alternate sides, not in junctions or on highways/dirt */
@@ -7804,6 +7805,7 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
   for(const a of A){if(a.g)continue;const geo={X:[p[0],a.ex],Z:[p[1],a.ez],S:[0,a.L],n:1,L:a.L,H:null,kind:a.k};
     if(a.k==='rail')netRailStrip(g,geo,0,a.L,ox,oz);else if(netFil(nid))continue;else{const jn=netBent(nid)?Math.min(a.L,netRJ(nid)):0;netRoadStrip(g,geo,0,jn,ox,oz,a.t,false,x,z);netRoadStrip(g,geo,jn,a.L,ox,oz,a.t,true,x,z)}}
   if(kind==='rail'){if(A.length===1&&A[0].g){const q=A[0].at(0.12,0),d=A[0].dir;model(g,'rail_buffer',RCOL,q[0]-ox,RB0,q[1]-oz,Math.atan2(Math.cos(d),Math.sin(d))+Math.PI)}return true}
+  if(A.length===1&&netHwEnd(nid))return true;
   if(A.length===1){/* dead end: turning circle, its sidewalk ring meeting the road's sidewalks */const W=NETW[A[0].t|0]||NETW[0],r=netDEr(A[0].t);
     const ci=new THREE.Mesh(new THREE.CircleGeometry(r,24).rotateX(-Math.PI/2),roadMat);surf(ci,roadMat,A[0].t===1?'#9a8663':'#74787d');ci.position.set(p[0]-ox,0.0603,p[1]-oz);ci.receiveShadow=true;g.add(ci);
     if(W.sw){const d=A[0].dir,R2=netDER2(A[0].t),gap=Math.asin(Math.min(0.99,(W.ae+0.02)/r)),rg=new THREE.Mesh(new THREE.RingGeometry(r,R2,28,1,0,2*Math.PI-2*gap).rotateX(-Math.PI/2),paveMat);surf(rg,paveMat,'#b9bdc3');
@@ -9335,7 +9337,7 @@ function zoneD(t){const d=isOff(t)?D.o:D[t.t];if(!G||t.t===4||isOff(t))return d;
 function econCalc(){const o={raw:0,fac:0,shop:0};for(const i of S.zones){const t=tiles[i];if(!t.l||access[i]<0)continue;const c=capOf(t);
     if(t.t===4){if((t.s|0)===0)o.fac+=c;else o.raw+=c}else if(t.t===3&&!isOff(t)&&(t.s|0)!==4)o.shop+=c*((t.s|0)===2?0.5:1)}
   const rNeed=o.fac*0.6,gMade=o.fac*1.1,gNeed=o.shop*1.2,rExp=Math.max(0,o.raw-rNeed),rImp=Math.max(0,rNeed-o.raw),gExp=Math.max(0,gMade-gNeed),gImp=Math.max(0,gNeed-gMade);
-  const port=(S.cnt&&(S.cnt[T.CARGO]||0))||(S.cstations||0)?1.3:1,link=tiles[ENTRY]&&tiles[ENTRY].t===T.ROAD;
+  const port=(S.cnt&&(S.cnt[T.CARGO]||0))||(S.cstations||0)?1.3:1,link=tiles[ENTRY]&&tiles[ENTRY].t===T.ROAD&&(typeof hwConnected!=='function'||hwConnected());
   const exp=link?Math.round((rExp*0.45+gExp*0.7)*port):0;
   return{raw:o.raw,fac:o.fac,shop:o.shop,rNeed,gMade,gNeed,rExp,rImp,gExp,gImp,exp,port:port>1,link}}
 function econTourism(){let z=0,a=0,m=0,h=0,f=0;try{z=zoneTour();a=airTourism();m=monTour();h=(S.cnt[T.HELI]||0)*300;f=SC.tour?(S.cnt[T.FUN]||0)*450:0}catch(e){}
@@ -9550,6 +9552,150 @@ function edNewUI(){const p=$('#pNew');if(!p)return;let box=$('#edNew');if(!box){
 {const _hp=homePanel;homePanel=function(id){_hp(id);if(id==='pNew')edNewUI()}}
 setTimeout(()=>{try{edNewUI();edBar()}catch(e){}},500);
 setInterval(()=>{try{const d=$('#edBar');if(d&&!d.hidden!==(edOn()&&!atTitle))edBar()}catch(e){}},700);
+
+/* ---------- the starting highway (patch_net.py) ----------
+   As in Cities: Skylines, a new city starts with a highway across the whole map, west edge to east edge, beside the
+   start area (it keeps the same distance from the river; straight on maps without one). It is made of normal network
+   highway pieces (two directions, median, guard rails), one piece per ~30 tiles, with nodes on the area borders.
+   - On land you own the pieces are real roads: bulldoze or rebuild them like any road. On land you do not own they
+     are only drawn, with through traffic; buying the area turns them into real road (free).
+   - Off-ramp and on-ramp (one-way roads) join a short starter road inside the start area; its end glows until you
+     connect a road to it.
+   - Both map edges are outside connections: the old west entry, and the east end of the real highway, where it meets
+     land you do not own (or the map edge). Arrivals and leavers use either.
+   - Locked areas are drawn a little darker. If no zoned building can reach the highway a warning shows; nobody moves
+     in and trade stops.
+   - Old cities: road tool bar button "Build the full highway" (free) lays whatever pieces fit on land you own.
+   - Debug: Info views > Outside connections shows the connection points and the route from the edge to the city. */
+var HWY={key:'',P:null,dec:null,decG:null,lockG:null,eastJ:-1,eastN:-1,path:null,thru:[],glow:null,lbl:null,dbg:false,dbgG:null,dbgT:0,warn:null};
+const hwOn=()=>!!(G&&!SC.ferry);
+const HWT=5,HWSTEP=30;
+function hwZf(x){return SC.river?riverZ(x)-(riverZ(-HALF)-HWZ):HWZ}
+/* the route: points [x,z] west to east; ramp nodes 3 tiles either side of the interchange */
+function hwRoute(){const ramp=!!(G.hw&&G.hw.ramp),key=ramp+':'+N+':'+HWZ;if(HWY.key===key&&HWY.P)return HWY.P;
+  const x0=STUB-1-HALF+0.5,xi=x0+20,xs=[x0];if(ramp)xs.push(xi-4,xi+4);for(let b=1;b<AGRID;b++)xs.push(-HALF+b*AREA-0.5);
+  for(let x=-HALF+HWSTEP+0.5;x<HALF-2;x+=HWSTEP)xs.push(x);xs.push(HALF-0.5);xs.sort((a,b)=>a-b);
+  const keep=[];for(const x of xs){const fixed=x===x0||x===HALF-0.5||(ramp&&(x===xi-4||x===xi+4))||Math.abs((x+HALF+0.5)%AREA)<1e-6;
+    if(keep.length&&x-keep[keep.length-1].x<1e-6)continue;
+    if(keep.length&&x-keep[keep.length-1].x<6){if(fixed&&!keep[keep.length-1].f)keep.pop();else if(!fixed)continue}keep.push({x,f:fixed})}
+  HWY.P=keep.map(o=>[o.x+0.013,hwZf(o.x)+0.007]);HWY.P[0]=[x0,HWZ];HWY.key=key;HWY.xi=ramp?xi:null;return HWY.P}
+function hwCtl(i){const P=hwRoute(),a=P[Math.max(0,i-1)],b=P[i],c=P[i+1],d=P[Math.min(P.length-1,i+2)];return[[b[0]+(c[0]-a[0])/6,b[1]+(c[1]-a[1])/6],[c[0]-(d[0]-b[0])/6,c[1]-(d[1]-b[1])/6]]}
+function hwBz(i){const P=hwRoute(),[c1,c2]=hwCtl(i);return[P[i],c1,c2,P[i+1]]}
+/* every tile under the piece (with the width of the road) is land you own */
+function hwOwned(i){const Q=hwBz(i),n=Math.ceil(bzLen(Q)/0.25);for(let k=0;k<=n;k++){const t=k/n,p=bzAt(Q,t),q=bzAt(Q,Math.min(1,t+0.01)),r=bzAt(Q,Math.max(0,t-0.01)),dx=q[0]-r[0],dz=q[1]-r[1],l=Math.hypot(dx,dz)||1;
+    for(const o of[-0.95,0,0.95]){const j=netTile(p[0]-dz/l*o,p[1]+dx/l*o);if(j<0||tiles[j].lock)return false}}return true}
+function hwNode(p){const id=netNodeNear(p[0],p[1]);return id}
+function hwBuilt(i){const P=hwRoute(),b=hwNode(P[i+1]);if(b===undefined||!G.net||!G.hw||!G.hw.b||!G.hw.b[i])return false;return i===0||hwNode(P[i])!==undefined}
+/* lay the pieces that fit on owned land (free); stops at the first blocked one and says where */
+function hwLay(withRamp){if(!hwOn())return{n:0};const tl=TOOLS.find(t=>t.id==='road'),keep={rt:tl.rt,lvl:NB.lvl,mode:CV.mode,ang:NB.angle,grid:NB.grid,money:G.money,lvl:G.lvl,xp:G.xp},P=hwRoute();let n=0,bad=null;if(!G.hw)G.hw={v:1,ramp:0};if(!G.hw.b)G.hw.b=[];
+  tl.rt=HWT;CV.mode='';NB.lvl=0;NB.angle=false;NB.grid=false;G.money=1e12;G.lvl=99;
+  try{for(let i=0;i<P.length-1;i++){if(hwBuilt(i)||!hwOwned(i))continue;
+      const end=p=>{const id=hwNode(p);if(id!==undefined)return{x:G.net.n[id][0],z:G.net.n[id][1],node:id};const s=netSnap(p[0],p[1],'road');return s.node!==undefined||s.grid!==undefined?s:{x:p[0],z:p[1]}};
+      const[c1,c2]=hwCtl(i),plan=netPlan(tl,end(P[i]),end(P[i+1]),c1,c2);if(plan.bad){bad={i,why:plan.bad,p:P[i]};break}if(netBuild(tl,plan)){n++;G.hw.b[i]=1}}
+    if(withRamp&&HWY.xi!=null&&!bad)hwRamps(tl)}
+  finally{tl.rt=keep.rt;NB.lvl=keep.lvl;CV.mode=keep.mode;NB.angle=keep.ang;NB.grid=keep.grid;G.money=keep.money;G.lvl=keep.lvl;G.xp=keep.xp}
+  hwRefresh();return{n,bad}}
+/* off-ramp and on-ramp (one-way) to a junction S, and a starter street from S to the glowing end */
+function hwRamps(tl){const xi=HWY.xi,h=hwZf(xi),h1=hwNode([xi-4+0.013,hwZf(xi-4)+0.007]),h2=hwNode([xi+4+0.013,hwZf(xi+4)+0.007]);if(h1===undefined||h2===undefined)return;
+  const S={x:xi+0.013,z:h-5.5},Gp={x:xi+0.013,z:h-11.5},n=id=>({x:G.net.n[id][0],z:G.net.n[id][1],node:id});
+  tl.rt=2;let p=netPlan(tl,n(h1),S,[G.net.n[h1][0]+0.2,G.net.n[h1][1]-2.2],[S.x-2.2,S.z+0.4]);if(p.bad||!netBuild(tl,p))return;
+  const sid=netNodeNear(S.x,S.z);if(sid===undefined)return;
+  p=netPlan(tl,n(sid),n(h2),[S.x+2.2,S.z+0.4],[G.net.n[h2][0]-0.2,G.net.n[h2][1]-2.2]);if(!p.bad)netBuild(tl,p);
+  tl.rt=0;p=netPlan(tl,n(sid),Gp);if(!p.bad&&netBuild(tl,p)){G.hw.gn=netNodeNear(Gp.x,Gp.z)}}
+/* new cities get the highway; land bought later gets its pieces; loading refreshes the drawing */
+{const _nc=newCity;newCity=function(name){_nc(name);if(!hwOn())return;G.hw={v:1,ramp:1,b:[]};const r=hwLay(true);if(!r.n)delete G.hw;else{recompute();S=stats();hud()}}}
+{const _ab=areaBuy;areaBuy=function(a){_ab(a);if(G&&G.hw){hwLay(false);recompute();S=stats();hud();save()}else hwRefresh()}}
+{const _ld=load;load=function(str){const r=_ld(str);if(r)setTimeout(()=>{try{hwRefresh()}catch(e){console.warn(e)}},0);return r}}
+/* ---- the east outside connection and the drawn highway over land you do not own ---- */
+function hwDecClear(){HWY.path=null;HWY.decKey='';if(HWY.decG){world.remove(HWY.decG);HWY.decG.traverse(o=>{if(o.geometry)o.geometry.dispose()});HWY.decG=null}}
+function hwRefresh(){const oldJ=HWY.eastJ;HWY.eastJ=-1;HWY.eastN=-1;HWY.nv=netVer;const lk=[...OWN].sort().join(',');if(lk!==HWY.lockKey||!HWY.lockG){HWY.lockKey=lk;hwLock()}
+  if(!hwOn()){hwDecClear();return}HWY.key='';const P=hwRoute(),M=netMap();let i=0;while(i<P.length-1&&hwBuilt(i))i++;
+  /* the real chain from the west ends at P[i]; if the next piece runs onto land you do not own, that node is the east entry */
+  const hasHw=G.hw||i>0;if(!hasHw){hwDecClear();return}
+  if(i>0){const id=hwNode(P[i]);if(id!==undefined&&(i===P.length-1||!hwOwned(i))){HWY.eastN=id;HWY.eastJ=M.node.get(id)}}
+  if(oldJ!==HWY.eastJ){const r=new Set();for(const j of[oldJ,HWY.eastJ])if(j>=0&&j<N*N)r.add(j);if(r.size)netRedraw(r)}
+  /* draw the pieces from the first one not on your land, and on past the east edge */
+  let k=i;while(k<P.length-1&&hwOwned(k)&&!hwBuilt(k))k++;if(k<i)k=i;
+  const dk=k+':'+P.map((_,q)=>q<P.length-1&&hwBuilt(q)?1:0).join('');if(dk===HWY.decKey&&HWY.decG)return;hwDecClear();HWY.decKey=dk;
+  const X=[],Z=[];for(let q=k;q<P.length-1;q++){if(hwBuilt(q))continue;const Q=hwBz(q),n=Math.max(8,Math.ceil(bzLen(Q)/0.4));for(let t=q===k?0:1;t<=n;t++){const p=bzAt(Q,t/n);X.push(p[0]);Z.push(p[1])}}
+  if(!X.length){const e=P[P.length-1];X.push(e[0]);Z.push(e[1])}const ze=Z[Z.length-1];for(let x=Math.ceil(X[X.length-1])+0.5;x<=HALF+130;x+=2){X.push(x);Z.push(ze)}
+  const S2=[0];for(let q=1;q<X.length;q++)S2.push(S2[q-1]+Math.hypot(X[q]-X[q-1],Z[q]-Z[q-1]));
+  const geo={X,Z,S:S2,n:X.length-1,L:S2[S2.length-1],H:null,kind:'road'};HWY.path=geo;HWY.pathFromEast=HWY.eastJ>=0;
+  const g=new THREE.Group();netRoadStrip(g,geo,0,geo.L,0,0,HWT,true,0,0);
+  for(let s=0.75;s<geo.L;s+=1.5){const q=cvAt(geo,s);for(const sd of[-1,1]){if(((s/1.5)|0)%4)continue;const nx=-q[3]*sd,nz=q[2]*sd;model(g,'prop_streetlight',null,q[0]+nx*0.75,0.075,q[1]+nz*0.75,Math.atan2(nz,-nx))}}
+  const d=bakeData(g);HWY.decG=meshesFrom([d.buckets]);world.add(HWY.decG)}
+/* keep trees off the highway's strip of land */
+{const _lt=landTree;landTree=function(x,z){if(G&&!SC.ferry){const wx=x-HALF+0.5,wz=z-HALF+0.5;if(wx>STUB-HALF&&Math.abs(wz-hwZf(wx))<1.6)return false}return _lt(x,z)}}
+/* ---- darker land you do not own ---- */
+const HWLOCKM=new THREE.MeshBasicMaterial({color:'#0b1016',transparent:true,opacity:0.24,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+function hwLock(){if(HWY.lockG){world.remove(HWY.lockG);HWY.lockG.geometry.dispose();HWY.lockG=null}if(!G)return;const V=[],I=[],seg=24;
+  for(let a=0;a<AGRID*AGRID;a++){if(OWN.has(a))continue;const x0=(a%AGRID)*AREA-HALF,z0=((a/AGRID)|0)*AREA-HALF,b=V.length/3;
+    for(let r=0;r<=seg;r++)for(let c=0;c<=seg;c++)V.push(x0+AREA*c/seg,0.035,z0+AREA*r/seg);
+    for(let r=0;r<seg;r++)for(let c=0;c<seg;c++){const p=b+r*(seg+1)+c;I.push(p,p+seg+1,p+1,p+1,p+seg+1,p+seg+2)}}
+  if(!V.length)return;const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(V,3));bg.setIndex(I);bg.computeVertexNormals();
+  HWY.lockG=new THREE.Mesh(bg,HWLOCKM);HWY.lockG.renderOrder=2;HWY.lockG.frustumCulled=false;world.add(HWY.lockG)}
+/* ---- arrivals and leavers through the east end ---- */
+const hwPhone=()=>typeof NETCARCAP!=='undefined'&&NETCARCAP<200;
+const HWTYPES=['sedan','hatch','suv','pickup','wagon','van','truck','minivan','coach'];
+{const _po=planOutside;planOutside=function(){const t=_po();if(!t||HWY.eastJ<0||Math.random()<0.5)return t;
+  try{if(t.from===OUT){bfs(HWY.eastJ,'car');const dst=t.path[t.path.length-1];if(reached(dst)){const p=pathTo(dst);if(p.length>=3){t.path=p;t.east=1}}}
+    else{bfs(t.path[0],'car');if(reached(HWY.eastJ)){const p=pathTo(HWY.eastJ);if(p.length>=3){t.path=p;t.east=1}}}}catch(e){}return t}}
+{const _sv=spawnVehicle;spawnVehicle=function(trip,type){if(trip&&trip.east&&trip.from===OUT&&!trip.lead&&HWY.path&&HWY.eastJ>=0&&trip.path[0]===HWY.eastJ){hwThruAdd(type,-1,HWY.path.L,trip);return null}return _sv(trip,type)}}
+function hwAway(c){if(!HWY.path)return;hwThruAdd(c.type,1,0,null,true,c.v,c.col)}
+function hwThruAdd(type,dir,s,trip,tmp,v,col){const big=type.L>0.33;HWY.thru.push({s,dir,tid:type.id,sp:type.speed*(0.85+Math.random()*0.3)*1.5,v:v??1,col:col||type.fixed||CARCOL[(Math.random()*CARCOL.length)|0],ln:big||Math.random()<0.5?0.55:0.2,trip,tmp:!!tmp})}
+function hwThru(dt){const p=HWY.path;if(!p){HWY.thru.length=0;return}const L=p.L,T=HWY.thru,cap=hwPhone()?8:20;
+  let amb=0;for(const o of T)if(!o.trip&&!o.tmp)amb++;
+  if(amb<cap&&Math.random()<dt*0.8){const ids=HWTYPES.filter(k=>VT[k]);const ty=VT[ids[(Math.random()*ids.length)|0]];if(ty){const d=Math.random()<0.5?1:-1;hwThruAdd(ty,d,d>0?Math.min(L*0.3,6):L)}}
+  for(const o of T){let cv=o.sp;const Lo=VT[o.tid].L;for(const a of T){if(a===o||a.dir!==o.dir||Math.abs(a.ln-o.ln)>0.05)continue;const d=(a.s-o.s)*o.dir,len=(Lo+VT[a.tid].L)/2;if(d>0&&d<len+0.6)cv=Math.min(cv,d<len+0.08?0:Math.min(a.v,(d-len)*3))}o.cv=cv}
+  for(let k=T.length-1;k>=0;k--){const o=T[k];o.v+=Math.max(-3*dt,Math.min(1.2*dt,o.cv-o.v));if(o.v<0)o.v=0;o.s+=o.dir*o.v*dt;
+    if(o.trip&&o.s<=0){T.splice(k,1);const t=o.trip;if(HWY.eastJ>=0&&t.path.every(j=>tiles[j]&&tiles[j].t===T.ROAD)){t.lead=1;const c=spawnVehicle(t,VT[o.tid]);if(c){c.v=o.v;c.col=o.col}}continue}
+    if(o.s>L||o.s<-0.5){T.splice(k,1);continue}
+    const q=cvAt(p,Math.max(0,Math.min(L,o.s))),nx=-q[3],nz=q[2],px=q[0]+nx*o.dir*o.ln,pz=q[1]+nz*o.dir*o.ln,ty=VT[o.tid];if(ty.n>=418)continue;
+    _p.set(px,0.06,pz);_q.setFromAxisAngle(_up,Math.atan2(q[2]*o.dir,q[3]*o.dir));_m.compose(_p,_q,_s);o.spin=(o.spin||0)+o.v*dt/(ty.wh?ty.wh[1]:0.024);drawVehicle(ty,_m,ty.fixed||o.col,0,o.spin);if(beamN<120)beams.setMatrixAt(beamN++,_m)}}
+{const _uo=updateOutCars;updateOutCars=function(dt){_uo(dt);try{hwThru(dt);hwGlow(dt);hwDbg(dt)}catch(e){console.warn(e)}}}
+/* ---- the glowing starter road end ---- */
+function hwGlow(dt){const id=G&&G.hw&&G.hw.gn,ok=id!==undefined&&G.net&&G.net.n[id]&&(NET.deg.get(id)||0)===1&&!atTitle;
+  if(!ok){if(HWY.glow)HWY.glow.visible=false;if(HWY.lbl)HWY.lbl.hidden=true;return}
+  if(!HWY.glow){const m=new THREE.Mesh(new THREE.RingGeometry(0.42,0.62,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffd84a',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));m.renderOrder=9;scene.add(m);HWY.glow=m;
+    const d=document.createElement('div');d.className='card';d.style.cssText='position:fixed;z-index:12;padding:6px 10px;font-size:13px;font-weight:700;pointer-events:none;transform:translate(-50%,-130%);white-space:nowrap;border:2px solid #ffd84a';d.textContent='Connect your first road here';document.body.appendChild(d);HWY.lbl=d}
+  const p=G.net.n[id],t=performance.now()/1000,k=1+0.25*Math.sin(t*4);HWY.glow.visible=true;HWY.glow.position.set(p[0],0.09,p[1]);HWY.glow.scale.setScalar(k);HWY.glow.material.opacity=0.55+0.35*Math.sin(t*4);
+  const v=new THREE.Vector3(p[0],0.2,p[1]).project(camera),r=canvas.getBoundingClientRect(),on=v.z<1&&Math.abs(v.x)<0.95&&Math.abs(v.y)<0.95&&cam.dist<70;HWY.lbl.hidden=!on;
+  if(on){HWY.lbl.style.left=(r.left+(v.x+1)/2*r.width)+'px';HWY.lbl.style.top=(r.top+(1-v.y)/2*r.height)+'px'}}
+/* ---- not connected to the outside world ---- */
+{const _st=stats;stats=function(){const s=_st();let zr=0;for(const i of s.zones)if(roadNear[i])zr++;s.zRoad=zr;return s}}
+function hwConnected(){return!S||!S.zRoad||S.noLink<S.zRoad}
+function hwWarn(){let d=HWY.warn;if(!d){d=document.createElement('div');d.id='hwWarn';d.className='card';d.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:20;padding:10px 14px;font-size:14px;font-weight:700;max-width:min(520px,calc(100vw - 32px));text-align:center;border:2px solid #ff6b5b;line-height:1.35';
+    d.innerHTML='Your city is not connected to the outside world. No one can move in.<br><span style="font-weight:400;font-size:12px;opacity:.85">Join a road to the highway (the glowing road end, or the end of the highway at the west edge).</span>';document.body.appendChild(d);HWY.warn=d}
+  d.hidden=!G||atTitle||hwConnected()}
+{const _hd=hud;hud=function(){_hd(...arguments);try{hwWarn()}catch(e){}}}
+/* ---- debug: outside connection points and the route from the edge to the city ---- */
+function hwDbg(dt){if(!HWY.dbg){if(HWY.dbgG){scene.remove(HWY.dbgG);HWY.dbgG=null}return}HWY.dbgT-=dt;if(HWY.dbgT>0&&HWY.dbgG)return;HWY.dbgT=2;
+  if(HWY.dbgG){scene.remove(HWY.dbgG);HWY.dbgG.traverse(o=>{if(o.geometry&&o.geometry!==CYL)o.geometry.dispose()})}const g=new THREE.Group();HWY.dbgG=g;scene.add(g);
+  const mk=(j,c)=>{if(j<0||!tiles[j])return;const[x,z]=wpos(j>=N*N?tiles[j].host:j),m=new THREE.Mesh(CYL,new THREE.MeshBasicMaterial({color:c,depthTest:false}));m.scale.set(0.25,3,0.25);m.position.set(x,0,z);m.renderOrder=10;g.add(m)};
+  mk(ENTRY,'#3ddc84');mk(HWY.eastJ,'#4aa8f0');
+  const zs=S.zones.filter(i=>access[i]>=0&&tiles[i].l);if(!zs.length)return;let cx=0,cz=0;for(const i of zs){cx+=i%N;cz+=(i/N)|0}cx/=zs.length;cz/=zs.length;let best=zs[0],bd=1e9;for(const i of zs){const d=(i%N-cx)**2+(((i/N)|0)-cz)**2;if(d<bd){bd=d;best=i}}
+  for(const[src,c]of[[ENTRY,'#3ddc84'],[HWY.eastJ,'#4aa8f0']]){if(src<0)continue;bfs(src,'car');if(!reached(access[best]))continue;const path=pathTo(access[best]),V=[];
+    for(let k=1;k<path.length;k++){const a=path[k-1]>=N*N?tiles[path[k-1]].host:path[k-1],b=path[k]>=N*N?tiles[path[k]].host:path[k],[ax,az]=wpos(a),[bx,bz]=wpos(b);V.push(ax,0.35,az,bx,0.35,bz)}
+    const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(V,3));const l=new THREE.LineSegments(bg,new THREE.LineBasicMaterial({color:c,depthTest:false}));l.renderOrder=10;g.add(l)}}
+{const m=$('#ovMenu');if(m){m.insertAdjacentHTML('beforeend','<button id="hwDbgBtn" aria-pressed="false"><i style="background:linear-gradient(90deg,#3ddc84,#4aa8f0)"></i>Outside connections</button>');
+  $('#hwDbgBtn').onclick=e=>{e.stopPropagation();HWY.dbg=!HWY.dbg;HWY.dbgT=0;$('#hwDbgBtn').setAttribute('aria-pressed',HWY.dbg);sfx('ui');toast(HWY.dbg?'Green: west entry. Blue: east entry. Lines: the way from each into your city.':'Outside connections hidden.')}}}
+/* ---- old cities: build the full highway ---- */
+function hwMissing(){if(!hwOn())return false;const P=hwRoute();for(let i=0;i<P.length-1;i++)if(!hwBuilt(i)&&hwOwned(i))return true;return false}
+{const _cb=cvBar;cvBar=function(){_cb();const d=$('#cvBar');if(!d||d.hidden||!tool||tool.id!=='road'||!G||!hwMissing())return;const s=document.createElement('span');s.style.cssText='grid-column:1/-1;display:flex;gap:6px;align-items:center';
+  s.innerHTML=`<button id="hwBtn" style="height:32px;padding:0 10px">${G.hw?'Finish the highway':'Build the full highway'}</button><span style="color:var(--muted)">Free · across your land</span>`;d.appendChild(s);
+  s.querySelector('#hwBtn').onclick=()=>{const first=!G.hw;const r=hwLay(false);if(!r.n&&first)delete G.hw;recompute();S=stats();hud();save();
+    if(r.bad){const[x,z]=r.bad.p;cam.target.set(x,0,z);cam.dist=Math.min(Math.max(cam.dist,22),40);updateCamera();hwShowRoute(r.bad.i);toast(`${r.n?`Built ${r.n} highway pieces. `:''}Something is in the way where the red line starts (${r.bad.why.replace(/\.$/,'').toLowerCase()}). Clear that strip and tap again.`);sfx('err')}
+    else{toast(r.n?`Built ${r.n} highway pieces. Traffic can now also come from the east.`:'The highway already runs across all your land.');sfx('road')}cvBar()}}}
+
+{const _rc=recompute;recompute=function(){_rc();if(G&&HWY.nv!==netVer)try{hwRefresh()}catch(e){console.warn(e)}}}
+/* the planned route on your land for a while: green pieces fit, red from the blocked one on */
+function hwShowRoute(badI){if(HWY.route){scene.remove(HWY.route);HWY.route.geometry.dispose();HWY.route=null}const P=hwRoute(),V=[],C=[],w=0.22;
+  for(let i=0;i<P.length-1;i++){if(!hwOwned(i))continue;const Q=hwBz(i),n=32,red=i>=badI,c=red?[1,0.25,0.2]:[0.3,0.9,0.5];
+    for(let k=0;k<n;k++){const a=bzAt(Q,k/n),b=bzAt(Q,(k+1)/n),dx=b[0]-a[0],dz=b[1]-a[1],l=Math.hypot(dx,dz)||1,nx=-dz/l*w,nz=dx/l*w;
+      V.push(a[0]+nx,0.3,a[1]+nz,a[0]-nx,0.3,a[1]-nz,b[0]+nx,0.3,b[1]+nz,a[0]-nx,0.3,a[1]-nz,b[0]-nx,0.3,b[1]-nz,b[0]+nx,0.3,b[1]+nz);for(let q=0;q<6;q++)C.push(...c)}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+  HWY.route=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,depthTest:false,transparent:true,opacity:0.85,side:THREE.DoubleSide}));HWY.route.renderOrder=11;HWY.route.frustumCulled=false;scene.add(HWY.route);
+  clearTimeout(HWY.routeT);HWY.routeT=setTimeout(()=>{if(HWY.route){scene.remove(HWY.route);HWY.route.geometry.dispose();HWY.route=null}},15000)}
 
 /* ---------- boot ---------- */
 function start(data){applyGrade();

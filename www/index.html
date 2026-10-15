@@ -7914,13 +7914,22 @@ function netFillet(g,A,RJn,ox,oz,x,z){const[a,b]=A,da=Math.min(RJn,a.g?a.g.L*0.5
     if(q)L+=Math.hypot(px-X[q-1],pz-Z[q-1]);X.push(px);Z.push(pz);S.push(L)}
   const geo={X,Z,S,n:32,L,H:null,kind:'road'},ta_=a.t|0,tb_=b.t|0;
   if(ta_===tb_)netRoadStrip(g,geo,0,L,ox,oz,ta_,true,x,z);
-  else{let dd=Math.abs(a.dir-b.dir);if(dd>Math.PI)dd=2*Math.PI-dd;const Wa=NETW[ta_]||NETW[0],Wb=NETW[tb_]||NETW[0];
-    if(dd<Math.PI-0.45||!Wa.sw||!Wb.sw){netRoadStrip(g,geo,0,L/2,ox,oz,ta_,true,x,z);netRoadStrip(g,geo,L/2,L,ox,oz,tb_,true,x,z);return}
-    /* straight change of road type: the narrow road runs through, the wide one tapers into it */
-    const wideA=Wa.hw>=Wb.hw,w=wideA?a:b,n=wideA?b:a,dw=wideA?da:db,dn=wideA?db:da,Ww=wideA?Wa:Wb,Wn=wideA?Wb:Wa,tn=wideA?tb_:ta_;
-    netRoadStrip(g,geo,0,L,ox,oz,tn,true,x,z);
-    for(const sd of[-1,1]){netPoly(g,[w.at(dw,sd*Ww.ae),w.at(dw,sd*Wn.ae),n.at(dn,-sd*Wn.ae)],0.0604,roadMat,'#74787d',ox,oz);
-      netPoly(g,[w.at(dw,sd*Ww.ae),w.at(dw,sd*Ww.hw),n.at(dn,-sd*Wn.hw),n.at(dn,-sd*Wn.ae)],0.075,paveMat,'#b9bdc3',ox,oz)}}}
+  else{/* change of road type at a bend or straight: one piece whose width eases from one road to the other */
+    const Wa=NETW[ta_]||NETW[0],Wb=NETW[tb_]||NETW[0];
+    netStripT(g,geo,0,L,ox,oz,-Wa.ae,-Wb.ae,0.06,Wa.ae,Wb.ae,0.06,'up',roadMat,'#74787d');
+    if(Wa.sw&&Wb.sw)for(const sd of[-1,1]){netStripT(g,geo,0,L,ox,oz,sd*Wa.ae,sd*Wb.ae,0.06,sd*Wa.ae,sd*Wb.ae,0.075,-sd,null,'#9da1a7');
+      netStripT(g,geo,0,L,ox,oz,sd*Wa.ae,sd*Wb.ae,0.075,sd*Wa.hw,sd*Wb.hw,0.075,'up',paveMat,'#b9bdc3');netStripT(g,geo,0,L,ox,oz,sd*Wa.hw,sd*Wb.hw,0.075,sd*Wa.hw,sd*Wb.hw,0,sd,null,'#80847f')}
+    const nt=Wa.ae<Wb.ae?ta_:tb_;if(nt!==1&&nt!==5)for(let d=0.15;d<L;d+=0.45)netStripT(g,geo,d,Math.min(L,d+0.2),ox,oz,-0.0175,-0.0175,0.0608,0.0175,0.0175,0.0608,'up',null,'#f1f1ec')}}
+/* like netStrip, but the two edges move from (vA0,vB0) at sa to (vA1,vB1) at sb */
+function netStripT(g,geo,sa,sb,ox,oz,vA0,vA1,yA,vB0,vB1,yB,want,mt,c){if(sb-sa<1e-4)return null;
+  const m=Math.max(1,Math.ceil((sb-sa)/0.05)),P=[],I=[];let wv=null;
+  for(let k=0;k<=m;k++){const f=k/m,s=sa+(sb-sa)*f,q=cvAt(geo,s),nx=-q[3],nz=q[2],h=netHs(geo,s),vA=vA0+(vA1-vA0)*f,vB=vB0+(vB1-vB0)*f;
+    P.push(q[0]+nx*vA-ox,yA+h,q[1]+nz*vA-oz,q[0]+nx*vB-ox,yB+h,q[1]+nz*vB-oz);if(!k)wv=want==='up'?[0,1,0]:want==='down'?[0,-1,0]:[nx*want,0,nz*want];
+    if(k){const a=(k-1)*2;I.push(a,a+1,a+2,a+1,a+3,a+2)}}
+  const e1=[P[3]-P[0],P[4]-P[1],P[5]-P[2]],e2=[P[6]-P[0],P[7]-P[1],P[8]-P[2]],cr=[e1[1]*e2[2]-e1[2]*e2[1],e1[2]*e2[0]-e1[0]*e2[2],e1[0]*e2[1]-e1[1]*e2[0]];
+  if(cr[0]*wv[0]+cr[1]*wv[1]+cr[2]*wv[2]<0)for(let q=0;q<I.length;q+=3){const t=I[q+1];I[q+1]=I[q+2];I[q+2]=t}
+  const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));bg.setIndex(I);bg.computeVertexNormals();bg.userData.net=1;
+  const ms=new THREE.Mesh(bg,mt||mat(c));if(mt)surf(ms,mt,c);ms.castShadow=false;ms.receiveShadow=true;g.add(ms);return ms}
 /* zebra crossings and stop lines where free-angle roads with sidewalks enter a junction */
 function netCrossings(g,A,RJn,ox,oz){if(A.length<3)return;const Y=0.0609;
   for(const a of A){if(!a.g)continue;const W=NETW[a.t|0]||NETW[0];if(!W.sw||a.t===5)continue;const d=Math.min(RJn,a.g.L*0.5);if(a.g.L*0.5<RJn+0.25)continue;const ae=W.ae;

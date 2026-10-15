@@ -2962,7 +2962,7 @@ function buildTile0(i,anim){
           const cyc=(tf%9)/9;ring.position.y=cyc<0.5?0.2+1.2*(cyc/0.5):cyc<0.58?1.4-1.2*Math.pow((cyc-0.5)/0.08,2):0.2}
       }
       if(L===4){/* zoo: four enclosures with wandering animals */
-        bx('#d8cdb5',2.96,0.035,2.96,0,0,0,false);
+        bx('#d8cdb5',2.96,0.035,2.96,0,0,0,false);const slab=(c,w,h,d,px,py,pz)=>{const m=new THREE.Mesh(BOXC,mat(c));m.scale.set(w,h,d);m.position.set(px,py,pz);bg.add(m);return m};
         const encl=(cx,cz,w,d,floor,fc='#6b4f36')=>{bx(floor,w,0.038,d,cx,0,cz,false);
           for(const sd of[-1,1]){slab(fc,w,0.012,0.012,cx,0.13,cz+sd*d/2,0,0,0,false);slab(fc,w,0.012,0.012,cx,0.07,cz+sd*d/2,0,0,0,false);slab(fc,0.012,0.012,d,cx+sd*w/2,0.13,cz,0,0,0,false);slab(fc,0.012,0.012,d,cx+sd*w/2,0.07,cz,0,0,0,false)}
           const nx=Math.round(w/0.2),nz=Math.round(d/0.2);for(let k=0;k<=nx;k++)for(const sd of[-1,1])part(bg,CYL,fc,0.008,0.12,0.008,cx-w/2+k*w/nx,0.035,cz+sd*d/2,false);for(let k=1;k<nz;k++)for(const sd of[-1,1])part(bg,CYL,fc,0.008,0.12,0.008,cx+sd*w/2,0.035,cz-d/2+k*d/nz,false)};
@@ -4891,7 +4891,7 @@ function updateCars(dt){updateHeli(dt);
     c.blk=null;if(c.ghost>0)c.ghost-=dt;
     else if(c.wx!==undefined&&target>0){const fx=Math.sin(c.yaw),fz=Math.cos(c.yaw),hw=c.type.w/2+0.005,look=c.v*0.35,cL=c.type.L,cw=c.type.w;
       let nf=0;for(const sd of[0.1,0.2,0.32]){if(c.t+sd>1)break;carCurve(c,c.t+sd,_cc);const F=FUT[nf++];F.x=_cc.pos.x;F.z=_cc.pos.z;F.yaw=_cc.yaw;F.s=sd}
-      for(const o of near(CHs,c.wx,c.wz,1.1)){if(o===c||o.wx===undefined)continue;const ex=o.wx-c.wx,ez=o.wz-c.wz;if(ex*ex+ez*ez>1)continue;
+      for(const o of near(CHs,c.wx,c.wz,Math.max(1.1,c.type.L+0.6))){if(o===c||o.wx===undefined)continue;const ex=o.wx-c.wx,ez=o.wz-c.wz;if(ex*ex+ez*ez>Math.max(1,(c.type.L/2+o.type.L/2+0.6)**2))continue;
         let hard=-1;for(let q=0;q<nf&&hard<0;q++){const F=FUT[q],dx=o.wx-F.x,dz=o.wz-F.z,sf=Math.sin(F.yaw),cf=Math.cos(F.yaw),ca=Math.abs(Math.cos(o.yaw-F.yaw)),sa=Math.abs(Math.sin(o.yaw-F.yaw));
           if(Math.abs(dx*sf+dz*cf)<cL/2+ca*o.type.L/2+sa*o.type.w/2+0.02&&Math.abs(dx*cf-dz*sf)<cw/2+ca*o.type.w/2+sa*o.type.L/2)hard=F.s}
         const len=(cL+o.type.L)/2+0.05,da=o.yaw-c.yaw,ow=Math.abs(Math.cos(da))*o.type.w/2+Math.abs(Math.sin(da))*o.type.L/2,ov=o.v*0.35;
@@ -4900,13 +4900,13 @@ function updateCars(dt){updateHeli(dt);
         if(hard<0&&soft<0)continue;
         if(hard<0){let p=o.blk,ring=false,top=carPr(o);for(let n=0;n<8&&p;n++){if(p===c){ring=true;break}top=Math.max(top,carPr(p));p=p.blk}if(ring&&carPr(c)>top)continue}
         c.blk=o;target=Math.min(target,hard>=0?Math.max(0,(hard-0.1)*3):soft*3)}
-      if(c.blk&&c.v<0.05){c.bw=(c.bw||0)+dt;if(c.bw>8){c.ghost=1;c.bw=0}}else c.bw=0}
+      if(c.blk&&c.v<0.05){c.bw=(c.bw||0)+dt;if(c.bw>8){if(c.keep||c.role==='bus'||c.siren)c.ghost=1;else c.gone=1;c.bw=0}}else c.bw=0}
     const v0=c.v;c.v+=Math.max(-3*dt,Math.min(1.2*dt,target-c.v));if(c.v<0)c.v=0;
     c.acc=(c.acc||0)+((dt>0?(c.v-v0)/dt:0)-(c.acc||0))*Math.min(1,dt*6);
     if(c.v<vm*0.3){jam[c.b]+=dt*0.25;JAMA.add(c.b)}
     if(c.wx!==undefined&&c.v>0&&!(c.ghost>0)&&c.t+dt*c.v<1){carCurve(c,c.t+dt*c.v,_cc);
-      for(const o of near(CHs,_cc.pos.x,_cc.pos.z,0.8)){if(o===c||o.wx===undefined)continue;const ex=o.wx-_cc.pos.x,ez=o.wz-_cc.pos.z;if(ex*ex+ez*ez>0.5)continue;
-        if(carHit(_cc.pos.x,_cc.pos.z,_cc.yaw,c.type,o)&&!(carHit(c.wx,c.wz,c.yaw,c.type,o)&&ex*ex+ez*ez>(o.wx-c.wx)**2+(o.wz-c.wz)**2)){c.v=0;c.blk=c.blk||o;c.bw=(c.bw||0)+dt;if(c.bw>8){c.ghost=1;c.bw=0}break}}}
+      const rr_=(c.type.L+1.05)/2+0.08;for(const o of near(CHs,_cc.pos.x,_cc.pos.z,rr_)){if(o===c||o.wx===undefined)continue;const ex=o.wx-_cc.pos.x,ez=o.wz-_cc.pos.z;if(ex*ex+ez*ez>((c.type.L+o.type.L)/2+0.1)**2)continue;
+        if(carHit(_cc.pos.x,_cc.pos.z,_cc.yaw,c.type,o)&&!(carHit(c.wx,c.wz,c.yaw,c.type,o)&&ex*ex+ez*ez>(o.wx-c.wx)**2+(o.wz-c.wz)**2)){c.v=0;c.blk=c.blk||o;c.bw=(c.bw||0)+dt;if(c.bw>8){if(c.keep||c.role==='bus'||c.siren)c.ghost=1;else c.gone=1;c.bw=0}break}}}
     c.t+=dt*c.v*cvRate(c);
     if(last&&c.t>=0.5){
       if(c.role==='bus'){const ln=c.ln,nk=(c.seg+1)%ln.segs.length,np=ln.segs[nk];
@@ -8996,6 +8996,9 @@ let nvPostT=0,nvPosts=[];
   if(!nvPosts.length||nvCount('postvan')+nvCount('posttruck')>=Math.min(8,2*nvPosts.length)||Math.random()>0.5)return;
   const po=nvPosts[(Math.random()*nvPosts.length)|0],L=S.lists,to=Math.random()<0.7?nvOf(L.home):nvOf(L.shop);nvTrip(access[po],to,Math.random()<0.2?'posttruck':'postvan')}}
 
+/* stuck cars (blocked 8 s) leave the road instead of driving through others */
+{const _ucg=updateCars;updateCars=function(dt){_ucg(dt);for(let k=cars.length-1;k>=0;k--){const c=cars[k];if(c.gone){endAgent(c,false);cars.splice(k,1)}}}}
+
 /* ---------- trolleybuses, monorail, cable car and the blimp (patch_net.py, models from vehicles3.py / transit2.py) ----------
    Trolleybus lines: drawn with the line tool like bus lines; trolleybuses run them and overhead wires follow the route.
    Monorail: tap station spots (at least 3 tiles apart), Finish; an elevated beam on columns joins them over anything,
@@ -9114,6 +9117,8 @@ function svhTick(dt){for(let k=SVH.length-1;k>=0;k--){const h=SVH[k],m=h.m;m.rot
 {const _uc2=updateCars;updateCars=function(dt){_uc2(dt);svhTick(dt)}}
 /* ---- tram track on network roads: rails, wires and poles follow the road's curve instead of the tile grid ---- */
 {const _td=tramDraw;tramDraw=function(){
+  /* tram track only lives on roads: drop marks left on tiles that are no longer road */
+  if(G&&G.tram)for(const k in G.tram){if(k==='idx')continue;const t=tiles[+k];if(!t||t.t!==T.ROAD)delete G.tram[k]}
   /* the old drawer only knows the grid: hide network tiles from it, then draw those along their segments */
   const keep={};if(G&&G.tram&&G.net&&G.net.s.length){const M=netMap();for(const k in G.tram){if(k==='idx')continue;if(M.TR[+k]){keep[k]=G.tram[k];delete G.tram[k]}}}
   _td();for(const k in keep)G.tram[k]=keep[k];if(!G||!G.tram||!Object.keys(keep).length)return;
@@ -9129,6 +9134,27 @@ function svhTick(dt){for(let k=SVH.length-1;k>=0;k--){const h=SVH[k],m=h.m;m.rot
     const m=new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3});const o=new THREE.Mesh(bg,m);o.frustumCulled=false;return o};
   if(R.length)TRMG.add(strip(R,0.016,0.0615,'#b4bac2'));if(Wr.length)TRMG.add(strip(Wr,0.004,0.27,'#2a2d33'));
   for(const[x,z,ry]of poles){const gg=new THREE.Group();gg.position.set(x,0,z);gg.rotation.y=ry-Math.PI/2;model(gg,'tram_pole',{metal:'#7d838c'},0,0.03,0);TRMG.add(gg)}}}
+
+/* ---- the monorail keeps its corridor clear (as in Cities: Skylines): nothing can be built under the beam, and
+   buildings in the way are removed when the line is built (or when an old save loads) ---- */
+const TXC={key:'',set:new Set(),pts:[],st:[]};
+function txCorr(){if(!G||!G.tx||!G.tx.mono||!G.tx.mono.length){TXC.key='';TXC.set.clear();TXC.pts=[];TXC.st=[];return TXC.set}const key=JSON.stringify(G.tx.mono.map(l=>l.st));if(key===TXC.key)return TXC.set;TXC.key=key;TXC.set=new Set();TXC.pts=[];TXC.st=[];
+  for(const ln of G.tx.mono){if(ln.st.length<2)continue;const c=txSmooth(ln.st);for(let s=0;s<=c.L;s+=0.1){const q=txAt(c,s);TXC.pts.push([q[0],q[1]]);const j=netTile(q[0],q[1]);if(j>=0)TXC.set.add(j)}
+    for(const p of ln.st){let bs=0,bd=1e9;for(let s=0;s<=c.L;s+=0.1){const q=txAt(c,s),d=(q[0]-p[0])**2+(q[1]-p[1])**2;if(d<bd){bd=d;bs=s}}const q0=txAt(c,bs),ql=Math.hypot(q0[2],q0[3])||1,q=[q0[0],q0[1],q0[2]/ql,q0[3]/ql];TXC.st.push([p[0],p[1],q[2],q[3]]);
+      for(let a=-1.5;a<=1.5;a+=0.25)for(let o=-0.4;o<=0.4;o+=0.2){const j=netTile(p[0]+q[2]*a-q[3]*o,p[1]+q[3]*a+q[2]*o);if(j>=0)TXC.set.add(j)}}}return TXC.set}
+/* does any of these points sit under the beam (within 0.15) or inside a station (3 x 0.9 tiles)? */
+function txHitPts(P){txCorr();for(const[x,z]of P){for(const[sx,sz,tx,tz]of TXC.st){const dx=x-sx,dz=z-sz,a=dx*tx+dz*tz,o=-dx*tz+dz*tx;if(Math.abs(a)<1.6&&Math.abs(o)<1.0)return true}
+    for(const q of TXC.pts){const dx=x-q[0],dz=z-q[1];if(dx*dx+dz*dz<0.0225)return true}}return false}
+function txClear(){const C=txCorr();if(!C.size)return 0;let n=0;
+  if(typeof ZN!=='undefined'&&ZN.blds)for(const b of[...ZN.blds]){if(txHitPts(fpPtsR(b.x,b.z,b.ry,b.hw,b.hd))){zoneKill(b,false);n++}}
+  for(const i of OWNIDX){const t=tiles[i];if(!t||t.lock||!(t.t>=2&&t.t<=4)||!t.l)continue;const ps=typeof netLotPose==='function'?netLotPose(i,t):null;const[wx,wz]=wpos(i);
+    if(txHitPts(ps?fpPtsR(ps.x,ps.z,ps.ry,0.45,0.45):fpPtsR(wx,wz,0,0.45,0.45))){t.l=0;buildTile(i);n++}}
+  if(G.fp)for(const h in G.fp){const p=G.fp[h];if(!txHitPts(fpPtsR(p[0],p[1],p[2],0.42,0.42)))continue;const t=tiles[+h];delete G.fp[h];if(t&&SV[t.t]){t.t=T.EMPTY;t.l=0;buildTile(+h);n++}}
+  if(typeof ZN!=='undefined'){ZN.dirty=true;ZN.instDirty=true;ZN.censusDirty=true}return n}
+{const _cfm=costFor;costFor=function(tl,i){const c=_cfm(tl,i);if(c===null||!tl||!G||!G.tx)return c;if(['road','rail','doze','path','tramtrack','line','mline','areas','dist'].includes(tl.id))return c;return txCorr().has(i)?null:c}}
+{const _zv=zValid;zValid=function(c,H){if(!_zv(c,H))return false;const C=txCorr();if(!C.size)return true;return!txHitPts([[c.x,c.z],...zSq(c)])}}
+{const _tf=txFinish;txFinish=function(){const before=G&&G.tx?G.tx.mono.length:0;_tf();if(G&&G.tx&&G.tx.mono.length>before){const n=txClear();if(n){recompute();S=stats();hud();toast(`Built. ${n} building${n===1?' was':'s were'} in the way of the monorail and had to go.`)}}}}
+{const _ld2=load;load=function(str){const r=_ld2(str);if(r)setTimeout(()=>{try{if(G&&G.tx&&G.tx.mono&&G.tx.mono.length&&!G.txClr){G.txClr=1;if(txClear()){recompute();S=stats();hud()}}}catch(e){console.warn(e)}},1500);return r}}
 
 /* ---------- convert old grid roads to the road network (patch_net.py) ----------
    Streets, one-ways and dirt roads laid with the old tile builder become network segments (straight runs between

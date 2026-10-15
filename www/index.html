@@ -7738,6 +7738,9 @@ function netPoly(g,pts,y,mt,c,ox,oz){if(pts.length<3)return;const P=[],I=[];for(
    15 m, avenues 24 m (4 lanes + median), boulevards 36 m (6 lanes + planted median), highways 24 m (4 lanes + shoulders) */
 const NETW={0:{ae:0.36,sw:true,hw:0.5},1:{ae:0.5,sw:false,hw:0.5},2:{ae:0.36,sw:true,hw:0.5},3:{ae:0.56,sw:true,hw:0.8},4:{ae:0.94,sw:true,hw:1.2},5:{ae:0.74,sw:false,hw:0.8}};
 const netHW=v=>(NETW[v|0]||NETW[0]).hw;
+/* old grid road tiles are one tile wide whatever their type; an arm from one keeps that width and look */
+const GRIDW={0:{ae:0.36,sw:true,hw:0.5,grid:1},1:{ae:0.5,sw:false,hw:0.5,grid:1},2:{ae:0.36,sw:true,hw:0.5,grid:1},3:{ae:0.38,sw:true,hw:0.5,grid:1},4:{ae:0.4,sw:true,hw:0.5,grid:1},5:{ae:0.475,sw:false,hw:0.5,grid:1}};
+const netAW=a=>a.grid?(GRIDW[a.t|0]||GRIDW[0]):(NETW[a.t|0]||NETW[0]);
 /* dead-end circle: asphalt radius r, sidewalk ring out to R2, arm sidewalks stop where they meet the ring */
 const netDEr=v=>{const W=NETW[v|0]||NETW[0];return W.sw?Math.max(0.56,W.ae+0.18):Math.max(0.46,W.ae+0.02)},netDER2=v=>{const W=NETW[v|0]||NETW[0];return netDEr(v)+Math.max(0.14,W.hw-W.ae-0.02)},netDEs=v=>{const R2=netDER2(v),h=netHW(v);return Math.max(NETDE,Math.sqrt(Math.max(0,R2*R2-h*h))+0.01)};
 /* arms meeting at a node: every segment end there plus plain grid roads beside the node tile */
@@ -7746,22 +7749,22 @@ function netArms(nid){const j=NET.node.get(nid),arms=[];if(j===undefined)return 
     arms.push({g,st,t:sg.t,k:sg.k,at:(d,v)=>{const s=st?d:g.L-d,q=cvAt(g,s),ux=st?q[2]:-q[2],uz=st?q[3]:-q[3];return[q[0]-uz*v,q[1]+ux*v]},dir:(()=>{const q=cvAt(g,st?0.3:g.L-0.3),ux=st?q[2]:-q[2],uz=st?q[3]:-q[3];return Math.atan2(uz,ux)})()})}
   const x=j%N,z=(j/N)|0;for(const[dx,dz]of D4){if(!inB(x+dx,z+dz))continue;const q=idx(x+dx,z+dz),t=tiles[q],KA=NET.TL[j]?NET.TL:NET.TR;if(KA[q]||t.t!==tiles[j].t||(t.t===T.ROAD&&rxAt(q)&&NET.TL[q]))continue;
     const ex=x-HALF+0.5+dx*0.5,ez=z-HALF+0.5+dz*0.5,L=Math.hypot(ex-p[0],ez-p[1])||1e-3,ux=(ex-p[0])/L,uz=(ez-p[1])/L;
-    arms.push({g:null,t:t.t===T.ROAD?RI(t.l).v:0,k:t.t===T.ROAD?'road':'rail',L,at:(d,v)=>[p[0]+ux*d-uz*v,p[1]+uz*d+ux*v],dir:Math.atan2(uz,ux),ex,ez,ux,uz})}
+    arms.push({g:null,t:t.t===T.ROAD?RI(t.l).v:0,k:t.t===T.ROAD?'road':'rail',grid:1,L,at:(d,v)=>[p[0]+ux*d-uz*v,p[1]+uz*d+ux*v],dir:Math.atan2(uz,ux),ex,ez,ux,uz})}
   arms.sort((a,b)=>a.dir-b.dir);return arms}
 /* is arc length s of geo g inside the junction area of an end node (where the arms merge)? */
 function netJunc(g,s){const sg=g.sg,dead=n=>(NET.deg.get(n)||0)+netGridArms(n)===1,de=netDEs(sg.t);if((s<de&&dead(sg.a))||(s>g.L-de&&dead(sg.b)))return true;const rj=n=>netFil(n)?Math.min(netRJ(n),g.L*0.5):netRJ(n);return(s<rj(sg.a)&&(NET.deg.get(sg.a)||0)+netGridArms(sg.a)>=2&&netBent(sg.a))||(s>g.L-rj(sg.b)&&(NET.deg.get(sg.b)||0)+netGridArms(sg.b)>=2&&netBent(sg.b))}
 /* junction radius: arms meeting at a narrow angle need their sidewalks to start further out */
 const NETRJC=new Map();
 function netRJ(nid){const k=nid+':'+NET.ver;if(NETRJC.has(k))return NETRJC.get(k);const A=netArms(nid);let r=NETRJ;
-  if(A.length>=2)for(let q=0;q<A.length;q++){const B=A[(q+1)%A.length];let gap=B.dir-A[q].dir;if(q===A.length-1)gap+=2*Math.PI;r=Math.max(r,Math.max(netHW(A[q].t),netHW(B.t))+0.06);if(gap>Math.PI*0.97)continue;r=Math.max(r,(Math.max(netHW(A[q].t),netHW(B.t))+0.06)/Math.tan(gap/2))}
+  if(A.length>=2)for(let q=0;q<A.length;q++){const B=A[(q+1)%A.length];let gap=B.dir-A[q].dir;if(q===A.length-1)gap+=2*Math.PI;r=Math.max(r,Math.max(netAW(A[q]).hw,netAW(B).hw)+0.06);if(gap>Math.PI*0.97)continue;r=Math.max(r,(Math.max(netAW(A[q]).hw,netAW(B).hw)+0.06)/Math.tan(gap/2))}
   r=Math.min(3,r);NETRJC.set(k,r);return r}
 const NETGA=new Map(),NETBENT=new Map();
 function netGridArms(nid){const k=nid+':'+NET.ver;if(NETGA.has(k))return NETGA.get(k);const j=NET.node.get(nid);let n=0;if(j!==undefined){const x=j%N,z=(j/N)|0;for(const[dx,dz]of D4)if(inB(x+dx,z+dz)){const q=idx(x+dx,z+dz),KA=NET.TL[j]?NET.TL:NET.TR;if(!KA[q]&&tiles[q].t===tiles[j].t)n++}}NETGA.set(k,n);return n}
 /* a node needs a junction patch unless it is a gentle bend joining just two arms */
 function netBent(nid){const k=nid+':'+NET.ver;if(NETBENT.has(k))return NETBENT.get(k);const A=netArms(nid);let b=A.length>2;
   if(A.length===2){let d=Math.abs(A[0].dir-A[1].dir);if(d>Math.PI)d=2*Math.PI-d;b=d<Math.PI-0.45||A[0].t!==A[1].t}NETBENT.set(k,b);return b}
-function netRoadStrip(g,geo,sa,sb,ox,oz,v,full,x,z){const St=(vA,yA,vB,yB,w,mt,c,A=sa,B=sb)=>netStrip(g,geo,A,B,ox,oz,vA,yA,vB,yB,w,mt,c);
-  const asph=v===1?'#9a8663':v===5?'#696d73':((x*31+z*17)%5)?'#74787d':'#71757a',LINE='#f1f1ec',Y=0.0608,W=NETW[v]||NETW[0],ae=W.ae;
+function netRoadStrip(g,geo,sa,sb,ox,oz,v,full,x,z,W0){const St=(vA,yA,vB,yB,w,mt,c,A=sa,B=sb)=>netStrip(g,geo,A,B,ox,oz,vA,yA,vB,yB,w,mt,c);
+  const asph=v===1?'#9a8663':v===5?'#696d73':((x*31+z*17)%5)?'#74787d':'#71757a',LINE='#f1f1ec',Y=0.0608,W=W0||NETW[v]||NETW[0],ae=W.ae;
   const dash=(o,w,c,len=0.2,step=0.5)=>{for(let d=Math.floor(sa/step)*step+0.15;d<sb;d+=step){const A=Math.max(sa,d),B=Math.min(sb,d+len);if(B>A)St(o-w/2,Y,o+w/2,Y,'up',null,c,A,B)}};
   const hw=W.hw||0.5;
   if(v===1){St(-0.5,0.06,0.5,0.06,'up',roadMat,asph);if(full)for(const s of[-1,1])St(s*0.19,0.0605,s*0.13,0.0605,'up',null,'#86734f');return}
@@ -7771,8 +7774,11 @@ function netRoadStrip(g,geo,sa,sb,ox,oz,v,full,x,z){const St=(vA,yA,vB,yB,w,mt,c
   if(!full)return;
   if(W.sw)for(const s of[-1,1]){St(s*ae,0.06,s*ae,0.08,-s,null,'#9da1a7');St(s*ae,0.08,s*(ae+0.02),0.08,'up',null,'#9da1a7');
     St(s*(ae+0.02),0.075,s*hw,0.075,'up',paveMat,'#b9bdc3');St(s*hw,0.075,s*hw,0,s,null,'#80847f');St(s*(ae-0.03),Y,s*(ae-0.01),Y,'up',null,LINE)}
-  if(v===5){for(const s of[-1,1]){St(s*(ae-0.04),Y,s*(ae-0.06),Y,'up',null,LINE);dash(s*0.36,0.025,LINE,0.25,0.6);St(s*hw,0.06,s*hw,0.11,-s,null,'#b7bbc0');St(s*0.06,Y,s*0.08,Y,'up',null,'#e8c33a')}St(-0.03,0.06,0.03,0.11,'up',null,'#c9ccd0')}
-  else if(v===3||v===4){const mw=v===4?0.2:0.05;St(-mw,0.08,mw,0.08,'up',null,v===4?'#5a8f3e':'#c9ccd0');for(const s of[-1,1]){St(s*mw,0.06,s*mw,0.08,s,null,'#c9ccd0');St(s*(mw+0.0075),Y,s*(mw+0.0225),Y,'up',null,LINE);for(const o of(v===4?[0.44,0.68]:[0.29]))dash(s*o,0.03,LINE)}}
+  if(v===5&&W.grid){/* the old grid highway: low median, white lines, barriers on the edges */
+    St(-0.02,0.11,0.02,0.11,'up',null,'#c9ccd0');for(const s of[-1,1]){St(s*0.02,0.06,s*0.02,0.11,s,null,'#c9ccd0');St(s*0.0275,Y,s*0.0425,Y,'up',null,LINE);St(s*0.43,Y,s*0.45,Y,'up',null,LINE);dash(s*0.23,0.03,LINE,0.22,0.5);
+      St(s*0.4575,0.06,s*0.4575,0.11,-s,null,'#c9ccd0');St(s*0.4575,0.11,s*0.4925,0.11,'up',null,'#c9ccd0');St(s*0.4925,0.11,s*0.4925,0.06,s,null,'#c9ccd0')}}
+  else if(v===5){for(const s of[-1,1]){St(s*(ae-0.04),Y,s*(ae-0.06),Y,'up',null,LINE);dash(s*0.36,0.025,LINE,0.25,0.6);St(s*hw,0.06,s*hw,0.11,-s,null,'#b7bbc0');St(s*0.06,Y,s*0.08,Y,'up',null,'#e8c33a')}St(-0.03,0.06,0.03,0.11,'up',null,'#c9ccd0')}
+  else if(v===3||v===4){const mw=v===4?(W.grid?0.085:0.2):(W.grid?0.045:0.05);St(-mw,0.08,mw,0.08,'up',null,v===4?'#5a8f3e':'#c9ccd0');for(const s of[-1,1]){St(s*mw,0.06,s*mw,0.08,s,null,'#c9ccd0');St(s*(mw+0.0075),Y,s*(mw+0.0225),Y,'up',null,LINE);for(const o of(W.grid?(v===4?[0.2,0.32]:[0.24]):v===4?[0.44,0.68]:[0.29]))dash(s*o,0.03,LINE)}}
   else if(v===2){dash(0,0.03,LINE,0.18,0.45)}
   else dash(0,0.035,LINE)}
 function netRailStrip(g,geo,sa,sb,ox,oz){const Y=RB0,St=(vA,yA,vB,yB,w,c)=>netStrip(g,geo,sa,sb,ox,oz,vA,yA,vB,yB,w,null,c);
@@ -7802,7 +7808,7 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
   const A=netArms(nid),p=G.net.n[nid];
   /* grid roads that join this node: a stub of road from the node to the tile edge */
   for(const a of A){if(a.g)continue;const geo={X:[p[0],a.ex],Z:[p[1],a.ez],S:[0,a.L],n:1,L:a.L,H:null,kind:a.k};
-    if(a.k==='rail')netRailStrip(g,geo,0,a.L,ox,oz);else if(netFil(nid))continue;else{const jn=netBent(nid)?Math.min(a.L,netRJ(nid)):0;netRoadStrip(g,geo,0,jn,ox,oz,a.t,false,x,z);netRoadStrip(g,geo,jn,a.L,ox,oz,a.t,true,x,z)}}
+    if(a.k==='rail')netRailStrip(g,geo,0,a.L,ox,oz);else if(netFil(nid))continue;else{const jn=netBent(nid)?Math.min(a.L,netRJ(nid)):0;netRoadStrip(g,geo,0,jn,ox,oz,a.t,false,x,z,netAW(a));netRoadStrip(g,geo,jn,a.L,ox,oz,a.t,true,x,z,netAW(a))}}
   if(kind==='rail'){if(A.length===1&&A[0].g){const q=A[0].at(0.12,0),d=A[0].dir;model(g,'rail_buffer',RCOL,q[0]-ox,RB0,q[1]-oz,Math.atan2(Math.cos(d),Math.sin(d))+Math.PI)}return true}
   if(A.length===1){/* dead end: turning circle, its sidewalk ring meeting the road's sidewalks */const W=NETW[A[0].t|0]||NETW[0],r=netDEr(A[0].t);
     const ci=new THREE.Mesh(new THREE.CircleGeometry(r,24).rotateX(-Math.PI/2),roadMat);surf(ci,roadMat,A[0].t===1?'#9a8663':'#74787d');ci.position.set(p[0]-ox,0.0603,p[1]-oz);ci.receiveShadow=true;g.add(ci);
@@ -7814,13 +7820,13 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
   if(!netBent(nid))return true;
   if(netFil(nid)){netFillet(g,A,netRJ(nid),ox,oz,x,z);return true}
   /* junction: asphalt hull over the arm mouths, and a sidewalk corner between each pair of neighbouring arms */
-  const mouth=[],aeOf=a=>(NETW[a.t|0]||NETW[0]).ae;
+  const mouth=[],aeOf=a=>netAW(a).ae;
   const RJn=netRJ(nid);for(const a of A){const d=Math.min(RJn,a.g?a.g.L*0.5:a.L),ae=aeOf(a);mouth.push(a.at(d,-ae),a.at(d,ae))}
   mouth.push(p);const hull=netHull(mouth);netPoly(g,hull,0.0604,roadMat,'#74787d',ox,oz);
   for(let k=0;k<A.length;k++){const a=A[k],b=A[(k+1)%A.length];let gap=b.dir-a.dir;if(k===A.length-1)gap+=2*Math.PI;if(gap>Math.PI*1.15)continue;
-    if(!(NETW[a.t|0]||NETW[0]).sw||!(NETW[b.t|0]||NETW[0]).sw)continue;
+    if(!netAW(a).sw||!netAW(b).sw)continue;
     const da=Math.min(RJn,a.g?a.g.L*0.5:a.L),db=Math.min(RJn,b.g?b.g.L*0.5:b.L);
-    const P1=a.at(da,aeOf(a)),P2=a.at(da,netHW(a.t)),P4=b.at(db,-netHW(b.t)),P5=b.at(db,-aeOf(b)),poly=[P1,P2];
+    const P1=a.at(da,aeOf(a)),P2=a.at(da,netAW(a).hw),P4=b.at(db,-netAW(b).hw),P5=b.at(db,-aeOf(b)),poly=[P1,P2];
     /* outer corner where the two outer sidewalk edges meet, if it is close by */
     const ua=[Math.cos(a.dir),Math.sin(a.dir)],ub=[Math.cos(b.dir),Math.sin(b.dir)],den=ua[0]*ub[1]-ua[1]*ub[0];
     if(Math.abs(den)>0.15){const dx=P4[0]-P2[0],dz=P4[1]-P2[1],t=(dx*ub[1]-dz*ub[0])/den,u=(dx*ua[1]-dz*ua[0])/den,X=[P2[0]+ua[0]*t,P2[1]+ua[1]*t];
@@ -7910,15 +7916,19 @@ function netFillet(g,A,RJn,ox,oz,x,z){const[a,b]=A,da=Math.min(RJn,a.g?a.g.L*0.5
   const P=[A0,[A0[0]-ta[0]*k,A0[1]-ta[1]*k],[B0[0]-tb[0]*k,B0[1]-tb[1]*k],B0],X=[],Z=[],S=[];let L=0;
   for(let q=0;q<=32;q++){const t=q/32,u=1-t,px=u*u*u*P[0][0]+3*u*u*t*P[1][0]+3*u*t*t*P[2][0]+t*t*t*P[3][0],pz=u*u*u*P[0][1]+3*u*u*t*P[1][1]+3*u*t*t*P[2][1]+t*t*t*P[3][1];
     if(q)L+=Math.hypot(px-X[q-1],pz-Z[q-1]);X.push(px);Z.push(pz);S.push(L)}
-  const geo={X,Z,S,n:32,L,H:null,kind:'road'},ta_=a.t|0,tb_=b.t|0;
-  if(ta_===tb_)netRoadStrip(g,geo,0,L,ox,oz,ta_,true,x,z);
-  else{let dd=Math.abs(a.dir-b.dir);if(dd>Math.PI)dd=2*Math.PI-dd;const Wa=NETW[ta_]||NETW[0],Wb=NETW[tb_]||NETW[0];
-    if(dd<Math.PI-0.45||!Wa.sw||!Wb.sw){netRoadStrip(g,geo,0,L/2,ox,oz,ta_,true,x,z);netRoadStrip(g,geo,L/2,L,ox,oz,tb_,true,x,z);return}
-    /* straight change of road type: the narrow road runs through, the wide one tapers into it */
-    const wideA=Wa.hw>=Wb.hw,w=wideA?a:b,n=wideA?b:a,dw=wideA?da:db,dn=wideA?db:da,Ww=wideA?Wa:Wb,Wn=wideA?Wb:Wa,tn=wideA?tb_:ta_;
-    netRoadStrip(g,geo,0,L,ox,oz,tn,true,x,z);
-    for(const sd of[-1,1]){netPoly(g,[w.at(dw,sd*Ww.ae),w.at(dw,sd*Wn.ae),n.at(dn,-sd*Wn.ae)],0.0604,roadMat,'#74787d',ox,oz);
-      netPoly(g,[w.at(dw,sd*Ww.ae),w.at(dw,sd*Ww.hw),n.at(dn,-sd*Wn.hw),n.at(dn,-sd*Wn.ae)],0.075,paveMat,'#b9bdc3',ox,oz)}}}
+  const geo={X,Z,S,n:32,L,H:null,kind:'road'},ta_=a.t|0,tb_=b.t|0,Wa=netAW(a),Wb=netAW(b);
+  if(ta_===tb_&&Wa===Wb){netRoadStrip(g,geo,0,L,ox,oz,ta_,true,x,z,Wa);return}
+  let dd=Math.abs(a.dir-b.dir);if(dd>Math.PI)dd=2*Math.PI-dd;
+  if(dd<Math.PI-0.45){netRoadStrip(g,geo,0,L/2,ox,oz,ta_,true,x,z,Wa);netRoadStrip(g,geo,L/2,L,ox,oz,tb_,true,x,z,Wb);return}
+  /* straight change of road type: one road runs through and the other tapers into it. The road with sidewalks runs
+     through (else the narrower one); where only it has sidewalks they grow out of nothing across the piece */
+  const thruB=Wa.sw!==Wb.sw?Wb.sw:Wb.hw<=Wa.hw,w=thruB?a:b,n=thruB?b:a,dw=thruB?da:db,dn=thruB?db:da,Ww=thruB?Wa:Wb,Wn=thruB?Wb:Wa,tn=thruB?tb_:ta_;
+  if(Wn.sw&&!Ww.sw){netRoadStrip(g,geo,0,L,ox,oz,tn,true,x,z,Object.assign({},Wn,{sw:false}));
+    for(const sd of[-1,1]){netPoly(g,[w.at(dw,sd*Ww.hw),w.at(dw,sd*Wn.ae),n.at(dn,-sd*Wn.ae)],0.0604,roadMat,'#74787d',ox,oz);
+      netPoly(g,[w.at(dw,sd*Ww.hw),n.at(dn,-sd*Wn.hw),n.at(dn,-sd*Wn.ae)],0.075,paveMat,'#b9bdc3',ox,oz)}return}
+  netRoadStrip(g,geo,0,L,ox,oz,tn,true,x,z,Wn);
+  for(const sd of[-1,1]){netPoly(g,[w.at(dw,sd*Ww.ae),w.at(dw,sd*Wn.ae),n.at(dn,-sd*Wn.ae)],0.0604,roadMat,'#74787d',ox,oz);
+    if(Ww.sw&&Wn.sw)netPoly(g,[w.at(dw,sd*Ww.ae),w.at(dw,sd*Ww.hw),n.at(dn,-sd*Wn.hw),n.at(dn,-sd*Wn.ae)],0.075,paveMat,'#b9bdc3',ox,oz)}}
 /* zebra crossings and stop lines where free-angle roads with sidewalks enter a junction */
 function netCrossings(g,A,RJn,ox,oz){if(A.length<3)return;const Y=0.0609;
   for(const a of A){if(!a.g)continue;const W=NETW[a.t|0]||NETW[0];if(!W.sw||a.t===5)continue;const d=Math.min(RJn,a.g.L*0.5);if(a.g.L*0.5<RJn+0.25)continue;const ae=W.ae;
@@ -8070,12 +8080,13 @@ function netSignals(g,i,nid,A,RJn,ox,oz){const sm=sigMode(i),aeOf=a=>(NETW[a.t|0
 /* ---------- planning a new piece of road or track ---------- */
 const NB={start:null,ctl:null,hover:null,plan:null,ghost:null,gest:null,ptrs:new Set(),angle:false,grid:false,inner:false,tan:null};
 const netModeOn=tl=>!!tl&&(tl.id==='road'||tl.id==='rail')&&['','bend','free'].includes(CV.mode);
-/* snap a world point: existing node, point on an existing segment, plain grid road tile, or free */
+/* snap a world point: existing node, point on an existing segment, plain grid road tile, or free.
+   A road snaps from anywhere on its width and a little past its edge, so a finger tap on it always joins it. */
 function netSnap(x,z,kind,from){const net=netG(),M=netMap();let best=null,bd=0.55;
   for(const id in net.n){const p=net.n[id],j=M.node.get(+id);if(j===undefined)continue;const L=M.seg.get(j);if(L&&!L.some(o=>o.g.kind===kind))continue;const d=Math.hypot(p[0]-x,p[1]-z);if(d<bd){bd=d;best={x:p[0],z:p[1],node:+id}}}
   if(best)return best;
   const j0=netTile(x,z);if(j0>=0&&M.nodeAt.has(j0)){const id=M.nodeAt.get(j0),p=net.n[id];const L=M.seg.get(j0);if(!L||L.some(o=>o.g.kind===kind))return{x:p[0],z:p[1],node:id}}
-  bd=0.45;for(const g of M.geo.values()){if(g.kind!==kind)continue;const r=netNear(g,x,z);if(r.d<bd){bd=r.d;if(r.s<NETMINJ||r.s>g.L-NETMINJ){const id=r.s<g.L/2?g.sg.a:g.sg.b,q=net.n[id];best={x:q[0],z:q[1],node:id}}else best={x:g.X[r.k],z:g.Z[r.k],seg:g.sg.id,t:g.TT[r.k]}}}
+  bd=1e9;for(const g of M.geo.values()){if(g.kind!==kind)continue;const r=netNear(g,x,z),lim=kind==='road'?netHW(g.sg.t)+0.45:0.45;if(r.d<lim&&r.d<bd){bd=r.d;if(r.s<NETMINJ||r.s>g.L-NETMINJ){const id=r.s<g.L/2?g.sg.a:g.sg.b,q=net.n[id];best={x:q[0],z:q[1],node:id}}else best={x:g.X[r.k],z:g.Z[r.k],seg:g.sg.id,t:g.TT[r.k]}}}
   if(best)return best;
   if(j0>=0&&!M.T[j0]&&tiles[j0].t===NETKT(kind)){const[cx,cz]=wpos(j0);return{x:cx,z:cz,grid:j0}}
   let px=x,pz=z;
@@ -8119,7 +8130,9 @@ function netPlan(tl,A,B,C1,C2){const kind=NETKIND(tl),KT=NETKT(kind),M=netMap(),
   for(const E of[A,B]){const j=netTile(E.x,E.z);if(j<0)return{bad:'Off the map.'};const t=tiles[j];if(t.lock||(isEntry(j)&&!(E.grid!==undefined&&j%N===STUB-1)))return{bad:isEntry(j)?'Join the highway at the end of its road into your land.':'That land is not yours yet. Buy the area first.'};
     if(E.node===undefined&&E.seg===undefined&&E.grid===undefined){if(M.T[j])return{bad:'Too close to another '+(kind==='rail'?'track':'road')+'. Join it, or start further away.'};
       if(t.t===T.RIVER||inRiverBand(j%N,(j/N)|0)&&t.t!==T.ROAD&&t.t!==T.RAIL)return{bad:'Start and end on dry land.'};
-      if(!(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4&&!t.l)||t.t===KT))return{bad:'Blocked by buildings. Bulldoze them first.'}}}
+      if(!(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4&&!t.l)||t.t===KT))return{bad:'Blocked by buildings. Bulldoze them first.'};
+      /* this end becomes a dead end: its turning circle must stay clear of other roads */
+      if(kind==='road'){const R2=netDER2(type)+0.02;for(const g of M.geo.values())if(g.kind==='road'&&!g.sg.e&&netNear(g,E.x,E.z).d<netHW(g.sg.t)+R2)return{bad:'Too close to another road. Join it, or end further away.'}}}}
   if(netTile(A.x,A.z)===netTile(B.x,B.z))return{bad:'Too short. Drag further.'};
   for(const E of[A,B])if(E.node===undefined){for(const id in G.net.n){const q=G.net.n[id];if(Math.hypot(q[0]-E.x,q[1]-E.z)<NETMINJ)return{bad:'Too close to another junction. Join it, or move further away.'}}}
   for(const c of cuts)if(c.node===undefined){for(const id in G.net.n){const q=G.net.n[id];if(Math.hypot(q[0]-c.p[0],q[1]-c.p[1])<NETMINJ)return{bad:'This would make junctions too close together. Cross further from the junction, or join it.'}}}

@@ -9720,9 +9720,11 @@ function netGP(g){if(!TERRAIN_ON||typeof TB==='undefined'||!TB)return null;const
   const ha=netNodeH(g.sg.a),hb=netNodeH(g.sg.b),w=Math.max(1,Math.round((g.sg.e>0?3:1.5)/ds)),t=new Float32Array(n+1);
   for(let pass=0;pass<3;pass++){h[0]=ha;h[n]=hb;let acc=0;const pre=new Float64Array(n+2);for(let k=0;k<=n;k++){acc+=h[k];pre[k+1]=acc}
     for(let k=0;k<=n;k++){const a=Math.max(0,k-w),b=Math.min(n,k+w);t[k]=(pre[b+1]-pre[a])/(b-a+1)}h.set(t)}
-  h[0]=ha;h[n]=hb;const G0=0.12*ds;
-  for(let it=0;it<6;it++){for(let k=1;k<=n;k++){const lo=h[k-1]-G0,hi=h[k-1]+G0;if(k<n)h[k]=Math.min(hi,Math.max(lo,h[k]))}for(let k=n-1;k>=0;k--){const lo=h[k+1]-G0,hi=h[k+1]+G0;if(k>0)h[k]=Math.min(hi,Math.max(lo,h[k]))}h[0]=ha;h[n]=hb}
+  h[0]=ha;h[n]=hb;const G0=0.12*ds,fx=new Uint8Array(n+1),ra=netJR(g.sg.a),rb=netJR(g.sg.b);for(let k=0;k<=n;k++){if(g.S[k]<=ra){h[k]=ha;fx[k]=1}else if(g.S[k]>=g.L-rb){h[k]=hb;fx[k]=1}}fx[0]=fx[n]=1;
+  for(let it=0;it<6;it++){for(let k=1;k<=n;k++){if(fx[k])continue;const lo=h[k-1]-G0,hi=h[k-1]+G0;h[k]=Math.min(hi,Math.max(lo,h[k]))}for(let k=n-1;k>=0;k--){if(fx[k])continue;const lo=h[k+1]-G0,hi=h[k+1]+G0;h[k]=Math.min(hi,Math.max(lo,h[k]))}}
   for(let k=0;k<=n;k++)if(h[k]<0)h[k]=0;g._gp=h;g._gpk=key;return h}
+/* how far from a junction the road stays level (the junction piece is flat) */
+function netJR(id){const d=NET.deg.get(id)||0;if(d<2&&!(G.net.n[id]&&netGridArms(id)))return 0.3;let hw=0.5;for(const g of NET.geo.values())if(g.sg.a===id||g.sg.b===id)hw=Math.max(hw,netHW(g.sg.t|0));return Math.min(3.2,Math.max(netRJ(id),hw)+0.25)}
 function netGPs(g,s){const h=netGP(g);if(!h)return 0;const S=g.S;let lo=0,hi=g.n;if(s<=0)return h[0];if(s>=g.L)return h[g.n];while(hi-lo>1){const m=(lo+hi)>>1;if(S[m]<=s)lo=m;else hi=m}const f=(s-S[lo])/Math.max(1e-9,S[hi]-S[lo]);return h[lo]+(h[hi]-h[lo])*f}
 /* write the profiles into the ground (after the old grid grading) */
 function netTerrGrade(){if(!TERRAIN_ON||!G||!G.net||!G.net.s.length)return;const M=netMap(),L=TC.length;
@@ -9732,9 +9734,12 @@ function netTerrGrade(){if(!TERRAIN_ON||!G||!G.net||!G.net.s.length)return;const
     for(let k=0;k<=g.n;k+=step){const s=g.S[k];if(sg.e>0&&g.v0!==undefined&&s>g.v0+0.05&&s<g.v1-0.05)continue;const x=g.X[k]+HALF,z=g.Z[k]+HALF;
       for(let cz=Math.ceil(z-rr);cz<=Math.floor(z+rr);cz++)for(let cx=Math.ceil(x-rr);cx<=Math.floor(x+rr);cx++){if(cx<1||cz<1||cx>=N||cz>=N)continue;const d=Math.hypot(cx-x,cz-z);if(d>rr)continue;const q=cz*TN+cx;
         if(!B[q]){B[q]=1e9;touched.push(q)}if(d<B[q]){B[q]=d;Hh[q]=gp[k];R[q]=hw;Wd[q]=1}}}}
+  /* a flat round pad at each junction, as wide as the junction piece */
+  const NP=[];for(const id in G.net.n){const p=G.net.n[id];if(p[2]||!NET.node.has(+id))continue;const r0=netJR(+id);if(r0<0.5)continue;NP.push([p[0]+HALF,p[1]+HALF,r0,netNodeH(+id)])}
   for(const q of touched){const d=B[q],hw=R[q];B[q]=0;if(TPD&&TPD[q]===0)continue;const x=q%TN,z=(q/TN)|0;
     let wet=false;for(let dz=-1;dz<=0&&!wet;dz++)for(let dx=-1;dx<=0;dx++){const tx=x+dx,tz=z+dz;if(tx<0||tz<0||tx>=N||tz>=N)continue;const t=tiles[tz*N+tx];if(t.t===T.RIVER||t.w){wet=true;break}}if(wet)continue;
     const w=(d<=hw+0.15?1:1-sstep(hw+0.15,hw+1.4,d))*Wd[q];if(w<=0)continue;TC[q]=TC[q]+(Hh[q]-TC[q])*w}
+  for(const[x,z,r0,hn]of NP){const rr=r0+1.3;for(let cz=Math.ceil(z-rr);cz<=Math.floor(z+rr);cz++)for(let cx=Math.ceil(x-rr);cx<=Math.floor(x+rr);cx++){if(cx<1||cz<1||cx>=N||cz>=N)continue;const q=cz*TN+cx;if(TPD&&TPD[q]===0)continue;const d=Math.hypot(cx-x,cz-z);if(d>rr)continue;const w=d<=r0?1:1-sstep(r0,rr,d);TC[q]=TC[q]+(hn-TC[q])*w}}
   TMAX=0;for(let k=0;k<L;k++)if(TC[k]>TMAX)TMAX=TC[k]}
 {const _trl=terrRoadLevel;terrRoadLevel=function(){_trl();try{netTerrGrade()}catch(e){console.warn(e)}}}
 /* roads changed: re-grade the ground */

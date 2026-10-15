@@ -8579,7 +8579,7 @@ function segT(g,s){const S=g.S;let lo=0,hi=g.n;if(s<=0)return 0;if(s>=g.L)return
 const zSq=(c,h=ZCELL/2*0.98)=>fpRect(c.x,c.z,c.ry,h,h);
 /* ---- generation ---- */
 function zValid(c,H){const j=netTile(c.x,c.z);if(j<0)return false;const t=tiles[j];if(t.lock||isEntry(j))return false;if(wetPt(c.x,c.z))return false;
-  const M=netMap();if((t.t===T.ROAD||t.t===T.RAIL)&&!M.T[j])return false;if(NETV.cover.has(j)||NETWIDE.has(j))return false;
+  const M=netMap();if((t.t===T.ROAD||t.t===T.RAIL)&&!M.T[j])return false;if(NETV.cover.has(j))return false;{const wid=NETWIDE.get(j);if(wid!==undefined&&wid!==c.seg)return false}
   const x=j%N,z=(j/N)|0;
   for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){if(!inB(x+dx,z+dz))continue;const k=idx(x+dx,z+dz),u=tiles[k];
     for(const o of M.seg.get(k)||[]){if(o.g.sg.id===c.seg)continue;const r=netNear(o.g,c.x,c.z,o.g.e0[o.k]-0.3,o.g.e1[o.k]+0.3);if(r.d<(o.g.kind==='rail'?0.2:netHW(o.g.sg.t))+ZGAP)return false}
@@ -8609,7 +8609,7 @@ function zBldOK(b){const C=fpRect(b.x,b.z,b.ry,b.hw,b.hd),M=netMap();
   const fx=b.x-Math.sin(b.ry)*0,fz=b.z,fwx=b.x+Math.sin(b.ry)*(b.hd+0.03),fwz=b.z+Math.cos(b.ry)*(b.hd+0.03),j=netTile(fwx,fwz);let near=false;
   if(j>=0){const x=j%N,z=(j/N)|0;for(let dz=-2;dz<=2&&!near;dz++)for(let dx=-2;dx<=2&&!near;dx++){if(!inB(x+dx,z+dz))continue;for(const o of M.seg.get(idx(x+dx,z+dz))||[]){if(o.g.kind!=='road')continue;const r=netNear(o.g,fwx,fwz,o.g.e0[o.k]-0.3,o.g.e1[o.k]+0.3);if(r.d<netHW(o.g.sg.t)+0.15){near=true;break}}}}
   if(!near)return false;
-  for(const p of fpPtsR(b.x,b.z,b.ry,b.hw-0.02,b.hd-0.02)){const k=netTile(p[0],p[1]);if(k<0)return false;if(NETWIDE.has(k))return false;for(const o of M.seg.get(k)||[]){const r=netNear(o.g,p[0],p[1],o.g.e0[o.k]-0.2,o.g.e1[o.k]+0.2);if(r.d<(o.g.kind==='rail'?0.2:netHW(o.g.sg.t))-0.01)return false}
+  for(const p of fpPtsR(b.x,b.z,b.ry,b.hw-0.02,b.hd-0.02)){const k=netTile(p[0],p[1]);if(k<0)return false;for(const o of M.seg.get(k)||[]){const r=netNear(o.g,p[0],p[1],o.g.e0[o.k]-0.2,o.g.e1[o.k]+0.2);if(r.d<(o.g.kind==='rail'?0.2:netHW(o.g.sg.t))-0.01)return false}
     const u=tiles[k];if((u.t===T.ROAD||u.t===T.RAIL)&&!M.T[k])return false}
   return true}
 /* which cells each building stands on, and which tiles it covers */
@@ -9229,7 +9229,7 @@ function czG(){if(!G)return null;if(!G.cz){G.cz={n:[[0,0,0,0],[0,0,0,0],[0,0,0,0
 let CZCOV={s:0,h:0,u:0,t:0},_czCovT=-1;
 function czCover(){if(!S||!S.lists)return CZCOV;if(_czCovT===G.day)return CZCOV;_czCovT=G.day;
   const sch=[];for(const i of OWNIDX){const t=tiles[i];if((t.t===T.SCHOOL||t.t===T.COLLEGE)&&access[i]>=0){const sv=SVT(t);sch.push([i%N,(i/N)|0,sv.r,t.t===T.SCHOOL?(t.l===2?3:1):(t.l===2?4:2)])}}
-  let tot=0,s=0,h=0,u=0;for(const i of S.lists.home){const c=capOf(tiles[i]);if(!c)continue;tot+=c;const x=i%N,z=(i/N)|0;let fs=0,fh=0,fu=0;
+  let tot=0,s=0,h=0,u=0;for(const i of S.lists.home){const t0=tiles[i];let c=0;try{c=t0&&t0.t===T.RES?capOf(t0):0}catch(e){c=0}if(!c)continue;tot+=c;const x=i%N,z=(i/N)|0;let fs=0,fh=0,fu=0;
     for(const[sx,sz,r,k]of sch){if((sx-x)**2+(sz-z)**2>r*r)continue;if(k===1||k===3)fs=1;if(k>=2)fh=1;if(k===4)fu=1}s+=fs*c;h+=fh*c;u+=fu*c}
   CZCOV=tot?{s:s/tot,h:h/tot,u:u/tot,t:tot}:{s:0,h:0,u:0,t:0};return CZCOV}
 function czMonth(){const c=czG();if(!c)return;const n=c.n,P=(S&&S.pop)||0,cv=czCover(),lib=S.gov&&S.gov.lib?1.2:1,mv=(a,e,b,f,k)=>{const q=n[a][e]*Math.max(0,Math.min(1,k));n[a][e]-=q;n[b][f]+=q;return q};
@@ -9269,7 +9269,7 @@ function czTaxK(){if(!G||!G.cz||!S||!S.pop)return 1;return Math.max(0.85,Math.mi
 /* ---- people living in a home (made up from the tile, so the same each time) ---- */
 function czRng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296}}
 function czPick(r,w){let s=0;for(const v of w)s+=v;let q=r()*s;for(let k=0;k<w.length;k++){q-=w[k];if(q<=0)return k}return w.length-1}
-function czPeople(i){const t=tiles[i],c=czG(),r=czRng((t.seed||i)*2654435761+i),cap=capOf(t),out=[],n=c?c.n:null;if(!cap)return out;
+function czPeople(i){const t=tiles[i],c=czG(),r=czRng((t.seed||i)*2654435761+i);let cap=0;try{cap=capOf(t)}catch(e){}const out=[],n=c?c.n:null;if(!cap)return out;
   const fam=LAST[(r()*LAST.length)|0],ages=n?n.map(a=>a.reduce((x,y)=>x+y,0)):CZAGE;
   for(let k=0;k<Math.min(cap,5);k++){const sur=k>0&&r()<0.35?LAST[(r()*LAST.length)|0]:fam,a=czPick(r,ages),e=czPick(r,n?n[a]:CZIN[a]);
     const age=a===0?2+((r()*12)|0):a===1?13+((r()*6)|0):a===2?19+((r()*46)|0):65+((r()*25)|0);out.push({name:FIRST[(r()*FIRST.length)|0]+' '+sur,age,a,e,h:r()})}

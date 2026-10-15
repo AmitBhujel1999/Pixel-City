@@ -551,7 +551,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <button id="sndHint" class="card" hidden><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/></svg>Tap anywhere to turn on sound</button>
   <div id="lvlPop" class="card" hidden role="dialog" aria-label="Level up"><div class="lpBurst"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#f2c14e"/></svg><b id="lpNum">2</b></div>
     <p class="lpK">Level up!</p><h2 id="lpName">Hamlet</h2><div class="lpPrize"><span>Prize money</span><b id="lpMoney" class="mono">$0</b></div><div id="lpUnl"></div><button id="lpGo">Continue</button></div>
-  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 23</p><ul><li><b>Power lines and water pipes</b><span>At the end of the Power and Water menus. Join two separate road networks so a power plant or pump on one feeds the other.</span></li><li><b>Hydro power and river floods</b><span>Hydro power plant (140 MW, clean) next to the river. Rivers can now flood and damage buildings by the water; a hydro plant halves the chance.</span></li><li><b>Service helicopters</b><span>In bigger cities police, fire and medical helicopters fly out to some call-outs and back.</span></li><li><b>Old roads, new look</b><span>Street tool: 'Give old roads the new look' turns old grid streets into new roads with lane arrows, crossings, signs and lane rules.</span></li><li><b>Trams on curved roads</b><span>Tram rails and wires now follow curved roads. Post vans start from post offices. Up to 220 vehicles on the road at once on computers.</span></li></ul><button id="wnGo">Let's play</button></div>
+  <div id="whatsNew" class="card" hidden role="dialog" aria-label="What's new"><h2>What's new</h2><p class="wnSub">Pixel's City update 24</p><ul><li><b>Citizens</b><span>Tap the population: ages, school level and jobs of your people, who works where, births, deaths and who moved in. A home's card lists some of the people living there.</span></li><li><b>Taxes, trade and tourism</b><span>Separate tax rates for low and high density homes and shops and for offices. Factories export spare goods and import what is missing. The Citizens panel shows trade and tourists.</span></li><li><b>Heating, snow and park areas</b><span>Boiler stations and geothermal plants heat homes on cold maps. Snow dumps send ploughs out. A park gate turns parks around it into a park area that sells tickets.</span></li><li><b>Junctions in the air and interchanges</b><span>Elevated roads can now join each other up on the deck. The road bar has a one-tap highway interchange, and old avenues and highways can be widened to the new look.</span></li><li><b>Map editor and hills</b><span>New game: open the map editor to paint forests, fertile land, oil and ore, save the map and start cities on it. Tick Hills and valleys to try a hilly city.</span></li></ul><button id="wnGo">Let's play</button></div>
   <aside id="inspect" class="card" hidden></aside>
   <aside id="agent" class="card" hidden aria-live="polite"></aside>
   <div id="menu" class="card" hidden>
@@ -592,6 +592,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <div id="scPick" class="scgrid" role="group" aria-label="Scenario"></div>
       <p id="scDesc" class="scdesc"></p>
       <label class="tutchk"><input type="checkbox" id="newTut" checked> Show me how to play (step-by-step tutorial)</label>
+      <label class="tutchk"><input type="checkbox" id="newHills"> Hills and valleys (test): the land rises and falls, roads climb the slopes</label>
       <form id="newCityForm"><input id="newName" placeholder="City name" maxlength="24" spellcheck="false" aria-label="New city name"><button type="submit">Start</button></form>
       <button class="back" type="button">Back</button>
     </section>
@@ -636,9 +637,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <div id="trafPanel" class="card" hidden></div><div id="tranPanel" class="card" hidden></div><div id="budPanel" class="card" hidden></div>
   <div id="taxPanel" class="card" hidden>
     <h3>Tax rates</h3>
-    <div class="trow" data-k="R"><span class="tn" style="color:var(--R)">Residential</span><button data-d="-1" aria-label="Lower residential tax">−</button><b class="mono" id="tpR">9%</b><button data-d="1" aria-label="Raise residential tax">+</button><span class="ti mono" id="tiR">$0</span></div>
-    <div class="trow" data-k="C"><span class="tn" style="color:var(--C)">Commercial</span><button data-d="-1" aria-label="Lower commercial tax">−</button><b class="mono" id="tpC">9%</b><button data-d="1" aria-label="Raise commercial tax">+</button><span class="ti mono" id="tiC">$0</span></div>
-    <div class="trow" data-k="I"><span class="tn" style="color:var(--I)">Industrial</span><button data-d="-1" aria-label="Lower industrial tax">−</button><b class="mono" id="tpI">9%</b><button data-d="1" aria-label="Raise industrial tax">+</button><span class="ti mono" id="tiI">$0</span></div>
+    <div class="trow" data-k="R"><span class="tn" style="color:var(--R)">Homes · low density</span><button data-d="-1" aria-label="Lower residential tax">−</button><b class="mono" id="tpR">9%</b><button data-d="1" aria-label="Raise residential tax">+</button><span class="ti mono" id="tiR">$0</span></div>
+    <div class="trow" data-k="RH"><span class="tn" style="color:var(--R)">Homes · high density</span><button data-d="-1" aria-label="Lower high density home tax">−</button><b class="mono" id="tpRH">9%</b><button data-d="1" aria-label="Raise high density home tax">+</button><span class="ti mono" id="tiRH">$0</span></div>
+    <div class="trow" data-k="C"><span class="tn" style="color:var(--C)">Shops · low density</span><button data-d="-1" aria-label="Lower commercial tax">−</button><b class="mono" id="tpC">9%</b><button data-d="1" aria-label="Raise commercial tax">+</button><span class="ti mono" id="tiC">$0</span></div>
+    <div class="trow" data-k="CH"><span class="tn" style="color:var(--C)">Shops · high density</span><button data-d="-1" aria-label="Lower high density shop tax">−</button><b class="mono" id="tpCH">9%</b><button data-d="1" aria-label="Raise high density shop tax">+</button><span class="ti mono" id="tiCH">$0</span></div>
+    <div class="trow" data-k="O"><span class="tn" style="color:var(--O)">Offices</span><button data-d="-1" aria-label="Lower office tax">−</button><b class="mono" id="tpO">9%</b><button data-d="1" aria-label="Raise office tax">+</button><span class="ti mono" id="tiO">$0</span></div>
+    <div class="trow" data-k="I"><span class="tn" style="color:var(--I)">Industry</span><button data-d="-1" aria-label="Lower industrial tax">−</button><b class="mono" id="tpI">9%</b><button data-d="1" aria-label="Raise industrial tax">+</button><span class="ti mono" id="tiI">$0</span></div>
     <div class="trow" data-k="F"><span class="tn">Utility bills</span><button data-d="-1" aria-label="Lower utility bills">−</button><b class="mono" id="tpF">100%</b><button data-d="1" aria-label="Raise utility bills">+</button><span class="ti mono" id="tiF">$0</span></div>
     <p class="tnote" id="billNote"></p>
     <p class="tnote">Figures are this month's expected tax income. Higher taxes slow demand for that zone. Residential tax also lowers happiness.</p>
@@ -851,7 +855,11 @@ const LOTCOL={2:'#cfe0c4',3:'#c8d6e8',4:'#e2d5b8'};
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const INTERVAL=[0,650,260,90], CARSPEED=[0,1,1.8,3];
 /* hills in the city (patch_terrain.py and later): off for now, see patch_terroff.py */
-const TERRAIN_ON=false;
+function hillsOf(id){if(!id)return false;try{const o=JSON.parse(store('pc-city-'+id)||'null');return!!(o&&o.G&&o.G.hills)}catch(e){}return false}
+const TERRAIN_ON=(()=>{let go=null;try{go=JSON.parse(store('pc-go')||'null')}catch(e){}if(go&&go.sc&&!go.id)return!!go.hills;let id=go&&go.id;
+  if(!id){try{const a=JSON.parse(store('pc-cities')||'[]'),last=store('pc-last');const l=Array.isArray(a)?a.slice().sort((p,q)=>(q.t||0)-(p.t||0)):[];id=(l.find(c=>c.id===last)||l[0]||{}).id}catch(e){}}
+  return hillsOf(id)})();
+window.__newHills=TERRAIN_ON;
 const TOOLS=[
  {id:'select',nm:'Select',key:'Esc',kind:'none',col:'#e8eef3',ct:'inspect'},
  {id:'road',nm:'Street',key:'1',kind:'line',col:'#9aa2ad',ct:'$10',rt:0},
@@ -2626,6 +2634,7 @@ function buildTile0(i,anim){
       break;}
     case T.PARK:{
       rot=faceRoad(x,z,r);
+      if(SZ===9){parkGateDraw(g,Y0);break}
       if(PC_MODELS['park_'+SZ]){/* Blender park (parks.py), with the city's trees planted at its tree spots */
         model(g,'park_'+SZ,PARKCOL,0,0,0);for(const[tx,ty,ts]of(PARKTREES['park_'+SZ]||[]))tree(tx,-ty,ts);
         if(SZ===4)for(const[dx,dz,c,ry]of[[0.05,-0.3,'#8b5a2b',0.4],[-0.3,-0.05,'#f2f2ee',-1.1],[0.3,0.15,'#2a2a2a',2.2]]){const dg=new THREE.Group();dg.position.set(dx,0.035,dz);dg.rotation.y=ry;g.add(dg);aniRig(dg,'dog',{fur:c,fur2:c==='#f2f2ee'?'#d9c9a8':'#f2e6d0'},0.085)}
@@ -2735,7 +2744,7 @@ function buildTile0(i,anim){
         part(g,CONE,'#2b2b2b',0.15,0.14,0.15,0.3,Y0,0.3);part(g,CONE,'#353535',0.1,0.1,0.1,0.18,Y0,0.38);
         slab('#6d757d',0.03,0.03,0.34,0.2,Y0+0.22,0.14,0.55);box(g,'#f7d154',0.46,0.04,0.02,-0.18,Y0+0.3,0.382,false);
         em.push([0.2,Y0+1.1,-0.18]);
-      } else if(SZ===4){hydroDraw(g,Y0);}else if(SZ===3){box(g,'#86bd62',0.98,0.03,0.98,0,0,0,false);
+      } else if(SZ===4){hydroDraw(g,Y0);}else if(SZ===5||SZ===6){heatDraw(g,Y0,em,SZ===6);}else if(SZ===3){box(g,'#86bd62',0.98,0.03,0.98,0,0,0,false);
         part(g,CYL,'#eef0f2',0.035,1.25,0.035,0,Y0,0);box(g,'#e4e7ea',0.07,0.06,0.14,0,Y0+1.22,0.02);part(g,BALL,'#d7dbe0',0.03,0.03,0.03,0,Y0+1.25,0.1,false);
         windRotor(i,x,z,rot,Y0+1.25);
         box(g,'#c9ccd1',0.12,0.1,0.1,0.26,Y0,0.3);shrub(-0.3,0.3);shrub(0.34,-0.3);
@@ -2860,7 +2869,7 @@ function buildTile0(i,anim){
       break;}
     case T.GARB:{
       rot=faceRoad(x,z,r);
-      if(SZ===0){lot('#b0b4b8');
+      if(SZ===3){snowDumpDraw(g,Y0)}else if(SZ===0){lot('#b0b4b8');
         model(g,'ind1_warehouse',{wall:'#9aa6ad',roof:'#5f6b73'},-0.1,Y0-0.02,-0.16,0,[0.66/0.84,1,0.42/0.56]);
         box(g,'#4a5058',0.9,0.006,0.3,0,Y0,0.3,false);veh(-0.2,0.3,Math.PI/2,'#2f8f4e','#d9d9d4',0.3,0.12);veh(0.2,0.3,Math.PI/2,'#2f8f4e','#d9d9d4',0.3,0.12);
       } else if(SZ===1){lot('#b0b4b8');
@@ -3873,7 +3882,7 @@ function utilities(){power.fill(0);water.fill(0);garbC.fill(0);const nc=labelCom
   if(SC.free){power.fill(1);water.fill(1);U.pw.made=Math.max(U.pw.made,U.pw.need);U.pw.short=false;U.wt.made=Math.max(U.wt.made,U.wt.need);U.wt.short=false}
   /* garbage: trucks collect, landfill stores, recycling and incinerators take some */
   let lt=0,trucks=0,rec=0,burn=0;U.gsites=[];
-  for(const i of OWNIDX){const t=tiles[i];if(t.t===T.LANDFILL){lt++;if(feedRoad(i)>=0)U.gsites.push(i)}else if(t.t===T.GARB){const sv=SVI(15,t.l);if(feedRoad(i)>=0){trucks+=sv.trucks*budOut('garb');rec+=sv.rec||0;burn+=sv.burn||0;U.gsites.push(i)}}}
+  for(const i of OWNIDX){const t=tiles[i];if(t.t===T.LANDFILL){lt++;if(feedRoad(i)>=0)U.gsites.push(i)}else if(t.t===T.GARB){const sv=SVI(15,t.l);if(!sv.snow&&feedRoad(i)>=0){trucks+=sv.trucks*budOut('garb');rec+=sv.rec||0;burn+=sv.burn||0;U.gsites.push(i)}}}
   const landCap=lt*LAND.cap,fill=G&&G.fill||0,full=lt===0||fill>=landCap;U.land.tiles=lt;U.land.cap=landCap;
   const landTrucks=lt?1+Math.floor(lt/6):0;const capT=(trucks+landTrucks)*TRUCK_T;const allowed=full?Math.min(capT,burn+rec):capT;const scale=capT>0?allowed/capT:0;
   const perLand=lt?landTrucks*TRUCK_T*scale/lt:0;
@@ -3953,7 +3962,7 @@ function tick(){
   const z=S.zones,n=Math.min(z.length,6+((z.length*0.08)|0));
   let changed=false;
   for(let k=0;k<n;k++){
-    const i=z[(Math.random()*z.length)|0],t=tiles[i],mi=maxLevel(i),m=Math.min(mi,zoneCap()),d=isOff(t)?D.o:D[t.t];
+    const i=z[(Math.random()*z.length)|0],t=tiles[i],mi=maxLevel(i),m=Math.min(mi,zoneCap()),d=zoneD(t);
     if(t.fire)continue;
     if(t.l<m&&d>0&&Math.random()<0.12+d*0.45){t.l++;buildTile(i,true);changed=true;addXP(XPGROW[t.l]);if(t.t===T.RES&&moveQ.length<5&&!moveQ.includes(i))moveQ.push(i)}
     else if(t.l>mi&&Math.random()<(mi===0?0.06:mi===1?0.02:0.012)){t.l--;buildTile(i);changed=true}
@@ -4028,7 +4037,7 @@ function monthEnd(){setTimeout(histPush,0);setTimeout(disMonth,0);const lp=loanP
 function monthEnd0(){
   S=stats();
   zoneMonth();S=stats();
-  const tour=chainMonth()+zoneTour()+railTake()+cargoTrade()+airTourism()+monTour()+(S.cnt[T.HELI]||0)*300+(SC.tour?(S.cnt[T.FUN]||0)*450:0);G.lastTour=tour;
+  const tour=econMonth()+chainMonth()+zoneTour()+railTake()+cargoTrade()+airTourism()+monTour()+(S.cnt[T.HELI]||0)*300+(SC.tour?(S.cnt[T.FUN]||0)*450:0);G.lastTour=tour;
   const bl=billsTotal();G.lastBills=bl;
   const inc=Math.round(taxIncome('R')+taxIncome('C')+taxIncome('I')+tour+bl);
   const up=Math.round((S.roadUp||0)+S.svcUp+RAILS.trains.length*120);
@@ -4999,7 +5008,7 @@ function hud(){
   $('#money').textContent=fmt(G.money);$('#money').style.color=G.money<0?'var(--bad)':'';
   const net=$('#net');net.textContent=(G.lastNet>0?'+':'')+fmt(G.lastNet);net.className='num small '+(G.lastNet>0?'pos':G.lastNet<0?'neg':'');
   net.title=`Income ${fmt(G.lastInc||0)} (utility bills ${fmt(G.lastBills||0)}) · upkeep ${fmt(G.lastUp||0)}`;
-  for(const k of'RCI'){const v=G['tax'+k];$('#tp'+k).textContent=v+'%';$('#ti'+k).textContent='+'+fmt(taxIncome(k)).replace('$','$')}
+  taxInit();for(const k of['R','RH','C','CH','O','I']){const v=G['tax'+k];$('#tp'+k).textContent=v+'%';$('#ti'+k).textContent='+'+fmt(taxPart(k))}
   {const b=bills();$('#tpF').textContent=Math.round((G.taxF??9)/9*100)+'%';$('#tiF').textContent='+'+fmt(b.pw+b.wt+b.gb);$('#billNote').textContent=`Utility bills this month: power ${fmt(b.pw)}, water ${fmt(b.wt)}, garbage ${fmt(b.gb)}. Homes and businesses only pay for services that reach them. Higher bills lower happiness a little.`}
   for(const[k,id]of[[2,'#dR'],[3,'#dC'],[4,'#dI'],['o','#dO']]){const v=D[k]||0,el=$(id),h=Math.abs(v)*50;
     el.style.height=h+'%';if(v>=0){el.style.bottom='50%';el.style.top='auto';el.style.opacity=1}else{el.style.top='50%';el.style.bottom='auto';el.style.opacity=.45}}
@@ -5099,7 +5108,7 @@ function happyParts(){const o=[];if(!S.pop)return o;const add=(v,nm,tip)=>o.push
   add(-Math.min(15,S.noPower*0.6),'Buildings without power','Build power and link it to your roads.');
   add(-Math.min(10,S.noWater*0.3),'Buildings without water','Build water towers or a pumping station.');
   let pol=0,res=0;for(const i of S.zones)if(tiles[i].t===T.RES){res++;if(pollu[i])pol++}add(res?-pol/res*25:0,'Homes in polluted air','Keep industry, landfills and the runway away from homes.');
-  const tx=-((G.taxR-9)*2.2+((G.taxC+G.taxI)/2-9)*0.8);add(tx,tx<0?'High taxes':'Low taxes',tx<0?'Lower taxes in the Tax panel.':'');{const gv=S.gov||{};if(gv.mayor)add(gv.mayor,'City government','');else if(S.pop>800)add(-2,"No mayor's office","Build a mayor's office (Gov button).");if(gv.court)add(gv.court,'Courts keep order','');if(gv.post)add(gv.post,'Post office','');if(gv.lib)add(gv.lib,'Library','')}trHappy(add);budHappy(add);matchHappy(add);civHappy(add);monHappy(add);{const bf=-((G.taxF??9)-9)*0.9;if(bf)add(bf,bf<0?'High utility bills':'Cheap utility bills',bf<0?'Lower utility bills in the Tax panel.':'')}
+  const tx=-((taxEff('R')-9)*2.2+((G.taxC+G.taxI)/2-9)*0.8);add(tx,tx<0?'High taxes':'Low taxes',tx<0?'Lower taxes in the Tax panel.':'');{const gv=S.gov||{};if(gv.mayor)add(gv.mayor,'City government','');else if(S.pop>800)add(-2,"No mayor's office","Build a mayor's office (Gov button).");if(gv.court)add(gv.court,'Courts keep order','');if(gv.post)add(gv.post,'Post office','');if(gv.lib)add(gv.lib,'Library','')}trHappy(add);budHappy(add);matchHappy(add);civHappy(add);monHappy(add);{const bf=-((G.taxF??9)-9)*0.9;if(bf)add(bf,bf<0?'High utility bills':'Cheap utility bills',bf<0?'Lower utility bills in the Tax panel.':'')}
   if(S.pop>250&&!S.schools)add(-8,'No school','Build a school.');
   add(Math.min(10,S.parks*2),'Parks','');if(S.schools)add(3,'Schools','');if(S.colleges)add(3,'Colleges','');
   if(S.dev){add(-S.trash/S.dev*20,'Garbage piling up','Build a garbage depot and paint a landfill.');add(-S.crime/S.dev*18,'Crime','Build police stations.');add(-S.sick/S.dev*12,'Sick residents','Build clinics and hospitals.')}
@@ -5236,7 +5245,7 @@ function renderInspect(){const i=inspI;if(i<0)return;const p=$('#inspect'),t=til
     if(zz.need)rows.push([{forest:'Forest',fert:'Fertile land',oil:'Oil left',ore:'Ore left'}[zz.need],zz.need==='oil'||zz.need==='ore'?yes(resLeft(i,zz.need)>0,Math.round(100*resLeft(i,zz.need)/10200)+'%','None'):yes(resOK(i,t.s|0),'Yes','No')]);
     if(zz.noise||noiseV[i]>40)rows.push(['Noise',noiseV[i]>=90?'<span class="no">Loud</span>':noiseV[i]>40?'<span style="color:var(--warn)">Some</span>':'<span class="ok">Quiet</span>']);
     if(zz.fin)rows.push(['City tax bonus',`+${Math.round(finBonus()*100)}% (all financial offices)`]);
-    if(t.t===2)rows.push(['Health care',yes(healthC[i],'Nearby','None')],['School',yes(schoolC[i],'Nearby','None')]);
+    if(t.t===2){czRows(i,t,rows);svc2HomeRows(i,rows)}else czJobRows(i,t,rows);if(t.t===2)rows.push(['Health care',yes(healthC[i],'Nearby','None')],['School',yes(schoolC[i],'Nearby','None')]);
     if(t.t===3)rows.push(['College',yes(collegeC[i],'Nearby','None')]);
     rows.push(['Fire cover',yes(fireC[i],'Yes','No')],['Police',yes(policeC[i],'Yes','No')],['Trash pickup',yes(garbC[i],'Yes','No')]);
     const pv=pollV[i],cr=t.crime||0;
@@ -5260,7 +5269,7 @@ function renderInspect(){const i=inspI;if(i<0)return;const p=$('#inspect'),t=til
         ['City stock',Object.entries(G.chain||{}).filter(([,v])=>v>=1).map(([k,v])=>`${CHI[k].nm} ${Math.round(v)}`).join(', ')||'Empty'],['Exports last month',fmt(G.chSold||0)]);
       if(access[i]<0)need='Build a road next to it so trucks can reach it.'}
     else if(t.t===T.HELI){rows.push(['Helicopters','2'],['Flights',`${heliOps.flights} so far`],['Tourism income','$300 / month'],['Size','3 × 3 tiles']);if(access[i]<0)need='Build a road next to it so crews can get there.'}
-    else if(t.t===T.SEWER||t.t===T.DEATH){civRows(t,sv,rows)}
+    else if(svc2Rows(i,t,sv,rows)){}else if(t.t===T.SEWER||t.t===T.DEATH){civRows(t,sv,rows)}
     else if(t.t===T.MONU){rows.push(['Effect',sv.eff],['Upkeep',fmt(sv.up)+' / month']);if(access[i]<0)need='Build a road next to it so visitors can come.'}
     else if(t.t===T.GOV){rows.push(['Effect',sv.eff],['Upkeep',fmt(sv.up)+' / month']);if(sv.gov==='trans')rows.push(['Manage','<button onclick="document.getElementById(\'tranBtn\').click()" style="padding:3px 8px">Open Transport</button>']);if(t.l===3)rows.push(['Extra tax now',fmt(Math.round((taxIncome('R')+taxIncome('C')+taxIncome('I'))*0.08/1.08))+' / month'])}
     else if(t.t===T.AIRPORT){const ops=airOf(i),on=withAir(ops,airportOn),dm=ops.dom;rows.push(['Type',dm?'Domestic · regional jets to towns in Nepal':'International · airliners to world cities'],['Flights',on?`${ops.flights||0} landed so far`:'<span class="no">None yet</span>'],['Tourists',on?`about ${Math.round(dm?20+S.pop*0.04:40+S.pop*0.08)} a day`:'<span class="no">None</span>'],['Tourism income',on?`${fmt(dm?Math.round(200+S.pop*0.25):Math.round(400+S.pop*0.5))} / month`:'<span class="no">None</span>'],['Size',(()=>{const b=bigDims(t.t,t.l);return b[0]+' × '+b[1]+' tiles'})()],['Noise','<span class="no">Near the runway</span>'],['Flights now','<button data-fld="fl" style="padding:2px 8px">Show flights</button>']);
@@ -6387,7 +6396,7 @@ function setSpeed(s){speed=s;{const pb=document.getElementById('paused');if(pb)p
 for(let k=0;k<4;k++)$('#sp'+k).onclick=()=>setSpeed(k);
 $('#taxBtn').onclick=()=>{const tp=$('#taxPanel'),show=tp.hidden;$('#menu').hidden=true;$('#trafPanel').hidden=true;$('#roadMenu').hidden=true;tp.hidden=!show;
   if(show){const b=$('#taxBtn').getBoundingClientRect();tp.style.left=Math.max(12,Math.min(innerWidth-tp.offsetWidth-12,b.left+b.width/2-tp.offsetWidth/2))+'px'}};
-document.querySelectorAll('#taxPanel .trow').forEach(r=>r.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k='tax'+r.dataset.k;G[k]=Math.max(0,Math.min(25,G[k]+ +b.dataset.d));computeDemand();hud()}));
+document.querySelectorAll('#taxPanel .trow').forEach(r=>r.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k='tax'+r.dataset.k;taxInit();G[k]=Math.max(0,Math.min(25,G[k]+ +b.dataset.d));computeDemand();hud()}));
 canvas.addEventListener('pointerdown',()=>{$('#taxPanel').hidden=true;$('#trafPanel').hidden=true;$('#tranPanel').hidden=true;$('#budPanel').hidden=true});
 $('#cityName').addEventListener('change',e=>{G.name=e.target.value.trim()||'Riverbend';drawSign(G.name);save()});
 $('#cityName').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();e.stopPropagation()});
@@ -6809,7 +6818,7 @@ function streetOf(r,ew){const x=r%N,z=(r/N)|0;if(ew===undefined){const e=isRoad(
   return ew?`${ST_N[z%ST_N.length]} Street`:`${AV_N[x%AV_N.length]} Avenue`}
 function bname(i){if(i===OUT)return'the highway';if(i>=0&&tiles[i]&&tiles[i].t===T.ROAD)return'Stop on '+streetOf(i);if(i<0)return'the bus depot';const t=tiles[i],s=t.seed;
   switch(t.t){case T.SCHOOL:return SCHOOLN[s%SCHOOLN.length]+' '+['Primary School','Middle School','High School'][t.l|0];case T.COLLEGE:return SCHOOLN[(s>>>3)%SCHOOLN.length]+' '+['Community College','College','University'][t.l|0];
-    case T.PARK:return PARKN[s%PARKN.length]+' '+['Park','Plaza','Central Park','Playground','Dog Park','Courts','Gardens','Community Garden','Skate Park'][t.l|0];case T.HOSP:return ST_N[(s>>>2)%ST_N.length]+' '+['Clinic','Hospital','Medical Center'][t.l|0];
+    case T.PARK:return PARKN[s%PARKN.length]+' '+['Park','Plaza','Central Park','Playground','Dog Park','Courts','Gardens','Community Garden','Skate Park','Park Gate'][t.l|0];case T.HOSP:return ST_N[(s>>>2)%ST_N.length]+' '+['Clinic','Hospital','Medical Center'][t.l|0];
     case T.FIRE:return['Fire Post','Fire Station','Fire Headquarters'][t.l|0]+' No. '+(1+s%9);case T.POLICE:return AV_N[(s>>>2)%AV_N.length]+' '+['Police Post','Police Station','Police HQ'][t.l|0];
     case T.PARKING:return PARKN[s%PARKN.length]+' Car Park';case T.METRO:return ST_N[(s>>>2)%ST_N.length]+' Metro';case T.PATH:return'Footpath';case T.MONU:return SV[31].sizes[t.l|0].nm;case T.SEWER:return t.l?'Water Treatment Works':'Sewage Outlet';case T.DEATH:return(AV_N[(s>>>2)%AV_N.length]||'Old')+(t.l?' Crematorium':' Cemetery');case T.STADIUM:return STB(t.l)>=2?SVI(T.STADIUM,t.l).nm:(t.seed%2?'Riverside':'Valley')+' Stadium';case T.GOV:return SV[21].sizes[t.l|0].nm;case T.RAIL:{const c=stCenter(i);return c>=0?ST_N[(tiles[c].seed>>>2)%ST_N.length]+(tiles[c].l===4?' Freight Yard':' Station'):'Railway'}case T.HELI:return(G&&G.name?G.name:'City')+' Heliport';case T.CHAIN:return chOf(t).nm;case T.CARGO:return(G&&G.name?G.name:'City')+' Cargo Airport';case T.FUN:return PARKN[s%PARKN.length]+' '+['Mini Golf','Ferris Wheel','Water Park','Adventure Park','Zoo'][t.l|0];case T.AIRPORT:return(G&&G.name?G.name:'City')+((t.l&4)?' International Airport':' Domestic Airport');case T.PART:return t.a>=0?bname(t.a):'a building';
     case T.GARB:case T.POWER:case T.WATER:return SVI(t.t,t.l).nm;case T.RES:case T.COM:case T.IND:return zt(t).ln[t.l];default:return'a building'}}
@@ -7392,19 +7401,19 @@ function exportCity(id){if(id===curId&&G)save();const str=store('pc-city-'+id);i
 $('#importBtn').onclick=()=>codeBox('import','','Paste a save code you exported from Pixel City on any device.');
 $('#codeText').addEventListener('keydown',e=>e.stopPropagation());
 window.__wn=()=>showWhatsNew(true);
-function showWhatsNew(force){if(!force&&store('pc-seen-update')==='23')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','23')}}
+function showWhatsNew(force){if(!force&&store('pc-seen-update')==='24')return;const d=$('#whatsNew');d.hidden=false;$('#wnGo').onclick=()=>{d.hidden=true;store('pc-seen-update','24')}}
 function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.theta,x:cam.target.x,z:cam.target.z};atTitle=true;$('#app').classList.add('at-title');$('#title').hidden=false;setSpeed(0);$('#paused').hidden=true;inspect(-1);deselect();setTool(TOOLS[0]);
   for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel','#tranPanel','#budPanel'])$(m).hidden=true;ov.user=null;applyOverlay();cam.dist=95;cam.phi=0.9;{const f=G?cityFocus():{x:0,z:6};cam.target.set(f.x,0,f.z)}zoomGoal=null;updateCamera();renderCities();
   $('#newName').value='';homePanel(null);syncHome();}
 function hideTitle(){atTitle=false;$('#app').classList.remove('at-title');$('#title').hidden=true;setSpeed(1);if(!store('pm-help-seen'))$('#help').hidden=false}
-function openCity(id){if(scOf(id)!==SC.id||(SC.river&&rwOf(id)!==RIVW)){if(curId&&G)save();store('pc-go',JSON.stringify({id}));location.reload();return}if(curId===id&&G){if(!camBefore||!camOk(camBefore.x,camBefore.z))camHome(id);else{cam.dist=camBefore.d;cam.phi=camBefore.p;cam.theta=camBefore.th;cam.target.set(camBefore.x,0,camBefore.z);updateCamera()}hideTitle();return}if(curId&&G)save();const str=store('pc-city-'+id);if(!str||!load(str)){toast('That city could not be opened.');return}
+function openCity(id){if(scOf(id)!==SC.id||(SC.river&&rwOf(id)!==RIVW)||hillsOf(id)!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({id}));location.reload();return}if(curId===id&&G){if(!camBefore||!camOk(camBefore.x,camBefore.z))camHome(id);else{cam.dist=camBefore.d;cam.phi=camBefore.p;cam.theta=camBefore.th;cam.target.set(camBefore.x,0,camBefore.z);updateCamera()}hideTitle();return}if(curId&&G)save();const str=store('pc-city-'+id);if(!str||!load(str)){toast('That city could not be opened.');return}
   curId=id;store('pc-last',id);camHome(id);save();hideTitle();sfx('level')}
-function foundCity(name,sc,tut){if((sc&&sc!==SC.id)||(SCN[sc||SC.id].river&&RIVW!==RIVW_NEW)){if(curId&&G)save();store('pc-go',JSON.stringify({sc:sc||SC.id,name,tut:!!tut}));location.reload();return}if(curId&&G)save();curId='c'+Date.now().toString(36)+((Math.random()*1e4)|0);newCity(name||SC.town);G.tut=tut?0:-1;store('pc-last',curId);save();hideTitle();sfx('level')}
+function foundCity(name,sc,tut){if((sc&&sc!==SC.id)||(SCN[sc||SC.id].river&&RIVW!==RIVW_NEW)||!!window.__newHills!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({sc:sc||SC.id,name,tut:!!tut,hills:!!window.__newHills}));location.reload();return}if(curId&&G)save();curId='c'+Date.now().toString(36)+((Math.random()*1e4)|0);newCity(name||SC.town);G.hills=TERRAIN_ON?1:0;G.tut=tut?0:-1;store('pc-last',curId);save();hideTitle();sfx('level')}
 let pickSc='classic';
 function drawScPick(){const box=$('#scPick');box.innerHTML=Object.keys(SCN).map(k=>`<button type="button" class="scb" data-sc="${k}" aria-pressed="${k===pickSc}"><b>${SCN[k].nm}</b><small>${fmt(SCN[k].money)} to start</small></button>`).join('');
   box.querySelectorAll('.scb').forEach(b=>b.onclick=()=>{sfx('ui');pickSc=b.dataset.sc;drawScPick()});$('#scDesc').textContent=SCN[pickSc].d;$('#newName').placeholder=SCN[pickSc].town}
 drawScPick();
-$('#newCityForm').onsubmit=e=>{e.preventDefault();const nm=$('#newName').value.trim()||SCN[pickSc].town;$('#newName').blur();const tut=$('#newTut').checked;if(pickSc!==SC.id){foundCity(nm,pickSc,tut);return}travel(()=>foundCity(nm,null,tut))};
+$('#newCityForm').onsubmit=e=>{e.preventDefault();window.__newHills=!!($('#newHills')&&$('#newHills').checked);const nm=$('#newName').value.trim()||SCN[pickSc].town;$('#newName').blur();const tut=$('#newTut').checked;if(pickSc!==SC.id){foundCity(nm,pickSc,tut);return}travel(()=>foundCity(nm,null,tut))};
 /* ---------- tutorial: a guided first city, one step at a time ---------- */
 const TUT=[
   {t:'Welcome, Mayor!',d:()=>`This is <b>${esc(G.name)}</b>, ${SCN[SC.id].nm.toLowerCase()}. I will guide you through building a working city. Each step turns green by itself when you finish it.`,next:1},
@@ -7560,13 +7569,16 @@ var NETWIDE=new Map();
 var NETV={tiles:null,alloc:new Map(),next:0,adj:new Map(),link:new Map(),cover:new Set(),tcover:new Set(),dirty:true};
 const netVirt=i=>i>=N*N;
 /* height profile: elevated rises after the junction area, tunnels drop inside the portal */
-function netProf(g,e){const n=g.n;g.H=new Float64Array(n+1);const L=g.L;
-  for(let k=0;k<=n;k++){const s=g.S[k],d=Math.min(s,L-s);let h;
+function netProf(g,e,aA,aB){const n=g.n;g.H=new Float64Array(n+1);const L=g.L;
+  for(let k=0;k<=n;k++){const s=g.S[k],d=Math.min(aA?1e9:s,aB?1e9:L-s);let h;
     if(e>0){const u=Math.max(0,Math.min(1,(d-NETRS)/NETRL));h=NETEH*u*u*(3-2*u)}
     else{const u=Math.max(0,Math.min(1,(d-NETTP)/0.35));h=NETTD*u*u*(3-2*u)}
     g.H[k]=h}}
 const netVK=(g,k)=>{const a=netHs(g,g.e0[k]),b=netHs(g,g.e1[k]);return g.sg.e>0?Math.min(a,b)>=NETEH*0.5:Math.max(a,b)<=NETTD*0.5};
 const NETKT=k=>k==='rail'?T.RAIL:T.ROAD;
+/* junctions in the air: G.net.n[id][2]===1. The node gets its own virtual tile over the ground. */
+const netAir=id=>{const p=G&&G.net&&G.net.n[id];return!!(p&&p[2])};
+function netNodeNear(x,z){if(!G||!G.net)return undefined;for(const id in G.net.n){const q=G.net.n[id];if(Math.hypot(q[0]-x,q[1]-z)<0.06)return+id}return undefined}
 function netG(){if(!G)return null;if(!G.net||typeof G.net!=='object')G.net={id:1,n:{},s:[]};if(!G.net.n)G.net.n={};if(!G.net.s)G.net.s=[];if(!G.net.id)G.net.id=1;return G.net}
 const netTile=(x,z)=>{const tx=Math.floor(x+HALF),tz=Math.floor(z+HALF);return inB(tx,tz)?idx(tx,tz):-1};
 /* cubic Bezier helpers: points are [x,z] */
@@ -7606,23 +7618,32 @@ function netRebuild(){const net=netG();NET.src=G;NET.ver=netVer;const NN=N*N,KM=
   NET.E.clear();NET.EL.clear();NET.OW.clear();NET.seg.clear();NET.geo.clear();NET.node.clear();NET.nodeAt.clear();NET.deg.clear();
   if(NETV.tiles!==tiles){NETV.tiles=tiles;NETV.alloc=new Map();NETV.next=0;tiles.length=NN}
   NETV.adj=new Map();NETV.link=new Map();NETV.cover=new Set();NETV.tcover=new Set();NETV.dirty=true;const usedV=new Set();if(!net)return;
-  for(const id in net.n){const p=net.n[id],j=netTile(p[0],p[1]);if(j<0)continue;NET.nodeAt.set(j,+id);NET.node.set(+id,j)}
+  const NGT=new Map(),AIRV=new Map(),AIRL=[];
+  const airV=(id,host,lt)=>{let v=AIRV.get(id);if(v!==undefined)return v;const key='n'+id+':1';let base=NETV.alloc.get(key);if(base===undefined){if(NETV.next+1>NETVMAX)return -1;base=NETV.next++;NETV.alloc.set(key,base)}usedV.add(key);v=NN+base;
+    tiles[v]={t:T.ROAD,l:lt,w:0,s:0,d:0,seed:1,virt:1,host,lock:0};NETV.cover.add(host);AIRV.set(id,v);NET.nodeAt.set(v,id);NET.node.set(id,v);return v};
+  for(const id in net.n){const p=net.n[id],j=netTile(p[0],p[1]);if(j<0)continue;NGT.set(+id,j);if(p[2])continue;NET.nodeAt.set(j,+id);NET.node.set(+id,j)}
   const keep=[];
   for(const sg of net.s){const P=netPts(sg);if(!P)continue;const g=netSample(P,sg.k);if(!g)continue;
-    if(g.ext[0]!==NET.node.get(sg.a)||g.ext[g.ext.length-1]!==NET.node.get(sg.b))continue;
+    if(g.ext[0]!==NGT.get(sg.a)||g.ext[g.ext.length-1]!==NGT.get(sg.b))continue;const aA=sg.k==='road'&&sg.e>0&&netAir(sg.a),aB=sg.k==='road'&&sg.e>0&&netAir(sg.b);if((netAir(sg.a)&&!aA)||(netAir(sg.b)&&!aB))continue;
     g.sg=sg;
-    if(sg.e&&sg.k==='road'){netProf(g,sg.e);g.host=g.ext.slice();const vk=[];for(let k=1;k<g.ext.length-1;k++)if(netVK(g,k))vk.push(k);
+    if(sg.e&&sg.k==='road'){netProf(g,sg.e,aA,aB);g.host=g.ext.slice();const vk=[];for(let k=1;k<g.ext.length-1;k++)if(netVK(g,k))vk.push(k);
       if(vk.length){const key=sg.id+':'+vk.length+':'+g.host[vk[0]];let base=NETV.alloc.get(key);
         if(base===undefined||base+vk.length>NETVMAX){if(NETV.next+vk.length>NETVMAX)continue;base=NETV.next;NETV.next+=vk.length;NETV.alloc.set(key,base)}
         usedV.add(key);vk.forEach((k,q)=>{const v=NN+base+q,h=g.host[k];tiles[v]={t:T.ROAD,l:sg.t,w:0,s:0,d:0,seed:1,virt:1,host:h,lock:0};g.ext[k]=v;(sg.e>0?NETV.cover:NETV.tcover).add(h)});
-        g.v0=g.e0[vk[0]];g.v1=g.e1[vk[vk.length-1]];g.vk=[vk[0],vk[vk.length-1]]}}
+        g.v0=g.e0[vk[0]];g.v1=g.e1[vk[vk.length-1]];g.vk=[vk[0],vk[vk.length-1]]}
+      if(aA||aB){const last=g.ext.length-1;if(aA){const v=airV(sg.a,g.host[0],sg.t);if(v<0)continue;g.ext[0]=v;g.v0=0}if(aB){const v=airV(sg.b,g.host[last],sg.t);if(v<0)continue;g.ext[last]=v;g.v1=g.L}
+        if(!vk.length){if(!aA)g.v0=g.L*0.5;if(!aB)g.v1=g.L*0.5}g.air=[aA,aB]}}
     if(!g.ext.every(j=>netKindOk(sg.k,j)))continue;
     if(!sg.e)netLift(g);keep.push(sg);NET.geo.set(sg.id,g);
     const TK=sg.k==='rail'?NET.TL:NET.TR;g.ext.forEach((j,k)=>{let L=NET.seg.get(j);if(!L)NET.seg.set(j,L=[]);L.push({g,k});if(NET.T[j]!==2)NET.T[j]=1;if(TK[j]!==2)TK[j]=1});
     for(let k=0;k+1<g.ext.length;k++){const a=g.ext[k],b=g.ext[k+1];(sg.k==='rail'?NET.EL:NET.E).add(Math.min(a,b)*KM+Math.max(a,b));if(sg.k==='road'&&sg.t===2)NET.OW.add(b*KM+a);
       if(a>=NN||b>=NN){for(const[x,y]of[[a,b],[b,a]]){let L=NETV.adj.get(x);if(!L)NETV.adj.set(x,L=[]);L.push(y)}}}
-    if(g.vk){const ra=g.ext[g.vk[0]-1],rb=g.ext[g.vk[1]+1];for(const[x,y]of[[ra,rb],[rb,ra]]){let L=NETV.link.get(x);if(!L)NETV.link.set(x,L=[]);L.push(y)}}
+    if(g.vk||g.air){const air=g.air||[false,false];AIRL.push({sg,ra:air[0]?-1:g.vk?g.ext[g.vk[0]-1]:-1,rb:air[1]?-1:g.vk?g.ext[g.vk[1]+1]:-1,air})}
     for(const nd of[sg.a,sg.b])NET.deg.set(nd,(NET.deg.get(nd)||0)+1)}
+  {const par=new Map(),f=k=>{while(par.get(k)!==k){par.set(k,par.get(par.get(k)));k=par.get(k)}return k},un=(a,b)=>{a=f(a);b=f(b);if(a!==b)par.set(a,b)};
+    for(const o of AIRL){par.set('s'+o.sg.id,'s'+o.sg.id);for(const[nd,isA]of[[o.sg.a,o.air[0]],[o.sg.b,o.air[1]]])if(isA){if(!par.has('n'+nd))par.set('n'+nd,'n'+nd);un('s'+o.sg.id,'n'+nd)}}
+    const grp=new Map();for(const o of AIRL){const r=f('s'+o.sg.id);let L=grp.get(r);if(!L)grp.set(r,L=[]);for(const e of[o.ra,o.rb])if(e>=0&&e<NN&&!L.includes(e))L.push(e)}
+    for(const L of grp.values())for(let q=1;q<L.length;q++)for(const[x,y]of[[L[q-1],L[q]],[L[q],L[q-1]]]){let A=NETV.link.get(x);if(!A)NETV.link.set(x,A=[]);A.push(y)}}
   if(keep.length!==net.s.length)net.s=keep;
   NETWIDE=new Map();for(const g of NET.geo.values()){const sg=g.sg;if(sg.k!=='road')continue;const hw=netHW(sg.t);if(hw<0.55)continue;const own=new Set(g.ext);
     for(let s=0;s<=g.L;s+=0.2){if(sg.e&&netHs(g,s)!==0)continue;const q=cvAt(g,s);for(let o=-hw+0.05;o<=hw-0.05;o+=0.2){const j=netTile(q[0]-q[3]*o,q[1]+q[2]*o);if(j<0||own.has(j)||NET.T[j]||NETWIDE.has(j))continue;const t=tiles[j];if(t.t===T.ROAD||t.t===T.RAIL||t.t===T.RIVER)continue;NETWIDE.set(j,sg.id)}}}
@@ -7658,7 +7679,7 @@ var NETCY=null;
 function netCar(c,t,out){NETCY=null;const p=netCarPath(c);if(!p)return false;
   if(p.st){const{g,k,dir}=p.st,s=dir>0?g.e0[k]+(g.e1[k]-g.e0[k])*t:g.e1[k]-(g.e1[k]-g.e0[k])*t,q=cvAt(g,s),dx=q[2]*dir,dz=q[3]*dir,L=laneOf(c.b,c);if(g.sg.e)NETCY=0.06+netHs(g,s);
     out.pos.set(q[0]-dz*L,0,q[1]+dx*L);out.yaw=Math.atan2(dx,dz);return true}
-  const P=p.J,q=bzAt(P,t),u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dz=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]);
+  if(c.b>=N*N)NETCY=0.06+NETEH;const P=p.J,q=bzAt(P,t),u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dz=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]);
   out.pos.set(q[0],0,q[1]);out.yaw=Math.atan2(dx,dz);return true}
 function netRate(c){const p=netCarPath(c);if(!p)return null;if(p.st){const{g,k}=p.st;return Math.min(25,1/Math.max(0.04,g.e1[k]-g.e0[k]))}return Math.min(25,1/Math.max(0.04,bzLen(p.J)))}
 {const _cc=carCurve;carCurve=function(c,t,out){if(netCar(c,t,out))return;_cc(c,t,out)}}
@@ -7911,7 +7932,9 @@ function netWedge(g,c,w,L,h,x,z,ry){const A=[-w/2,0,0],B=[w/2,0,0],C=[w/2,h,0],D
 function netElevDraw(){NETV.dirty=false;if(NETELG){if(NETELG.parent)NETELG.parent.remove(NETELG);NETELG.traverse(o=>{if(o.geometry)o.geometry.dispose()});NETELG=null}
   if(!G||!G.net)return;const g=new THREE.Group();let any=false;
   for(const geo of NET.geo.values()){const sg=geo.sg;if(!sg.e||geo.v0===undefined)continue;any=true;const v=sg.t|0,W=NETW[v]||NETW[0],a=geo.v0-0.02,b=geo.v1+0.02;
-    if(sg.e>0){netRoadStrip(g,geo,a,b,0,0,v,true,0,0);netBridge(g,geo,a,b,0,0,true);
+    if(sg.e>0){const air=geo.air||[false,false],rjA=air[0]?Math.min(geo.L*0.45,netRJ(sg.a)):a,rjB=air[1]?Math.max(rjA,geo.L-Math.min(geo.L*0.45,netRJ(sg.b))):b;
+      if(air[0])netRoadStrip(g,geo,a,rjA,0,0,v,false,0,0);netRoadStrip(g,geo,rjA,rjB,0,0,v,true,0,0);if(air[1])netRoadStrip(g,geo,rjB,b,0,0,v,false,0,0);netBridge(g,geo,air[0]?rjA:a,air[1]?rjB:b,0,0,true);
+      {const hw=netHW(v);for(const[s0,s1]of[air[0]?[a,rjA]:null,air[1]?[rjB,b]:null].filter(Boolean))if(s1>s0){netStrip(g,geo,s0,s1,0,0,-hw,0.015,hw,0.015,'down',null,'#8f9398');for(const sd of[-1,1])netStrip(g,geo,s0,s1,0,0,sd*hw,0.06,sd*hw,0.015,sd,null,'#a3a7ac')}}
       /* round columns with a cap beam, not where they would stand on a road, track or in the river */
       for(let s=Math.ceil(a/1.3)*1.3;s<b;s+=1.3){const q=cvAt(geo,s),h=netHs(geo,s),j=netTile(q[0],q[1]);if(j<0||h<0.15)continue;const t=tiles[j];
         if(t.t===T.ROAD||t.t===T.RAIL||t.t===T.RIVER||inRiverBand(j%N,(j/N)|0))continue;const ry=Math.atan2(q[2],q[3]);
@@ -7926,6 +7949,15 @@ function netElevDraw(){NETV.dirty=false;if(NETELG){if(NETELG.parent)NETELG.paren
         P('#c6c3bb',hw*2+0.18,0.1,0.1,0.05,0,0.31);P('#b1aea6',hw*2+0.22,0.03,0.12,0.05,0,0.41);
         for(const sd of[-1,1]){const p=at(-0.12,sd*(hw+0.16)),m=box(g,'#bdbab2',0.06,0.22,0.3,p[0],0,p[1]);m.rotation.y=ry+sd*0.55}
         const p=at(0.1,0);netWedge(g,'#5d7a3c',hw*2+0.5,1.7,0.42,p[0],p[1],ry)}}}
+  for(const id in G.net.n){const p=G.net.n[id];if(!p[2]||!NET.deg.get(+id))continue;any=true;let hw=0.5;for(const geo of NET.geo.values())if(geo.sg.a===+id||geo.sg.b===+id)hw=Math.max(hw,netHW(geo.sg.t|0));
+    part(g,CYL,'#71757a',hw*1.02,0.02,hw*1.02,p[0],NETEH+0.032,p[1],false).receiveShadow=false;
+    {/* parapet walls joining the wall ends of neighbouring arms round the junction */
+      const arms=[];for(const geo of NET.geo.values()){const sg=geo.sg;if(sg.a!==+id&&sg.b!==+id)continue;const atA=sg.a===+id,rj=Math.min(geo.L*0.45,netRJ(+id)),q=cvAt(geo,atA?rj:geo.L-rj),sd=atA?1:-1,dx=q[2]*sd,dz=q[3]*sd,w=netHW(sg.t|0)-0.008;
+        arms.push({an:Math.atan2(dz,dx),L:[q[0]-dz*w,q[1]+dx*w],R:[q[0]+dz*w,q[1]-dx*w]})}
+      arms.sort((u,v)=>u.an-v.an);if(arms.length>1)for(let k=0;k<arms.length;k++){const u=arms[k],v=arms[(k+1)%arms.length];let gap=v.an-u.an;if(gap<=0)gap+=Math.PI*2;if(gap<0.2)continue;
+        const P=u.L,Q=v.R,len=Math.hypot(Q[0]-P[0],Q[1]-P[1]);if(len<0.02)continue;const m=box(g,'#c9ccd0',len+0.01,0.05,0.016,(P[0]+Q[0])/2,NETEH+0.06,(P[1]+Q[1])/2);m.rotation.y=-Math.atan2(Q[1]-P[1],Q[0]-P[0]);
+        const n=box(g,'#a3a7ac',len+0.01,0.06,0.012,(P[0]+Q[0])/2,NETEH,(P[1]+Q[1])/2);n.rotation.y=m.rotation.y}}part(g,CYL,'#9a9ea3',hw*1.02,0.07,hw*1.02,p[0],NETEH-0.02,p[1],false).receiveShadow=false;
+    const j=netTile(p[0],p[1]),t=j>=0?tiles[j]:null;if(t&&t.t!==T.ROAD&&t.t!==T.RAIL&&t.t!==T.RIVER&&!inRiverBand(j%N,(j/N)|0))part(g,CYL,'#b3b0a8',0.11,NETEH,0.11,p[0],0,p[1])}
   if(!any)return;
   const d=bakeData(g);g.traverse(o=>{if(o.geometry&&o.geometry.userData.net){NI.delete(o.geometry);o.geometry.dispose()}});
   NETELG=meshesFrom([d.buckets]);world.add(NETELG)}
@@ -8013,7 +8045,7 @@ function netPole(g,x,z,h){part(g,CYL,'#8d949b',0.007,h,0.007,x,0.075,z)}
 /* ---------- traffic control at network junctions ----------
    Arms are put in two groups by direction (along / across the main road), which act as the two light phases. */
 function netPhase(nid){const A=netArms(nid);if(!A.length)return null;let m=A[0];for(const a of A)if((a.t|0)>(m.t|0)||((a.t|0)===(m.t|0)&&a.g&&!m.g))m=a;return m.dir}
-function netEW(J,b){const M=netMap();if(!M.TR[J])return null;const id=M.nodeAt.get(J);if(id===undefined)return null;const base=netPhase(id);if(base===null)return null;
+function netEW(J,b){const M=netMap();if(!M.TR[J]||J>=N*N)return null;const id=M.nodeAt.get(J);if(id===undefined)return null;const base=netPhase(id);if(base===null)return null;
   const p=netPort(J,b),d=Math.atan2(p.dz,p.dx)-base;return Math.abs(Math.cos(d))>=Math.abs(Math.sin(d))}
 const NSIG={r:new THREE.MeshBasicMaterial({color:'#ff3b30'}),y:new THREE.MeshBasicMaterial({color:'#ffb020'}),g:new THREE.MeshBasicMaterial({color:'#3ddc84'}),o:new THREE.MeshLambertMaterial({color:'#2a2f36'})};
 function netSignals(g,i,nid,A,RJn,ox,oz){const sm=sigMode(i),aeOf=a=>(NETW[a.t|0]||NETW[0]).ae,base=netPhase(nid);
@@ -8052,6 +8084,7 @@ const NETKIND=tl=>tl.id==='rail'?'rail':'road';
 function netPlan(tl,A,B,C1,C2){const kind=NETKIND(tl),KT=NETKT(kind),M=netMap(),type=kind==='road'?RI(tl.rt||0).v:0;
   if(kind==='road'&&tl.rt===undefined)return{bad:'Pick a road type.'};
   if(kind==='road'&&NB.lvl)return netPlanLvl(tl,A,B,C1,C2,type);
+  for(const E of[A,B]){if(E.node!==undefined&&netAir(E.node))return{bad:'That junction is up in the air. Pick Elevated in the level row to join it.'};if(E.seg!==undefined){const g0=M.geo.get(E.seg);if(g0&&g0.sg.e)return{bad:g0.sg.e>0?'That road is up on a deck. Pick Elevated in the level row to join it.':'Join tunnels at their ends.'}}}
   const P=[[A.x,A.z],C1||null,C2||null,[B.x,B.z]];if(!P[1]){const l=bzLine(P[0],P[3]);P[1]=l[1];P[2]=l[2]}
   const len=Math.hypot(B.x-A.x,B.z-A.z);if(len<0.7)return{bad:'Too short. Drag further.'};
   /* sharp turns: keep the bend radius sensible */
@@ -8119,15 +8152,17 @@ function netPlanLvl(tl,A,B,C1,C2,type){const lvl=NB.lvl,M=netMap(),nm=lvl>0?'ele
   if(type===1)return{bad:'Dirt roads cannot be '+(lvl>0?'raised':'put in a tunnel')+'. Pick another road type.'};
   const P=[[A.x,A.z],C1||null,C2||null,[B.x,B.z]];if(!P[1]){const l=bzLine(P[0],P[3]);P[1]=l[1];P[2]=l[2]}
   const geo=netSample(P,'road');if(!geo)return{bad:'This curve loops over itself or leaves your land.'};
-  const need0=lvl>0?2*(NETRS+NETRL)+0.8:2*(NETTP+0.35)+0.8;if(geo.L<need0)return{bad:'Too short for '+(lvl>0?'an ':'a ')+nm+': it needs at least '+Math.round(need0*TILE_M)+' m for the '+(lvl>0?'ramps':'portals')+'.'};
+  const need0=lvl>0?(2-(A.air?1:0)-(B.air?1:0))*(NETRS+NETRL)+0.8:2*(NETTP+0.35)+0.8;if(geo.L<need0)return{bad:'Too short for '+(lvl>0?'an ':'a ')+nm+': it needs at least '+Math.round(need0*TILE_M)+' m for the '+(lvl>0?'ramps':'portals')+'.'};
   {const m=24;for(let k=1;k<m;k++){const a=bzAt(P,(k-1)/m),b=bzAt(P,k/m),c=bzAt(P,(k+1)/m),u=[b[0]-a[0],b[1]-a[1]],v=[c[0]-b[0],c[1]-b[1]],lu=Math.hypot(...u),lv=Math.hypot(...v);
     if(lu<1e-6||lv<1e-6)continue;const ang=Math.acos(Math.max(-1,Math.min(1,(u[0]*v[0]+u[1]*v[1])/lu/lv))),rr=(lu+lv)/2/Math.max(1e-6,ang);if(rr<0.6)return{bad:'Too tight a bend. Make the curve wider.'}}}
-  geo.sg={e:lvl,t:type};netProf(geo,lvl);
+  const airE=E=>{if(lvl<=0)return false;if(E.node!==undefined)return netAir(E.node);if(E.seg!==undefined){const g0=M.geo.get(E.seg);if(!g0||!(g0.sg.e>0))return false;const r=netNear(g0,E.x,E.z);return netHs(g0,r.s)>=NETEH*0.95}return false};
+  const aA=airE(A),aB=airE(B);A.air=aA;B.air=aB;
+  geo.sg={e:lvl,t:type};netProf(geo,lvl,aA,aB);
   const free=t=>t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4&&!t.l),need=[];let nv=0;
   for(let k=0;k<geo.ext.length;k++){const j=geo.ext[k],t=tiles[j];if(t.lock||isEntry(j))return{bad:'That land is not yours yet. Buy the area first.'};
-    const end=k===0||k===geo.ext.length-1;
-    if(!end&&netVK(geo,k)){nv++;
-      if(lvl>0){if(NETV.cover.has(j))return{bad:'Another elevated road is already here. Cross it with a tunnel, or join it on the ground.'};
+    const end=k===0||k===geo.ext.length-1;if(end&&(k?B.air:A.air)){nv++;continue}
+    if(!end&&netVK(geo,k)){nv++;const[cx,cz]=wpos(j),nearAir=(A.air&&Math.hypot(cx-A.x,cz-A.z)<1.3)||(B.air&&Math.hypot(cx-B.x,cz-B.z)<1.3);
+      if(lvl>0){if(NETV.cover.has(j)&&!nearAir)return{bad:'Another elevated road is already here. Cross it with a tunnel, or join it on the ground.'};
         if(!(free(t)||t.t===T.ROAD||t.t===T.RAIL||t.t===T.RIVER||t.t===T.PATH||inRiverBand(j%N,(j/N)|0)))return{bad:'An elevated road cannot pass over buildings. Bulldoze them first, or use a tunnel.'}}
       else if(NETV.tcover.has(j))return{bad:'Another tunnel is already here.'};
       continue}
@@ -8137,10 +8172,11 @@ function netPlanLvl(tl,A,B,C1,C2,type){const lvl=NB.lvl,M=netMap(),nm=lvl>0?'ele
     if(t.t===T.ROAD)continue;if(!free(t))return{bad:'Blocked by buildings. Bulldoze them first.'};need.push(j)}
   if(!nv)return{bad:'Too short for '+(lvl>0?'an ':'a ')+nm+'.'};
   for(const E of[A,B])if(E.node===undefined){for(const id in G.net.n){const q=G.net.n[id];if(Math.hypot(q[0]-E.x,q[1]-E.z)<NETMINJ)return{bad:'Too close to another junction. Join it, or move further away.'}}}
-  for(const E of[A,B])if(E.seg!==undefined){const g0=M.geo.get(E.seg);if(g0&&g0.sg.e)return{bad:'Join elevated roads and tunnels at their ends, on the ground.'}}
+  for(const E of[A,B])if(E.seg!==undefined&&!E.air){const g0=M.geo.get(E.seg);if(g0&&g0.sg.e)return{bad:g0.sg.e>0?'Join an elevated road where it is up on its deck, or at its ends on the ground.':'Join tunnels at their ends, on the ground.'}}
+  for(const E of[A,B])if(E.node!==undefined&&netAir(E.node)&&!E.air)return{bad:'That junction is up in the air. Join it with an elevated road.'};
   let cost=0;const tl2=Object.assign({},tl);for(const j of need){const c=costFor(tl2,j);if(c===null)return{bad:'Blocked here. Clear the land first.'};cost+=c}
   cost+=Math.round(nv*RI(type).cost*(lvl>0?4:5)+nv*(lvl>0?30:45));
-  const endInfo=E=>E.node!==undefined?{node:E.node}:E.seg!==undefined?{seg:E.seg,t:E.t}:E.grid!==undefined?{grid:E.grid}:{};
+  const endInfo=E=>E.node!==undefined?{node:E.node}:E.seg!==undefined?{seg:E.seg,t:E.t,air:E.air?1:0}:E.grid!==undefined?{grid:E.grid}:{};
   return{kind:'road',type,lvl,pieces:[{P,from:{p:[A.x,A.z],...endInfo(A)},to:{p:[B.x,B.z],...endInfo(B)},geo}],cuts:[],xing:new Map(),need,cost,len:geo.L}}
 /* can the new curve geo (at its tile k) cross the other kind's segment o here as a level crossing? */
 function netXang(geo,k,ux,uz){const q=cvAt(geo,(geo.e0[k]+geo.e1[k])/2);return Math.abs(q[2]*uz-q[3]*ux)}
@@ -8163,8 +8199,8 @@ function netBuild(tl,plan){const net=netG(),before=JSON.stringify(net),kind=plan
   if(plan.cost>G.money){toast(`That costs ${fmt(plan.cost)}, but you have ${fmt(G.money)}.`);sfx('err');return false}
   const nid=()=>net.id++,mkNode=p=>{const id=nid();net.n[id]=[p[0],p[1]];return id};const redo=new Set();
   const nodeOf=end=>{if(end.node!==undefined)return end.node;if(end._id!==undefined)return end._id;
-    if(end.seg!==undefined){const sg=net.s.find(q=>q.id===end.seg);const g=NET.geo.get(end.seg);if(sg&&g){const id=mkNode(end.p),r=netNear(g,end.p[0],end.p[1]),P=netPts(sg),[p1,p2]=bzSplit(P,r.t);p1[3]=end.p;p2[0]=end.p;
-        net.s.splice(net.s.indexOf(sg),1);net.s.push({id:nid(),k:sg.k,t:sg.t,a:sg.a,b:id,c1:p1[1],c2:p1[2]},{id:nid(),k:sg.k,t:sg.t,a:id,b:sg.b,c1:p2[1],c2:p2[2]});for(const j of g.ext)redo.add(j);end._id=id;return id}}
+    if(end.seg!==undefined){const sg=net.s.find(q=>q.id===end.seg);const g=NET.geo.get(end.seg);if(sg&&g){const id=mkNode(end.p),r=netNear(g,end.p[0],end.p[1]),P=netPts(sg),[p1,p2]=bzSplit(P,r.t);p1[3]=end.p;p2[0]=end.p;if(end.air)net.n[id][2]=1;const ex=sg.e?{e:sg.e}:{};
+        net.s.splice(net.s.indexOf(sg),1);net.s.push({id:nid(),k:sg.k,t:sg.t,a:sg.a,b:id,c1:p1[1],c2:p1[2],...ex},{id:nid(),k:sg.k,t:sg.t,a:id,b:sg.b,c1:p2[1],c2:p2[2],...ex});for(const j of g.ext)redo.add(j);end._id=id;return id}}
     if(end.grid!==undefined){NETWAS.add(end.grid)}
     end._id=mkNode(end.p);return end._id};
   for(const pc of plan.pieces){const a=nodeOf(pc.from),b=nodeOf(pc.to),sg={id:nid(),k:kind,t:plan.type,a,b,c1:pc.P[1],c2:pc.P[2]};if(plan.lvl)sg.e=plan.lvl;net.s.push(sg);for(const j of pc.geo.ext)redo.add(j)}
@@ -8217,7 +8253,7 @@ function netTap(p,cx,cy){const tl=tool;NB.kind=NETKIND(tl);
   if(!netBuild(tl,plan))return;
   /* carry on from the end, heading the same way */
   const last=plan.pieces[plan.pieces.length-1].P,dx=last[3][0]-last[2][0],dz=last[3][1]-last[2][1],l=Math.hypot(dx,dz)||1;
-  const M=netMap(),j=netTile(p.x,p.z),id=M.nodeAt.get(j);
+  const M=netMap(),j=netTile(p.x,p.z),nn=netNodeNear(p.x,p.z),id=nn!==undefined?nn:M.nodeAt.get(j);
   NB.start=id!==undefined?{x:G.net.n[id][0],z:G.net.n[id][1],node:id}:{x:p.x,z:p.z};NB.tan=[dx/l,dz/l];NB.ctl=null;NB.hover=null;netPreview(cx,cy)}
 canvas.addEventListener('pointerdown',e=>{if(!netModeOn(tool))return;
   if(e.button===2){if(NB.start){netEnd();e.stopImmediatePropagation()}return}
@@ -8908,7 +8944,7 @@ function nvTick(dt){if(!G||!S.lists||atTitle)return;nvT-=dt;nvSiteT-=dt;if(nvT>0
   /* concrete mixers to building sites */
   if(typeof ZN!=='undefined'&&ZN.blds&&nvCount('mixer')<3&&Math.random()<0.3){const b=ZN.blds.find(b=>b.state==='build'&&Math.random()<0.3);if(b){const j=netTile(b.x+Math.sin(b.ry)*(b.hd+0.6),b.z+Math.cos(b.ry)*(b.hd+0.6));if(j>=0&&tiles[j].t===T.ROAD)nvTrip(L.ind.length?nvOf(L.ind):nvRoad(),j,'mixer')}}
   /* snow ploughs while it snows */
-  if((W.snow>0.2||W.type==='blizzard')&&nvCount('plough')<Math.min(5,1+pop/3000)&&Math.random()<0.4)nvTrip(nvRoad(),nvRoad(),'plough');
+  if((W.snow>0.2||W.type==='blizzard'||snowNow())&&snowScan().dumps.length&&nvCount('plough')<Math.min(3+SNOW.dumps.length*3,1+pop/1500)&&Math.random()<0.4){const f=snowFrom();if(f>=0)nvTrip(f,snowRoad(),'plough')}
   /* rescue trucks to where a disaster struck */
   if(nvRescue.length&&nvCount('rescue')<4){const i=nvRescue.shift();let best=-1,bd=1e9;const x=i%N,z=(i/N)|0;for(const r of(S.roadList||[])){const d=(r%N-x)**2+(((r/N)|0)-z)**2;if(d<bd){bd=d;best=r}}nvTrip(nvRoad(),best,'rescue','police')}}
 const nvRescue=[];
@@ -9060,13 +9096,17 @@ function svhTick(dt){for(let k=SVH.length-1;k>=0;k--){const h=SVH[k],m=h.m;m.rot
 /* ---------- convert old grid roads to the road network (patch_net.py) ----------
    Streets, one-ways and dirt roads laid with the old tile builder become network segments (straight runs between
    junctions, bends and ends), so they get the new look: lane arrows, crossings, signs, trees, smooth junctions and lane
-   rules. Avenues, boulevards and highways stay as they are (widening them would knock down the buildings beside them),
-   and so do bridges, curved grid roads, level crossings and the highway entry. Button in the road tool bar. */
+   rules. A second button also converts avenues, boulevards and highways: they get their real widths (24 m and 36 m),
+   so zoned buildings right beside them are knocked down, as when a wide road is built. Runs next to service
+   buildings stay old. Bridges, curved grid roads, level crossings and the highway entry stay as they are. */
 const NCV_ONE={2:[1,0],6:[-1,0],7:[0,1],8:[0,-1]};
-function netConvOK(i){const t=tiles[i];if(!t||t.lock||t.t!==T.ROAD||t.w)return false;const v=RI(t.l).v;if(v!==0&&v!==1&&v!==2)return false;
+function netConvOK(i,wide){const t=tiles[i];if(!t||t.lock||t.t!==T.ROAD||t.w)return false;const v=RI(t.l).v;if(v!==0&&v!==1&&v!==2&&!(wide&&v>=3&&v<=5&&netConvRoom(i)))return false;
   if(i===ENTRY||rxAt(i))return false;const M=netMap();if(M.T[i])return false;if(G.cv&&G.cv.length&&cvMap().road.has(i))return false;return true}
-function netConvCount(){let n=0;for(const i of OWNIDX)if(netConvOK(i))n++;return n}
-function netConvert(){if(!G)return 0;const net=netG(),ok=new Uint8Array(N*N);let any=0;for(const i of OWNIDX)if(netConvOK(i)){ok[i]=1;any++}if(!any)return 0;
+/* a wide grid road can only widen where nothing but zones, trees, roads, track or empty land is beside it */
+function netConvRoom(i){const x=i%N,z=(i/N)|0;for(const[dx,dz]of D4){if(!inB(x+dx,z+dz))continue;const t=tiles[idx(x+dx,z+dz)];if(t.lock)return false;if(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4)||t.t===T.ROAD||t.t===T.RAIL||t.t===T.PATH||t.t===T.RIVER)continue;return false}return true}
+function netConvCount(wide){let n=0;for(const i of OWNIDX)if(netConvOK(i,wide)&&(!wide||RI(tiles[i].l).v>=3))n++;return n}
+function netConvLoss(){const seen=new Set();for(const i of OWNIDX){if(!netConvOK(i,true)||RI(tiles[i].l).v<3)continue;const x=i%N,z=(i/N)|0;for(const[dx,dz]of D4){if(!inB(x+dx,z+dz))continue;const j=idx(x+dx,z+dz),t=tiles[j];if(t.t>=2&&t.t<=4&&t.l)seen.add(j)}}return seen.size}
+function netConvert(wide){if(!G)return 0;const net=netG(),ok=new Uint8Array(N*N);let any=0;for(const i of OWNIDX)if(netConvOK(i,wide)){ok[i]=1;any++}if(!any)return 0;
   const nb=i=>{const x=i%N,z=(i/N)|0,o=[];for(const[dx,dz]of D4)if(inB(x+dx,z+dz)){const j=idx(x+dx,z+dz);if(tiles[j].t===T.ROAD&&canMove(i,j,'any')!==false)o.push([j,dx,dz])}return o};
   const isNode=i=>{const L=nb(i);if(L.length!==2)return true;const[a,b]=L;if(a[1]!==-b[1]||a[2]!==-b[2])return true;if(!ok[a[0]]||!ok[b[0]])return true;const v=RI(tiles[i].l).v;if(RI(tiles[a[0]].l).v!==v||RI(tiles[b[0]].l).v!==v)return true;return false};
   const nodeOf=new Map(),mk=i=>{if(nodeOf.has(i))return nodeOf.get(i);const[x,z]=wpos(i),id=net.id++;net.n[id]=[x,z];nodeOf.set(i,id);return id};
@@ -9079,12 +9119,14 @@ function netConvert(){if(!G)return 0;const net=netG(),ok=new Uint8Array(N*N);let
       if(v===2){const d=NCV_ONE[t]||[1,0],ax=a%N,az=(a/N)|0,bx=b%N,bz=(b/N)|0;if(Math.sign(bx-ax)!==d[0]||Math.sign(bz-az)!==d[1]){const q=a;a=b;b=q}}
       const A=mk(a),B=mk(b),[x0,z0]=wpos(a),[x1,z1]=wpos(b),l=bzLine([x0,z0],[x1,z1]);net.s.push({id:net.id++,k:'road',t:v,a:A,b:B,c1:l[1],c2:l[2]});segs++;
       for(const j of run)if(ok[j]&&RI(tiles[j].l).v===2)tiles[j].l=2}}
-  netVer++;netRebuild();const redo=new Set();for(const i of OWNIDX)if(ok[i])redo.add(i);netRedraw(redo);netLotsUpdate();recompute();S=stats();hud();return segs}
+  netVer++;netRebuild();if(wide){for(const j of NETWIDE.keys())if(tiles[j].t>=2&&tiles[j].t<=4)ok[j]=1;netWideClear()}const redo=new Set();for(const i of OWNIDX)if(ok[i])redo.add(i);netRedraw(redo);netLotsUpdate();recompute();S=stats();hud();return segs}
 /* the button */
-{const _cb=cvBar;cvBar=function(){_cb();const d=$('#cvBar');if(!d||d.hidden||(tool&&tool.id==='rail'))return;const n=netConvCount();if(!n)return;
-  const s=document.createElement('span');s.style.cssText='grid-column:1/-1;display:flex;gap:6px;align-items:center';
-  s.innerHTML=`<button id="ncvBtn" style="height:32px;padding:0 10px">Give old roads the new look</button><span style="color:var(--muted)">${n} tiles</span>`;d.appendChild(s);
-  s.querySelector('#ncvBtn').onclick=()=>{const k=netConvert();toast(k?`Converted ${k} road pieces. Avenues, boulevards, highways, bridges and curved roads stay as they were.`:'Nothing to convert.');sfx('road');cvBar()}}}
+{const _cb=cvBar;cvBar=function(){_cb();const d=$('#cvBar');if(!d||d.hidden||(tool&&tool.id==='rail'))return;const n=netConvCount(),nw=netConvCount(true);if(!n&&!nw)return;
+  const s=document.createElement('span');s.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center';
+  s.innerHTML=(n?`<button id="ncvBtn" style="height:32px;padding:0 10px">Give old roads the new look</button><span style="color:var(--muted)">${n} tiles</span>`:'')+(nw?`<button id="ncvW" style="height:32px;padding:0 10px">Widen old avenues and highways</button><span style="color:var(--muted)">${nw} tiles</span>`:'');d.appendChild(s);
+  const b=s.querySelector('#ncvBtn');if(b)b.onclick=()=>{const k=netConvert();toast(k?`Converted ${k} road pieces. Avenues, boulevards, highways, bridges and curved roads stay as they were.`:'Nothing to convert.');sfx('road');cvBar()};
+  const w=s.querySelector('#ncvW');if(w)w.onclick=()=>{const loss=netConvLoss();if(loss&&!w.dataset.sure){w.dataset.sure=1;w.textContent=`Knock down up to ${loss} buildings? Tap again`;sfx('ui');return}
+    const k=netConvert(true);toast(k?`Converted ${k} road pieces, avenues and highways at full width.`:'Nothing to convert.');sfx('road');cvBar()}}}
 
 /* ---------- power lines and water pipes (patch_net.py) ----------
    Power and water already reach buildings through connected roads (each road network shares what its plants and pumps
@@ -9153,6 +9195,355 @@ function floodTick(dt){if(!FLOOD)return;const f=FLOOD;f.t+=dt;const k=f.t<4?f.t/
 {const _dm=disMonth;disMonth=function(){_dm();if(!G||!disOn()||!SC.river||(S.pop||0)<2000||FLOOD)return;
   let hydro=false;for(const i of S.svc&&S.svc[T.POWER]||[])if(tiles[i].l===4&&nearRiver(i))hydro=true;if(Math.random()<(hydro?1/96:1/48))floodStart()}}
 {const _uc4=updateCars;updateCars=function(dt){_uc4(dt);floodTick(dt)}}
+
+/* ---------- citizens: ages, education and jobs (patch_net.py) ----------
+   As in Cities: Skylines every resident has an age group (child, teen, adult, senior) and an education level (none,
+   primary, high school, university). The city keeps a count for each pair (G.cz.n[age][edu]), always summing to the
+   population. Each month people age, children are born, seniors die, schools educate whoever lives near one, and
+   newcomers move in or people move out to match the homes. Adults fill jobs that need their education (or less):
+   industry wants school leavers, offices want graduates. Too few graduates holds offices back; educated people pay a
+   bit more tax. Population button opens the Citizens panel; a home's card lists some of the people who live there. */
+const CZA=['Children','Teens','Adults','Seniors'],CZE=['No schooling','Primary school','High school','University'];
+const CZAC=['#7fd3f0','#8be0a4','#f2c14e','#c08ce0'],CZEC=['#9aa3ad','#7fb4f5','#5ad1a0','#d6b34a'];
+const CZIN=[[0.72,0.28,0,0],[0.1,0.6,0.3,0],[0.2,0.38,0.3,0.12],[0.35,0.4,0.18,0.07]],CZAGE=[0.17,0.1,0.6,0.13];
+/* the education each kind of job asks for (shares of none / primary / high school / university) */
+const CZJOB={ind:[0.45,0.35,0.17,0.03],shop:[0.2,0.4,0.3,0.1],off:[0,0.1,0.4,0.5]};
+function czSum(n){let s=0;for(const r of n)for(const v of r)s+=v;return s}
+function czAdd(n,P){for(let a=0;a<4;a++)for(let e=0;e<4;e++)n[a][e]+=P*CZAGE[a]*CZIN[a][e]*(e===3?czEduK():1)}
+function czEduK(){return 0.6+Math.min(1,(G.lvl||1)/30)*0.8}
+function czG(){if(!G)return null;if(!G.cz){G.cz={n:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],gr:[0,0,0],born:0,died:0,mvIn:0,mvOut:0};czAdd(G.cz.n,(S&&S.pop)||0)}return G.cz}
+/* share of residents (by home size) near each kind of school */
+let CZCOV={s:0,h:0,u:0,t:0},_czCovT=-1;
+function czCover(){if(!S||!S.lists)return CZCOV;if(_czCovT===G.day)return CZCOV;_czCovT=G.day;
+  const sch=[];for(const i of OWNIDX){const t=tiles[i];if((t.t===T.SCHOOL||t.t===T.COLLEGE)&&access[i]>=0){const sv=SVT(t);sch.push([i%N,(i/N)|0,sv.r,t.t===T.SCHOOL?(t.l===2?3:1):(t.l===2?4:2)])}}
+  let tot=0,s=0,h=0,u=0;for(const i of S.lists.home){const c=capOf(tiles[i]);if(!c)continue;tot+=c;const x=i%N,z=(i/N)|0;let fs=0,fh=0,fu=0;
+    for(const[sx,sz,r,k]of sch){if((sx-x)**2+(sz-z)**2>r*r)continue;if(k===1||k===3)fs=1;if(k>=2)fh=1;if(k===4)fu=1}s+=fs*c;h+=fh*c;u+=fu*c}
+  CZCOV=tot?{s:s/tot,h:h/tot,u:u/tot,t:tot}:{s:0,h:0,u:0,t:0};return CZCOV}
+function czMonth(){const c=czG();if(!c)return;const n=c.n,P=(S&&S.pop)||0,cv=czCover(),lib=S.gov&&S.gov.lib?1.2:1,mv=(a,e,b,f,k)=>{const q=n[a][e]*Math.max(0,Math.min(1,k));n[a][e]-=q;n[b][f]+=q;return q};
+  /* growing up and growing old */
+  for(let e=0;e<4;e++){mv(2,e,3,e,1/420);mv(1,e,2,e,1/40)}for(let e=0;e<4;e++)mv(0,e,1,e,1/56);
+  /* school: primary near any school, high school near a high school or college, university near a university */
+  c.gr=[0,0,0];c.gr[0]+=mv(0,0,0,1,cv.s/16*lib)+mv(1,0,1,1,cv.s/20*lib);c.gr[1]+=mv(1,1,1,2,cv.h/18*lib)+mv(2,1,2,2,cv.h/400*lib);c.gr[2]+=mv(2,2,2,3,cv.u/60*lib);
+  /* births and deaths */
+  let ad=0;for(let e=0;e<4;e++)ad+=n[2][e];const born=ad*0.0045;n[0][0]+=born;c.born=born;
+  let died=0;for(let e=0;e<4;e++){const d=n[3][e]*(S.cnt&&S.cnt[12]?1/120:1/80)+n[2][e]/4000;n[3][e]-=n[3][e]*(S.cnt&&S.cnt[12]?1/120:1/80);n[2][e]-=n[2][e]/4000;died+=d}c.died=died;
+  /* people move in or out so the counts match the homes */
+  const sum=czSum(n);c.mvIn=c.mvOut=0;if(P>sum){czAdd(n,P-sum);c.mvIn=P-sum}else if(sum>P&&sum>0){const k=P/sum;for(const r of n)for(let e=0;e<4;e++)r[e]*=k;c.mvOut=sum-P}
+  czJobs()}
+/* adults take the best job their education allows; anyone overqualified takes a lower one */
+let CZJ=null;
+function czJobs(){const c=czG();if(!c||!S)return null;const n=c.n,jo=S.jo||0,shop=Math.max(0,S.jc-jo),ind=S.ji||0,J=[0,0,0,0],W=[0,0,0,0];
+  for(let e=0;e<4;e++){J[e]=ind*CZJOB.ind[e]+shop*CZJOB.shop[e]+jo*CZJOB.off[e];W[e]=n[2][e]+n[1][e]*0.15}
+  const left=W.slice(),fill=[0,0,0,0],emp=[0,0,0,0];
+  for(let lv=3;lv>=0;lv--){let need=J[lv];for(let e=lv;e<4&&need>0;e++){const k=Math.min(need,left[e]);left[e]-=k;need-=k;fill[lv]+=k;emp[e]+=k}}
+  const w=W.reduce((a,b)=>a+b,0),e=emp.reduce((a,b)=>a+b,0),jobs=J.reduce((a,b)=>a+b,0);
+  CZJ={J,W,fill,emp,left,vac:J.map((v,k)=>v-fill[k]),workers:w,employed:e,jobs,unemp:w>0?1-e/w:0,offVac:jo>0?Math.max(0,(J[3]-fill[3])+(J[2]-fill[2]))/Math.max(1,J[3]+J[2]):0};return CZJ}
+function czAdultEdu(){const c=czG();if(!c)return 0;const a=c.n[2],s=a[0]+a[1]+a[2]+a[3];return s>0?(a[1]+2*a[2]+3*a[3])/s:0}
+function czShare(a){const c=czG();if(!c)return 0;const s=czSum(c.n);return s>0?c.n[a].reduce((x,y)=>x+y,0)/s:0}
+/* educated people earn and pay more; a city of pensioners pays less */
+function czTaxK(){if(!G||!G.cz||!S||!S.pop)return 1;return Math.max(0.85,Math.min(1.15,0.94+czAdultEdu()*0.06-Math.max(0,czShare(3)-0.15)*0.4))}
+{const _ti=taxIncome;taxIncome=function(k){const v=_ti(k);return k==='R'?v*czTaxK():v}}
+/* offices need graduates: few graduates hold office demand back, spare graduates push it up */
+{const _cd=computeDemand;computeDemand=function(){_cd();if(!G||!G.cz||!S||S.pop<200)return;const j=CZJ||czJobs();if(!j)return;
+  const spare=j.W[3]>0?j.left[3]/Math.max(1,j.W[3]):0;D.o=Math.max(-1,Math.min(1,D.o-j.offVac*0.6+spare*0.3))}}
+{const _hp=happyParts;happyParts=function(){const o=_hp();if(!G||!G.cz||!S||S.pop<150)return o;const add=(v,nm,tip)=>{if(Math.abs(v)>=0.5)o.push({v,nm,tip})};
+  const ed=czAdultEdu();add(Math.min(3,ed*1.2),'Well-educated citizens','');const j=CZJ;
+  if(j&&j.W[3]>20&&j.left[3]/j.W[3]>0.25)add(-2,'Graduates without office jobs','Zone offices so university graduates find work.');
+  if(czShare(3)>0.2&&!(S.cnt&&S.cnt[12]))add(-2,'Seniors need care','Build a clinic or hospital.');
+  if(czShare(0)>0.12&&!S.schools)add(-2,'Children without a school','Build a primary school near homes.');
+  return o}}
+{const _me=monthEnd;monthEnd=function(){try{S=stats();czMonth()}catch(e){console.warn(e)}_me()}}
+/* ---- people living in a home (made up from the tile, so the same each time) ---- */
+function czRng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296}}
+function czPick(r,w){let s=0;for(const v of w)s+=v;let q=r()*s;for(let k=0;k<w.length;k++){q-=w[k];if(q<=0)return k}return w.length-1}
+function czPeople(i){const t=tiles[i],c=czG(),r=czRng((t.seed||i)*2654435761+i),cap=capOf(t),out=[],n=c?c.n:null;if(!cap)return out;
+  const fam=LAST[(r()*LAST.length)|0],ages=n?n.map(a=>a.reduce((x,y)=>x+y,0)):CZAGE;
+  for(let k=0;k<Math.min(cap,5);k++){const sur=k>0&&r()<0.35?LAST[(r()*LAST.length)|0]:fam,a=czPick(r,ages),e=czPick(r,n?n[a]:CZIN[a]);
+    const age=a===0?2+((r()*12)|0):a===1?13+((r()*6)|0):a===2?19+((r()*46)|0):65+((r()*25)|0);out.push({name:FIRST[(r()*FIRST.length)|0]+' '+sur,age,a,e,h:r()})}
+  return out}
+function czNear(i,ty,lv){let best=-1,bd=1e9;const x=i%N,z=(i/N)|0;for(const j of OWNIDX){const t=tiles[j];if(t.t!==ty||(lv!==undefined&&t.l!==lv))continue;const d=(j%N-x)**2+(((j/N)|0)-z)**2;if(d<bd&&d<=SVT(t).r**2){bd=d;best=j}}return best}
+function czDoing(i,p){const L=S.lists,j=CZJ;
+  if(p.a===0){if(p.age<5)return'Toddler';let s=czNear(i,T.SCHOOL,0);if(s<0)s=czNear(i,T.SCHOOL,1);if(s<0)s=czNear(i,T.SCHOOL);return s>=0?'Pupil at '+bname(s):'No school nearby'}
+  if(p.a===1){const s=czNear(i,T.SCHOOL,2),c=czNear(i,T.COLLEGE);return c>=0&&p.age>=17?'Student at '+bname(c):s>=0?'Pupil at '+bname(s):p.e>=1?'Left school · looking for work':'No school nearby'}
+  if(p.a===3)return'Retired';
+  const un=j?Math.min(0.6,j.unemp):0.1;if(p.h<un)return'Looking for work';
+  const off=L.shop.filter(q=>isOff(tiles[q])),shop=L.shop.filter(q=>!isOff(tiles[q]));
+  const pool=p.e===3&&off.length?off:p.e>=2&&shop.length&&p.h<0.7?shop:L.ind.length&&(p.e<=1||!shop.length)?L.ind:shop.length?shop:L.ind;
+  if(!pool.length)return'Works out of town';const w=pool[Math.floor(p.h*9973)%pool.length];return`Works at ${bname(w)}`}
+function czRows(i,t,rows){if(!G||!S)return;const P=czPeople(i);if(!P.length)return;const cap=capOf(t);
+  for(const p of P)rows.push([`${p.name}, ${p.age}`,`${czDoing(i,p)}<br><small style="opacity:.75">${CZE[p.e]}</small>`]);
+  if(cap>P.length)rows.push(['And',`${cap-P.length} more resident${cap-P.length===1?'':'s'}`])}
+function czJobRows(i,t,rows){if(!G)return;const k=t.t===4?'ind':isOff(t)?'off':'shop',w=CZJOB[k];
+  rows.push(['Workers needed',w.map((v,e)=>v>=0.1?`${Math.round(v*100)}% ${CZE[e].toLowerCase()}`:'').filter(Boolean).join(' · ')])}
+/* ---- the Citizens panel (tap the population) ---- */
+function czBar(parts){const s=parts.reduce((a,p)=>a+p[0],0)||1;return`<div style="display:flex;height:14px;border-radius:7px;overflow:hidden;margin:6px 0">${parts.map(([v,c])=>`<i style="width:${v/s*100}%;background:${c}"></i>`).join('')}</div>`}
+const czN=v=>Math.round(v).toLocaleString('en-US'),czP=v=>Math.round(v*100)+'%';
+function czPanel(open){const p=panelEl('czPanel');if(open===false){p.hidden=true;return}if(open===undefined&&p.hidden)return;p.hidden=false;const tab=p.dataset.tab||'people';
+  const head=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;gap:6px">${[['people','Citizens'],['trade','Trade and tourism']].map(([k,l])=>`<button data-czt="${k}" aria-pressed="${tab===k}" style="padding:4px 10px">${l}</button>`).join('')}</div><button data-czc="1" aria-label="Close">×</button></div>`;
+  if(tab==='trade'){p.innerHTML=head+econHtml();return}
+  const c=czG();if(!c||!S.pop){p.innerHTML=head+'<p>No one lives here yet. Zone homes next to a road.</p>';return}
+  S=S||stats();const j=czJobs(),n=c.n,ag=n.map(a=>a.reduce((x,y)=>x+y,0)),cv=czCover(),ad=n[2],ads=ad.reduce((a,b)=>a+b,0)||1;
+  let h=`<div style="font-size:22px;font-weight:700">${czN(S.pop)} <small style="font-size:13px;opacity:.75">people</small></div>`;
+  h+=`<h4 style="margin:10px 0 2px">Age</h4>${czBar(ag.map((v,a)=>[v,CZAC[a]]))}<ul class="czl">${ag.map((v,a)=>`<li><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${CZAC[a]};margin-right:6px"></i>${CZA[a]}</span><span>${czN(v)} · ${czP(v/S.pop)}</span></li>`).join('')}</ul>`;
+  h+=`<h4 style="margin:10px 0 2px">Education of adults</h4>${czBar(ad.map((v,e)=>[v,CZEC[e]]))}<ul class="czl">${ad.map((v,e)=>`<li><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${CZEC[e]};margin-right:6px"></i>${CZE[e]}</span><span>${czN(v)} · ${czP(v/ads)}</span></li>`).join('')}</ul>`;
+  h+=`<h4 style="margin:10px 0 2px">Jobs</h4><ul class="czl"><li><span>Workers</span><span>${czN(j.workers)}</span></li><li><span>Jobs in the city</span><span>${czN(j.jobs)}</span></li><li><span>Unemployed</span><span class="${j.unemp>0.1?'no':'ok'}">${czP(j.unemp)}</span></li></ul>
+    <table style="width:100%;border-collapse:collapse;margin-top:4px"><tr style="opacity:.7"><td>Education</td><td style="text-align:right">Workers</td><td style="text-align:right">Jobs</td><td style="text-align:right">Unfilled</td></tr>${[0,1,2,3].map(e=>`<tr style="border-top:1px solid var(--line)"><td style="padding:3px 0">${CZE[e]}</td><td style="text-align:right">${czN(j.W[e])}</td><td style="text-align:right">${czN(j.J[e])}</td><td style="text-align:right" class="${j.vac[e]>Math.max(5,j.J[e]*0.15)?'no':''}">${czN(j.vac[e])}</td></tr>`).join('')}</table>`;
+  h+=`<h4 style="margin:10px 0 2px">Schools reach</h4><ul class="czl"><li><span>Homes near a school</span><span>${czP(cv.s)}</span></li><li><span>Near a high school or college</span><span>${czP(cv.h)}</span></li><li><span>Near a university</span><span>${czP(cv.u)}</span></li><li><span>Graduated last month</span><span>${czN(c.gr[0])} · ${czN(c.gr[1])} · ${czN(c.gr[2])}</span></li></ul>`;
+  h+=`<h4 style="margin:10px 0 2px">Last month</h4><ul class="czl"><li><span>Born</span><span>${czN(c.born)}</span></li><li><span>Died</span><span>${czN(c.died)}</span></li><li><span>Moved in</span><span>${czN(c.mvIn)}</span></li><li><span>Moved out</span><span>${czN(c.mvOut)}</span></li><li><span>Tax from residents</span><span>${czTaxK()>=1?'+':''}${Math.round((czTaxK()-1)*100)}% for education and age</span></li></ul>`;
+  const tip=j.vac[3]+j.vac[2]>Math.max(20,(j.J[3]+j.J[2])*0.2)?'Offices cannot find enough graduates. Build a high school, a college or a university near homes.':cv.s<0.6?'Many children live far from a school. Build schools near homes.':j.unemp>0.15?'Many people are out of work. Zone more industry, shops or offices.':czShare(3)>0.2?'Your city is getting older. Clinics, hospitals and cemeteries will be busy.':'Your citizens are doing well.';
+  h+=`<p class="tip">${tip}</p>`;p.innerHTML=head+h}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-czt],[data-czc]');if(!b||!G)return;const p=panelEl('czPanel');
+  if(b.dataset.czc){czPanel(false);return}p.dataset.tab=b.dataset.czt;sfx('ui');czPanel(true)});
+{const pe=$('#pop')&&$('#pop').parentElement;if(pe){pe.classList.add('tapb');pe.title='Citizens · tap for details';pe.style.cursor='pointer';pe.addEventListener('click',()=>{if(!G)return;sfx('ui');const p=panelEl('czPanel');if(!p.hidden){p.hidden=true;return}czPanel(true)})}}
+setInterval(()=>{try{const p=document.getElementById('czPanel');if(p&&!p.hidden&&G)czPanel(true)}catch(e){}},2000);
+{const st=document.createElement('style');st.textContent='.czl{list-style:none;padding:0;margin:0}.czl li{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px solid var(--line)}.czl li span:last-child{text-align:right;font-variant-numeric:tabular-nums}#czPanel h4{font-size:13px;opacity:.85}#czPanel [aria-pressed=true]{background:var(--acc,#3ddc84);color:#10161d}';document.head.appendChild(st)}
+
+/* ---------- economy: tax by density, imports and exports, tourism (patch_net.py) ----------
+   Tax panel: separate rates for low and high density homes, low and high density shops, offices and industry (as in
+   Cities: Skylines). The old residential and commercial rates become the low density rates; the new ones start equal.
+   Special zones count as: eco homes = low density homes; organic shops = low density shops; leisure, tourism and
+   wall-to-wall shops = high density shops. Each zone's own rate nudges its growth.
+   Trade: raw-material industry (forestry, farming, oil, ore) feeds generic factories, factories feed the shops.
+   What is left over is exported for money; what is missing is imported, which costs the businesses some profit
+   (a little less tax). Cargo stations, cargo airports and the port carry exports for 30% more. */
+function taxInit(){if(!G)return;if(G.taxRH==null)G.taxRH=G.taxR;if(G.taxCH==null)G.taxCH=G.taxC;if(G.taxO==null)G.taxO=G.taxC}
+const econHigh=t=>t.t===2?(t.s|0)===0:t.t===3&&!isOff(t)&&(t.s|0)!==1&&(t.s|0)!==2;
+function taxKey(t){return t.t===2?(econHigh(t)?'RH':'R'):t.t===3?(isOff(t)?'O':econHigh(t)?'CH':'C'):'I'}
+{const _zs=zoneStat;zoneStat=function(s,t){_zs(s,t);const c=capOf(t);if(!c)return;const tx=zt(t).tax||1;
+  if(t.t===2){if(econHigh(t))s.popTH=(s.popTH||0)+c*tx}else if(t.t===3){if(isOff(t))s.joT=(s.joT||0)+c*tx;else if(econHigh(t))s.jcTH=(s.jcTH||0)+c*tx}}}
+/* the single rate that gives the same money as the separate rates */
+function taxEff(k){taxInit();if(!S)return G['tax'+k];
+  if(k==='R'){const all=S.popT??S.pop,hi=S.popTH||0,lo=all-hi;return all>0?(lo*G.taxR+hi*G.taxRH)/all:G.taxR}
+  if(k==='C'){const all=S.jcT??S.jc,hi=S.jcTH||0,of=S.joT||0,lo=all-hi-of;return all>0?(lo*G.taxC+hi*G.taxCH+of*G.taxO)/all:G.taxC}return G['tax'+k]}
+{const _ti=taxIncome;taxIncome=function(k){if(!G)return 0;taxInit();let v;if(k==='R'||k==='C'){const key='tax'+k,old=G[key];G[key]=taxEff(k);try{v=_ti(k)}finally{G[key]=old}}else v=_ti(k);
+  const ec=G.econ;if(ec){if(k==='C'&&ec.gNeed>0)v*=1-0.08*ec.gImp/ec.gNeed;if(k==='I'&&ec.rNeed>0)v*=1-0.1*ec.rImp/ec.rNeed}return v}}
+/* income from one rate row of the Tax panel */
+function taxPart(k){if(!S)return 0;if(k==='I')return taxIncome('I');const base=k[0],tot=taxIncome(base);taxInit();
+  const part=base==='R'?{R:((S.popT??S.pop)-(S.popTH||0))*G.taxR,RH:(S.popTH||0)*G.taxRH}:{C:((S.jcT??S.jc)-(S.jcTH||0)-(S.joT||0))*G.taxC,CH:(S.jcTH||0)*G.taxCH,O:(S.joT||0)*G.taxO};
+  const sum=Object.values(part).reduce((a,b)=>a+b,0);return sum>0?tot*part[k]/sum:0}
+/* demand uses the blended rates; then each zone's own rate pushes it up or down a little */
+{const _cd=computeDemand;computeDemand=function(){if(!G)return _cd();taxInit();const r=G.taxR,c=G.taxC;G.taxR=taxEff('R');G.taxC=taxEff('C');try{_cd()}finally{G.taxR=r;G.taxC=c}
+  D.o=Math.max(-1,Math.min(1,D.o-(G.taxO-taxEff('C'))*0.06))}}
+function zoneD(t){const d=isOff(t)?D.o:D[t.t];if(!G||t.t===4||isOff(t))return d;const k=taxKey(t),base=t.t===2?'R':'C';return Math.max(-1,Math.min(1,d-(G['tax'+k]-taxEff(base))*0.06))}
+/* ---- trade ---- */
+function econCalc(){const o={raw:0,fac:0,shop:0};for(const i of S.zones){const t=tiles[i];if(!t.l||access[i]<0)continue;const c=capOf(t);
+    if(t.t===4){if((t.s|0)===0)o.fac+=c;else o.raw+=c}else if(t.t===3&&!isOff(t)&&(t.s|0)!==4)o.shop+=c*((t.s|0)===2?0.5:1)}
+  const rNeed=o.fac*0.6,gMade=o.fac*1.1,gNeed=o.shop*1.2,rExp=Math.max(0,o.raw-rNeed),rImp=Math.max(0,rNeed-o.raw),gExp=Math.max(0,gMade-gNeed),gImp=Math.max(0,gNeed-gMade);
+  const port=(S.cnt&&(S.cnt[T.CARGO]||0))||(S.cstations||0)?1.3:1,link=tiles[ENTRY]&&tiles[ENTRY].t===T.ROAD;
+  const exp=link?Math.round((rExp*0.45+gExp*0.7)*port):0;
+  return{raw:o.raw,fac:o.fac,shop:o.shop,rNeed,gMade,gNeed,rExp,rImp,gExp,gImp,exp,port:port>1,link}}
+function econTourism(){let z=0,a=0,m=0,h=0,f=0;try{z=zoneTour();a=airTourism();m=monTour();h=(S.cnt[T.HELI]||0)*300;f=SC.tour?(S.cnt[T.FUN]||0)*450:0}catch(e){}
+  const pk=(G.econ&&G.econ.park)||0;const inc=z+a+m+h+f+pk;return{inc,hotels:z,air:a,mon:m,heli:h,fun:f,park:pk,visitors:Math.round(inc/22)}}
+/* called from the month's income (added to the tourism line) */
+function econMonth(){if(!G||!S)return 0;const e=econCalc(),pk=paMonth();e.park=pk;G.econ=e;const tr=econTourism();G.econ.tour=tr;
+  const hist=G.econH||(G.econH=[]);hist.push({x:e.exp,i:Math.round(e.rImp+e.gImp),v:tr.visitors});if(hist.length>12)hist.shift();return e.exp+pk}
+function econHtml(){if(!G||!S)return'';const e=G.econ||econCalc(),tr=econTourism(),f=v=>Math.round(v).toLocaleString('en-US');
+  let h=`<h4 style="margin:4px 0 2px">Goods</h4><ul class="czl"><li><span>Raw materials made (farms, forests, oil, ore)</span><span>${f(e.raw)}</span></li><li><span>Needed by factories</span><span>${f(e.rNeed)}</span></li><li><span>Goods made by factories</span><span>${f(e.gMade)}</span></li><li><span>Needed by shops</span><span>${f(e.gNeed)}</span></li></ul>`;
+  h+=`<h4 style="margin:10px 0 2px">Exports</h4><ul class="czl"><li><span>Raw materials</span><span>${f(e.rExp)}</span></li><li><span>Goods</span><span>${f(e.gExp)}</span></li><li><span>Export income</span><span class="ok">${fmt(e.exp||0)} / month</span></li><li><span>Freight links</span><span>${!e.link?'<span class="no">Highway not linked</span>':e.port?'Highway + cargo · +30%':'Highway only'}</span></li></ul>`;
+  h+=`<h4 style="margin:10px 0 2px">Imports</h4><ul class="czl"><li><span>Raw materials</span><span>${f(e.rImp)}</span></li><li><span>Goods</span><span>${f(e.gImp)}</span></li><li><span>Effect</span><span>${e.rImp+e.gImp>0?`<span class="no">Industry tax −${Math.round(e.rNeed?10*e.rImp/e.rNeed:0)}% · shop tax −${Math.round(e.gNeed?8*e.gImp/e.gNeed:0)}%</span>`:'<span class="ok">None</span>'}</span></li></ul>`;
+  h+=`<h4 style="margin:10px 0 2px">Tourism</h4><ul class="czl"><li><span>Visitors a month</span><span>${f(tr.visitors)}</span></li><li><span>Hotels and tourist shops</span><span>${fmt(tr.hotels)}</span></li><li><span>Airports</span><span>${fmt(tr.air)}</span></li><li><span>Monuments</span><span>${fmt(tr.mon)}</span></li><li><span>Park areas (tickets)</span><span>${fmt(tr.park)}</span></li><li><span>Other attractions</span><span>${fmt(tr.heli+tr.fun)}</span></li><li><span>Tourism income</span><span class="ok">${fmt(tr.inc)} / month</span></li></ul>`;
+  const tip=e.rImp>e.rNeed*0.3?'Factories import most of their raw materials. Zone forestry, farming, oil or ore industry.':e.gImp>e.gNeed*0.3?'Shops import most of their goods. Zone more generic industry.':!e.port&&e.exp>800?'A cargo station or cargo airport would earn 30% more from exports.':tr.visitors<200?'Hotels, monuments, attractions and an airport bring tourists.':'Trade is balanced.';
+  return h+`<p class="tip">${tip}</p>`}
+
+/* ---------- heating, snow dumps and park areas (patch_net.py) ----------
+   Heating (Power menu): in cold weather (always on the Frostpeak map) homes need heat. Boiler stations and geothermal
+   plants share their heat over connected roads like power; cold homes make people unhappy.
+   Snow dump (Garbage menu): while snow lies on the roads, ploughs drive out from snow dumps; roads out of their reach
+   stay snowy and people complain.
+   Park areas (Parks menu): a park gate turns the parks, attractions and footpaths joined to it into one park area, as
+   in Cities: Skylines Park Life. Visitors buy tickets (price on the gate's card); the area levels up with visitors. */
+SV[T.POWER].sizes.push({nm:'Boiler station',tag:'Heating',cost:3500,up:90,mw:0,heat:3000,poll:[2,60],lv:6,tier:1,eff:'Heats 3,000 residents in cold weather'},
+  {nm:'Geothermal heating plant',tag:'Heating',cost:9000,up:160,mw:0,heat:12000,lv:16,tier:2,clean:1,eff:'Heats 12,000 residents · clean'});
+SV[T.POWER].order.push(5,6);
+SV[T.GARB].sizes.push({nm:'Snow dump',tag:'Snow',cost:2000,up:50,trucks:0,snow:1,r:24,lv:4,tier:1,eff:'Ploughs clear snow from roads within 24 tiles'});
+SV[T.PARK].sizes.push({nm:'Park gate',tag:'Park area',cost:1200,up:25,r:4,lv:3,tier:1,gate:1,eff:'Joins the parks and attractions around it into a park area that sells tickets'});
+SV[T.PARK].order.push(9);
+{const _svc=ICO3.svc;ICO3.svc=function(t,l){
+  if(t===T.POWER&&l===5)return'<svg viewBox="0 0 80 64" width="80" height="64"><rect width="80" height="64" rx="6" fill="#9aa1a8"/><rect x="10" y="26" width="40" height="30" fill="#b9614a"/><rect x="56" y="6" width="9" height="50" fill="#7d858c"/><path d="M14 40h32M14 48h32" stroke="#e05a3a" stroke-width="3"/></svg>';
+  if(t===T.POWER&&l===6)return'<svg viewBox="0 0 80 64" width="80" height="64"><rect width="80" height="64" rx="6" fill="#8fb07a"/><ellipse cx="34" cy="44" rx="22" ry="14" fill="#e4e8ea"/><path d="M58 40c0-10 8-10 8-22M66 40c0-8 6-10 6-18" stroke="#fff" stroke-width="4" fill="none"/><rect x="50" y="42" width="22" height="5" fill="#d25a3a"/></svg>';
+  if(t===T.GARB&&l===3)return'<svg viewBox="0 0 80 64" width="80" height="64"><rect width="80" height="64" rx="6" fill="#b0b4b8"/><path d="M6 54 24 22 42 54zM30 54 50 16 72 54z" fill="#f4f8fb"/><rect x="8" y="50" width="22" height="8" fill="#f08a24"/></svg>';
+  if(t===T.PARK&&l===9)return'<svg viewBox="0 0 80 64" width="80" height="64"><rect width="80" height="64" rx="6" fill="#7cc35f"/><rect x="14" y="16" width="10" height="40" fill="#c9b79a"/><rect x="56" y="16" width="10" height="40" fill="#c9b79a"/><path d="M12 18 Q40 0 68 18" stroke="#2f7a4f" stroke-width="7" fill="none"/><rect x="30" y="38" width="20" height="18" fill="#e5a92f"/></svg>';
+  return _svc(t,l)}}
+/* ---- drawing ---- */
+function heatDraw(g,Y0,em,geo){box(g,geo?'#8fb07a':'#9aa1a8',0.98,Y0,0.98,0,0,0,false);
+  if(!geo){box(g,'#b9614a',0.5,0.32,0.4,-0.18,Y0,0.12);box(g,'#6f767c',0.52,0.03,0.42,-0.18,Y0+0.32,0.12,false);for(const z of[0.02,0.2])box(g,'#e05a3a',0.52,0.02,0.02,-0.18,Y0+0.12,z+0.12,false);
+    part(g,CYL,'#7d858c',0.05,1.25,0.05,0.28,Y0,-0.25);part(g,CYL,'#d6312b',0.052,0.06,0.052,0.28,Y0+1.1,-0.25,false);em.push([0.28,Y0+1.28,-0.25]);
+    for(const x of[0.12,0.22,0.32])part(g,CYL,'#c9cdd1',0.05,0.18,0.05,x,Y0,0.25)}
+  else{part(g,BALL,'#e4e8ea',0.26,0.2,0.26,-0.15,Y0,-0.05);box(g,'#d6dadd',0.3,0.16,0.22,0.22,Y0,0.15);
+    for(const z of[-0.3,-0.18])box(g,'#d25a3a',0.7,0.03,0.03,0.05,Y0+0.08,z,false);for(const x of[0.25,0.38]){part(g,CYL,'#9aa3ad',0.035,0.3,0.035,x,Y0,-0.25);em.push([x,Y0+0.32,-0.25])}}}
+function snowDumpDraw(g,Y0){box(g,'#b0b4b8',0.98,Y0,0.98,0,0,0,false);
+  for(const[x,z,s]of[[-0.22,-0.2,0.3],[0.15,-0.25,0.24],[-0.05,0.05,0.2],[0.3,0.05,0.16]])part(g,CONE,'#f4f8fb',s,s*0.8,s,x,Y0,z);
+  for(const sd of[-1,1]){box(g,'#59606a',0.96,0.08,0.01,0,Y0,sd*0.47,false);box(g,'#59606a',0.01,0.08,0.96,sd*0.47,Y0,0,false)}
+  box(g,'#f08a24',0.12,0.07,0.22,-0.3,Y0,0.3);box(g,'#3a3f45',0.16,0.04,0.02,-0.3,Y0,0.42,false);box(g,'#d9e4ea',0.32,0.1,0.18,0.22,Y0,0.32)}
+function parkGateDraw(g,Y0){box(g,'#7cc35f',0.98,Y0,0.98,0,0,0,false);box(g,'#d8cdb8',0.34,0.004,0.98,0,Y0,0,false);
+  for(const x of[-0.24,0.24]){box(g,'#c9b79a',0.09,0.34,0.09,x,Y0,0.36);part(g,CONE,'#2f7a4f',0.08,0.08,0.08,x,Y0+0.34,0.36,false)}
+  box(g,'#2f7a4f',0.58,0.06,0.05,0,Y0+0.28,0.36);box(g,'#f2e6c9',0.3,0.04,0.052,0,Y0+0.29,0.362,false);
+  box(g,'#e5a92f',0.14,0.14,0.12,0.33,Y0,0.18);box(g,'#c0392b',0.16,0.02,0.14,0.33,Y0+0.14,0.18,false);
+  for(const x of[-0.06,0.06])box(g,'#59606a',0.01,0.07,0.08,x,Y0,0.3,false);
+  for(const sd of[-1,1])box(g,'#3f6e3a',0.2,0.08,0.06,sd*0.38,Y0,0.44,false);for(const[x,z]of[[-0.3,-0.2],[0.3,-0.25],[0,-0.32]])part(g,CONE,'#3f8f4a',0.1,0.24,0.1,x,Y0,z)}
+/* ---- heating ---- */
+const heatC=new Uint8Array(N*N+60000),roadHT=new Uint8Array(N*N+60000);
+U.ht={made:0,need:0,served:0};
+function heatOn(){return!!(G&&(SC.cold||(typeof W!=='undefined'&&(W.type==='snow'||W.type==='blizzard'))))}
+{const _ut=utilities;utilities=function(){_ut();heatC.fill(0);let nc=0,any=false;for(const i of OWNIDX){if(comp[i]>=nc)nc=comp[i]+1;const t=tiles[i];if(t.t===T.POWER&&SVI(6,t.l).heat)any=true}
+  if(!any){U.ht={made:0,need:0,served:0};let nd=0;for(const i of OWNIDX){const t=tiles[i];if(t.t===2&&t.l)nd+=capOf(t)}U.ht.need=nd;return}
+  const h=allocate(nc,i=>{const t=tiles[i];return t.t===T.POWER?(SVI(6,t.l).heat||0)*budOut('power'):0},t=>t.t===2&&t.l?capOf(t):0,heatC,roadHT,1e9);U.ht=h}}
+function heatShare(){if(!S||!S.lists)return 1;let tot=0,ok=0;for(const i of S.lists.home){const c=capOf(tiles[i]);tot+=c;if(heatC[i])ok+=c}return tot?ok/tot:1}
+/* ---- snow ---- */
+const SNOW={dumps:[],cov:new Uint8Array(N*N),t:-1};
+function snowScan(){if(!G||SNOW.t===G.day)return SNOW;SNOW.t=G.day;SNOW.dumps=[];SNOW.cov.fill(0);
+  for(const i of OWNIDX){const t=tiles[i];if(t.t===T.GARB&&SVI(15,t.l).snow&&feedRoad(i)>=0){SNOW.dumps.push(i);markR(i%N,(i/N)|0,Math.round(SVI(15,t.l).r*(0.7+0.3*budF('garb'))),SNOW.cov)}}return SNOW}
+function snowNow(){return typeof W!=='undefined'&&W.cover>0.35&&(W.snow>0.1||SC.cold||W.temp<1)}
+function snowShare(){const s=snowScan();if(!S||!S.roadList||!S.roadList.length)return 1;let ok=0;for(const i of S.roadList)if(s.cov[i])ok++;return ok/S.roadList.length}
+function snowFrom(){const s=snowScan();const d=s.dumps[(Math.random()*s.dumps.length)|0];return d!==undefined?feedRoad(d):-1}
+function snowRoad(){const s=snowScan(),L=S.roadList||[];for(let k=0;k<20;k++){const r=L[(Math.random()*L.length)|0];if(r!==undefined&&s.cov[r])return r}return L[(Math.random()*L.length)|0]}
+/* keep snow dumps out of the garbage service */
+{const _ns=nearestStation;nearestStation=function(type,i){if(type!==T.GARB)return _ns(type,i);const keep=U.gsites;U.gsites=keep.filter(j=>!(tiles[j].t===T.GARB&&SVI(15,tiles[j].l).snow));try{return _ns(type,i)}finally{U.gsites=keep}}}
+/* ---- park areas ---- */
+const PAPARK=[30,80,150,25,20,30,25,20,40,0],PAFUN=[200,600,1500,3000,2000],PALV=[0,3000,15000,50000,150000];
+let PA={list:[],t:0,of:new Map()};
+function paFloodOK(j){const t=tiles[j];if(!t||t.lock)return 0;if(t.t===T.PARK||t.t===T.FUN||t.t===T.PATH)return j;if(t.t===T.PART){const a=bigAnchorOf(j);if(a>=0&&(tiles[a].t===T.FUN||tiles[a].t===T.PARK))return a}return-1}
+function paScan(){const now=performance.now();if(now-PA.t<1500)return PA;PA.t=now;PA.list=[];PA.of=new Map();if(!G)return PA;
+  for(const i of OWNIDX){const t=tiles[i];if(t.t!==T.PARK||t.l!==9||PA.of.has(i))continue;
+    const seen=new Set([i]),q=[i],tl=[];let val=0,att=0;const anc=new Set();
+    while(q.length&&seen.size<700){const j=q.pop();tl.push(j);const x=j%N,z=(j/N)|0;const a=paFloodOK(j);
+      if(a>=0&&!anc.has(a)){anc.add(a);const ta=tiles[a];if(ta.t===T.PARK){val+=PAPARK[ta.l|0]||20;if(ta.l!==9&&ta.l>=1)att++}else if(ta.t===T.FUN){val+=PAFUN[ta.l|0]||300;att++}else val+=3}
+      for(const[dx,dz]of D4){if(!inB(x+dx,z+dz))continue;const k=idx(x+dx,z+dz);if(seen.has(k))continue;if(paFloodOK(k)>=0){seen.add(k);q.push(k)}}}
+    const gates=[...anc].filter(a=>tiles[a].t===T.PARK&&tiles[a].l===9),key=Math.min(...gates),st=paSt(key);
+    const ar={key,gates,tiles:tl,val,att,lvl:paLvl(st.tot)};PA.list.push(ar);for(const g of gates)PA.of.set(g,ar)}
+  return PA}
+function paSt(key){if(!G.pa)G.pa={};return G.pa[key]||(G.pa[key]={tot:0,last:0,inc:0,fee:3})}
+function paLvl(tot){let l=1;for(let k=1;k<PALV.length;k++)if(tot>=PALV[k])l=k+1;return l}
+function paMonth(){if(!G||!S)return 0;const P=paScan();if(!P.list.length)return 0;const tr=econTourism(),base=Math.max(0,tr.inc-tr.park)/22;
+  const demand=(S.pop||0)*0.25+base*0.4;let A=0;for(const a of P.list)A+=a.val*(1+0.15*(a.lvl-1));let inc=0;
+  for(const a of P.list){const st=paSt(a.key),fee=st.fee??3,cap=a.val*(1+0.2*(a.lvl-1)),share=A>0?demand*a.val*(1+0.15*(a.lvl-1))/A:0;
+    const v=Math.round(Math.min(cap,share)*Math.max(0,1-fee/20));st.last=v;st.tot+=v;st.inc=v*fee;inc+=st.inc;
+    const nl=paLvl(st.tot);if(nl>a.lvl){a.lvl=nl;notify(`<b>Park area level ${nl}!</b> ${bname(a.key)} now draws more visitors.`)}}
+  return inc}
+function paRows(i,rows){const a=paScan().of.get(i);if(!a){rows.push(['Park area','Place parks, attractions or footpaths next to the gate']);return}const st=paSt(a.key),nx=PALV[a.lvl];
+  rows.push(['Park area',`Level ${a.lvl} of 5`],['Area',`${a.tiles.length} tiles · ${a.att} attraction${a.att===1?'':'s'}`],['Visitors last month',(st.last||0).toLocaleString('en-US')],['Visitors so far',(st.tot||0).toLocaleString('en-US')],
+    ['Next level',nx?`at ${nx.toLocaleString('en-US')} visitors`:'Top level'],['Ticket income',`${fmt(st.inc||0)} last month`],
+    ['Ticket price',`<span>${[0,2,3,5,8].map(v=>`<button data-paf="${v}" data-pak="${a.key}" aria-pressed="${(st.fee??3)===v}" style="padding:2px 6px;margin-left:3px;font-size:12px">${v?'$'+v:'Free'}</button>`).join('')}</span>`])}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-paf]');if(!b||!G)return;paSt(+b.dataset.pak).fee=+b.dataset.paf;sfx('ui');toast(+b.dataset.paf?`Park tickets now cost ${fmt(+b.dataset.paf)}.`:'The park area is now free to enter.');if(inspI>=0)inspect(inspI)});
+/* green border round the park area while its gate's card is open */
+const PAB={g:null,key:-1};
+function paBorder(){const i=inspI,a=i>=0&&tiles[i]&&tiles[i].t===T.PARK&&tiles[i].l===9?paScan().of.get(i):null,key=a?a.key*7+a.tiles.length:-1;if(key===PAB.key)return;PAB.key=key;
+  if(PAB.g){scene.remove(PAB.g);PAB.g.geometry.dispose();PAB.g=null}if(!a)return;const set=new Set(a.tiles),P=[],y=0.12;
+  for(const j of a.tiles){const[wx,wz]=wpos(j),x=j%N,z=(j/N)|0;for(const[dx,dz]of D4){if(inB(x+dx,z+dz)&&set.has(idx(x+dx,z+dz)))continue;
+    const cx=wx+dx*0.5,cz=wz+dz*0.5,ex=dz*0.5,ez=dx*0.5;P.push(cx-ex,y,cz-ez,cx+ex,y,cz+ez)}}
+  const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));PAB.g=new THREE.LineSegments(bg,new THREE.LineBasicMaterial({color:'#3ddc84',depthTest:false,transparent:true}));PAB.g.renderOrder=9;scene.add(PAB.g)}
+{const _uc5=updateCars;updateCars=function(dt){_uc5(dt);try{paBorder()}catch(e){}}}
+/* ---- cards and happiness ---- */
+function svc2Rows(i,t,sv,rows){
+  if(t.t===T.PARK&&t.l===9){paRows(i,rows);return true}
+  if(t.t===T.POWER&&sv.heat){rows.push(['Heats',`${sv.heat.toLocaleString('en-US')} residents`],['City needs',`${Math.round(U.ht.need).toLocaleString('en-US')} residents · ${heatOn()?'cold now':'not needed in this weather'}`],['Homes heated',Math.round(heatShare()*100)+'%']);return true}
+  if(t.t===T.GARB&&sv.snow){rows.push(['Reach',`${sv.r} tiles`],['Roads in reach',Math.round(snowShare()*100)+'%'],['Snow on the roads',snowNow()?'Yes · ploughs are out':'None now']);return true}
+  return false}
+function svc2HomeRows(i,rows){if(heatOn())rows.push(['Heating',heatC[i]?'<span class="ok">Warm</span>':'<span class="no">Cold</span>'])}
+{const _hp=happyParts;happyParts=function(){const o=_hp();if(!G||!S||!S.pop)return o;const add=(v,nm,tip)=>{if(Math.abs(v)>=0.5)o.push({v,nm,tip})};
+  if(heatOn()&&S.pop>100)add(-(1-heatShare())*10,'Cold homes','Build a boiler station or geothermal plant (Power menu) and link it to the homes by road.');
+  if(snowNow()&&S.pop>300)add(-(1-snowShare())*6,'Snow on the roads','Build a snow dump (Garbage menu) so ploughs clear the streets.');
+  const P=paScan();let l=0;for(const a of P.list)l+=a.lvl;add(Math.min(6,l),'Park areas','');return o}}
+
+/* ---------- highway interchange (patch_net.py) ----------
+   One tap builds a highway interchange on free land (18 x 18 tiles): a ground highway, a second highway raised over
+   it, and four curved slip roads that leave the raised deck at junctions in the air and come down to the ground
+   highway. Every end is a normal road end, so the highways can be carried on with the road tool. Button in the road
+   tool bar; Turn rotates it 45 degrees. */
+var IX={on:false,rot:0,ghost:null};
+const IXR=9;
+function ixPts(cx,cz){cx=Math.floor(cx+HALF)-HALF+0.5+0.013;cz=Math.floor(cz+HALF)-HALF+0.5+0.007;const c=Math.cos(IX.rot),s=Math.sin(IX.rot);return(u,v)=>({x:cx+u*c-v*s,z:cz+u*s+v*c})}
+function ixFree(cx,cz){const P=ixPts(cx,cz);for(let u=-IXR-0.5;u<=IXR+0.5;u+=0.5)for(let v=-IXR-0.5;v<=IXR+0.5;v+=0.5){const p=P(u,v),j=netTile(p.x,p.z);if(j<0)return'That runs off the map.';const t=tiles[j];
+    if(t.lock||isEntry(j))return'That land is not yours yet. Buy the area first.';if(!(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4&&!t.l)))return'An interchange needs 18 × 18 tiles of free land (no roads or buildings).'}return null}
+function ixBuild(cx,cz){const bad=ixFree(cx,cz);if(bad){toast(bad);sfx('err');return false}
+  const tl=TOOLS.find(t=>t.id==='road'),keep={rt:tl.rt,lvl:NB.lvl,mode:CV.mode,ang:NB.angle,grid:NB.grid},P=ixPts(cx,cz),before=G.money;
+  const go=(lvl,A,B,C1,C2)=>{NB.lvl=lvl;const plan=netPlan(tl,A,B,C1,C2);if(plan.bad){toast('Interchange: '+plan.bad);return false}return netBuild(tl,plan)};
+  tl.rt=5;CV.mode='';NB.angle=false;NB.grid=false;let ok=true,ramps=0;
+  try{if(G.money<4000){toast(`An interchange costs about ${fmt(4000)}, but you have ${fmt(G.money)}.`);sfx('err');return false}
+    ok=go(0,P(-IXR,0),P(IXR,0))&&go(1,P(0,-IXR),P(0,IXR));
+    if(ok)for(const su of[1,-1])for(const sv of[-1,1]){const a=P(0,sv*4),b=P(su*7,0),A=netSnap(a.x,a.z,'road'),B=netSnap(b.x,b.z,'road');
+      const d=(u,v)=>{const p=P(u,v),o=P(0,0);return[p.x-o.x,p.z-o.z]},k1=d(su*1.5,sv*1.6),k2=d(su*1.8,sv*1.5);
+      if(go(1,A,B,[A.x+k1[0],A.z+k1[1]],[B.x+k2[0],B.z+k2[1]]))ramps++}}
+  finally{tl.rt=keep.rt;NB.lvl=keep.lvl;CV.mode=keep.mode;NB.angle=keep.ang;NB.grid=keep.grid}
+  if(!ok)return false;toast(ramps===4?`Interchange built for ${fmt(before-G.money)}.`:`Highways built; ${ramps} of 4 slip roads fitted.`);addXP(40);return true}
+function ixGhost(p){if(IX.ghost){scene.remove(IX.ghost);IX.ghost.geometry.dispose();IX.ghost=null}if(!p||!IX.on)return;const P=ixPts(p.x,p.z),V=[],R=IXR+0.5;
+  const ln=(a,b)=>{const A=P(...a),B=P(...b);V.push(A.x,0.15,A.z,B.x,0.15,B.z)};ln([-R,-R],[R,-R]);ln([R,-R],[R,R]);ln([R,R],[-R,R]);ln([-R,R],[-R,-R]);ln([-IXR,0],[IXR,0]);ln([0,-IXR],[0,IXR]);
+  for(const su of[1,-1])for(const sv of[-1,1]){ln([0,sv*4],[su*3,sv*3.5]);ln([su*3,sv*3.5],[su*7,0])}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));const bad=ixFree(p.x,p.z);
+  IX.ghost=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:bad?'#ff6b5b':'#5ee08a',depthTest:false,transparent:true}));IX.ghost.renderOrder=9;scene.add(IX.ghost)}
+canvas.addEventListener('pointerdown',e=>{if(!IX.on||e.button!==0||!tool||tool.id!=='road')return;const g=groundAt(e.clientX,e.clientY);if(!g)return;e.stopImmediatePropagation();e.preventDefault();
+  if(ixBuild(g.x,g.z)){IX.on=false;ixGhost(null);cvBar()}},true);
+canvas.addEventListener('pointermove',e=>{if(!IX.on)return;const g=groundAt(e.clientX,e.clientY);if(g)ixGhost(g)},true);
+{const _st=setTool;setTool=function(t){_st(t);if(IX.on&&(!t||t.id!=='road')){IX.on=false;ixGhost(null)}}}
+{const _cb=cvBar;cvBar=function(){_cb();const d=$('#cvBar');if(!d||d.hidden||!tool||tool.id!=='road')return;const s=document.createElement('span');s.style.cssText='grid-column:1/-1;display:flex;gap:6px;align-items:center';
+  const lock=lvl()<15;s.innerHTML=`<button id="ixBtn" aria-pressed="${IX.on}" ${lock?'disabled':''} style="height:32px;padding:0 10px">Highway interchange</button>${IX.on?'<button id="ixRot" style="height:32px;padding:0 10px">Turn</button>':''}<span style="color:var(--muted)">${lock?'Level 15':IX.on?'Tap free land · 18 × 18 tiles':''}</span>`;d.appendChild(s);
+  s.querySelector('#ixBtn').onclick=()=>{IX.on=!IX.on;if(!IX.on)ixGhost(null);sfx('ui');if(IX.on){netEnd();toast('Tap free land to build an interchange. Turn rotates it.')}cvBar()};
+  const r=s.querySelector('#ixRot');if(r)r.onclick=()=>{IX.rot=(IX.rot+Math.PI/4)%(Math.PI*2);sfx('ui')}}}
+
+/* ---------- map editor (patch_net.py) ----------
+   New game > Map editor opens an empty map of the picked scenario in editor mode: time stands still, money does
+   not matter and land costs nothing. Brushes paint forest, clear trees, and lay fertile land, oil or ore. Every brush
+   stroke is kept (G.ed.s = [[kind, x, z, radius]]), so the edits survive saving and come back on land bought later.
+   Save map stores {name, sc, rseed, strokes} in 'pc-maps'; New game lists those maps and starts a city on one.
+   Exit editor turns the map into a normal city. */
+const EDK={tree:{nm:'Forest',c:'#3f8f4a'},clear:{nm:'Clear trees',c:'#b9a27a'},fert:{nm:'Fertile land',c:'#c9b14a'},oil:{nm:'Oil',c:'#3d3a44'},ore:{nm:'Ore',c:'#8a7fa0'},none:{nm:'Remove resources',c:'#9aa3ad'}};
+var ED={k:null,r:3,down:false,last:null};
+const edOn=()=>!!(G&&G.edit);
+function edMaps(){try{return JSON.parse(store('pc-maps')||'[]')}catch(e){return[]}}
+function edSaveMaps(a){store('pc-maps',JSON.stringify(a))}
+/* one stroke on the tiles it covers (own land only); resources change RSC, trees change tiles */
+function edApply(st,redraw){const[k,x,z,r]=st,cx=Math.floor(x),cz=Math.floor(z),touched=[];
+  for(let dz=-Math.ceil(r);dz<=Math.ceil(r);dz++)for(let dx=-Math.ceil(r);dx<=Math.ceil(r);dx++){const X=cx+dx,Z=cz+dz;if(!inB(X,Z))continue;const d=Math.hypot(dx,dz)/Math.max(0.5,r);if(d>1)continue;const i=idx(X,Z),t=tiles[i];if(!t||t.lock)continue;
+    if(k==='tree'){if(t.t===T.EMPTY&&hash2(X*1.7+st[1],Z*2.3+st[2])<0.85){t.t=T.TREE;touched.push(i)}}
+    else if(k==='clear'){if(t.t===T.TREE){t.t=T.EMPTY;touched.push(i)}}
+    else if(k==='none'){RSC.oil[i]=RSC.ore[i]=RSC.fert[i]=0}
+    else if(t.t!==T.RIVER){const v=Math.round(255*(1-d*d*0.6));RSC[k][i]=Math.max(RSC[k][i],v);if(k!=='fert'&&G.rd)delete G.rd[i]}}
+  if(redraw&&touched.length){for(const i of touched)buildTile(i);forestScan()}
+  return touched.length}
+function edReplay(area){if(!G||!G.ed||!G.ed.s)return;for(const st of G.ed.s){if(area!==undefined){const a=areaOf(idx(Math.max(0,Math.min(N-1,Math.floor(st[1]))),Math.max(0,Math.min(N-1,Math.floor(st[2])))));if(Math.abs(a%AGRID-area%AGRID)>1||Math.abs(((a/AGRID)|0)-((area/AGRID)|0))>1)continue}edApply(st,false)}}
+/* strokes come back after the resources are rolled from the seed, and on land bought later */
+{const _gr=genResources;genResources=function(){_gr();if(G&&G.ed&&G.ed.s)for(const st of G.ed.s)if(st[0]!=='tree'&&st[0]!=='clear')edApply(st,false)}}
+{const _ga=genArea;genArea=function(a){_ga(a);if(G&&G.ed&&G.ed.s&&G.ed.s.some(s=>s[0]==='tree'||s[0]==='clear'))for(const st of G.ed.s)if(st[0]==='tree'||st[0]==='clear')edApply(st,false)}}
+/* editor: no time, free land */
+{const _tk=tick;tick=function(){if(edOn())return;_tk()}}
+{const _an=areaNext;areaNext=function(){return edOn()?{lv:1,cost:0}:_an()}}
+{const _ab=areaBuyable;areaBuyable=function(a){return edOn()?!OWN.has(a):_ab(a)}}
+function edPaint(x,z){if(!ED.k||!G)return;const st=[ED.k,+(x+HALF).toFixed(2),+(z+HALF).toFixed(2),ED.r];if(ED.last&&Math.hypot(st[1]-ED.last[1],st[2]-ED.last[2])<ED.r*0.5)return;ED.last=st;
+  if(!G.ed)G.ed={s:[]};G.ed.s.push(st);if(G.ed.s.length>6000)G.ed.s.splice(0,G.ed.s.length-6000);edApply(st,true);if(ov.mode==='resources')drawOverlay()}
+canvas.addEventListener('pointerdown',e=>{if(!edOn()||!ED.k||e.button!==0)return;const g=groundAt(e.clientX,e.clientY);if(!g)return;e.stopImmediatePropagation();e.preventDefault();ED.down=true;ED.last=null;edPaint(g.x,g.z)},true);
+canvas.addEventListener('pointermove',e=>{if(!ED.down||!ED.k)return;const g=groundAt(e.clientX,e.clientY);if(g){e.stopImmediatePropagation();edPaint(g.x,g.z)}},true);
+addEventListener('pointerup',()=>{if(ED.down){ED.down=false;ED.last=null;recompute();S=stats();save()}});
+function edBar(){let d=$('#edBar');if(!d){d=document.createElement('div');d.id='edBar';d.className='card';d.style.cssText='position:absolute;left:calc(12px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:9;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:12px;max-width:min(330px,calc(100vw - 24px))';document.body.appendChild(d)}
+  d.hidden=!edOn()||atTitle;if(d.hidden)return;
+  d.innerHTML=`<b style="font-size:14px">Map editor</b><span style="color:var(--muted)">Pick a brush, then tap or drag on the land. Use the Areas tool to add more land (free here).</span>
+    <span style="display:flex;flex-wrap:wrap;gap:4px">${Object.entries(EDK).map(([k,o])=>`<button data-edk="${k}" aria-pressed="${ED.k===k}" style="padding:4px 8px"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${o.c};margin-right:5px"></i>${o.nm}</button>`).join('')}</span>
+    <span style="display:flex;gap:4px;align-items:center"><span style="color:var(--muted)">Brush</span>${[[1.5,'Small'],[3,'Medium'],[6,'Big']].map(([r,l])=>`<button data-edr="${r}" aria-pressed="${ED.r===r}" style="padding:4px 8px">${l}</button>`).join('')}</span>
+    <span style="display:flex;gap:6px"><input id="edName" maxlength="24" placeholder="Map name" value="${(G.edName||G.name||'').replace(/"/g,'')}" style="flex:1;min-width:0"><button id="edSave">Save map</button></span>
+    <span style="display:flex;gap:6px"><button id="edUndo" ${G.ed&&G.ed.s&&G.ed.s.length?'':'disabled'}>Undo last strokes</button><button id="edExit">Exit editor</button></span>`;
+  d.querySelectorAll('[data-edk]').forEach(b=>b.onclick=()=>{ED.k=ED.k===b.dataset.edk?null:b.dataset.edk;setTool(TOOLS[0]);if(ED.k&&ED.k!=='tree'&&ED.k!=='clear')setOverlayAuto('resources');else setOverlayAuto(null);sfx('ui');edBar()});
+  d.querySelectorAll('[data-edr]').forEach(b=>b.onclick=()=>{ED.r=+b.dataset.edr;sfx('ui');edBar()});
+  d.querySelector('#edSave').onclick=()=>{const nm=d.querySelector('#edName').value.trim()||G.name;G.edName=nm;const a=edMaps().filter(m=>m.id!==G.edId);G.edId=G.edId||('m'+Date.now().toString(36));
+    a.push({id:G.edId,name:nm,sc:G.sc,rseed:G.rseed,s:(G.ed&&G.ed.s)||[],t:Date.now()});edSaveMaps(a);save();toast(`Map “${nm}” saved. Start a city on it from New game.`);sfx('cash')};
+  d.querySelector('#edUndo').onclick=()=>{const s=G.ed.s;const n=Math.min(s.length,12);const gone=s.splice(s.length-n,n);genResources();
+    for(const st of gone)if(st[0]==='tree'||st[0]==='clear'){const[k,x,z,r]=st;for(let dz=-Math.ceil(r);dz<=Math.ceil(r);dz++)for(let dx=-Math.ceil(r);dx<=Math.ceil(r);dx++){const X=Math.floor(x)+dx,Z=Math.floor(z)+dz;if(!inB(X,Z)||Math.hypot(dx,dz)>r)continue;const i=idx(X,Z),t=tiles[i];if(!t||t.lock||(t.t!==T.TREE&&t.t!==T.EMPTY))continue;const w=landTree(X,Z)?T.TREE:T.EMPTY;if(t.t!==w){t.t=w;buildTile(i)}}}
+    for(const st of s)if(st[0]==='tree'||st[0]==='clear')edApply(st,true);forestScan();drawOverlay();sfx('doze');edBar()};
+  d.querySelector('#edExit').onclick=()=>{delete G.edit;ED.k=null;setOverlayAuto(null);edBar();G.money=SC.money;save();toast('Editor closed. This map is now a normal city.');sfx('ui')}}
+/* starting points: the editor, or a city on a saved map (set before the city is made, read right after) */
+{const _fc=foundCity;foundCity=function(name,sc,tut){try{ED.pend=JSON.parse(store('pc-edgo')||'null')}catch(e){ED.pend=null}return _fc(name,sc,tut)}}
+{const _nc=newCity;newCity=function(name){const go=ED.pend;ED.pend=null;if(go)try{localStorage.removeItem('pc-edgo')}catch(e){}
+  _nc(name);if(!go)return;
+  if(go.mode==='edit'){G.edit=1;G.money=1e9;G.ed={s:[]};G.edName=name;setSpeed(0);setTimeout(()=>{edBar();toast('Map editor: paint forests and resources, then Save map.')},300)}
+  else if(go.mode==='map'){const m=edMaps().find(q=>q.id===go.id);if(!m)return;G.rseed=m.rseed;G.ed={s:m.s.slice()};G.mapName=m.name;genResources();for(const st of G.ed.s)if(st[0]==='tree'||st[0]==='clear')edApply(st,false);forestScan();buildAll();recompute();S=stats();save()}}}
+{const _oc=openCity;openCity=function(id){const r=_oc(id);setTimeout(()=>{try{edBar()}catch(e){}},200);return r}}
+/* New game panel: the editor button and the saved maps */
+function edNewUI(){const p=$('#pNew');if(!p)return;let box=$('#edNew');if(!box){box=document.createElement('div');box.id='edNew';box.style.cssText='margin:10px 0;display:flex;flex-direction:column;gap:6px';const f=$('#newCityForm');f.parentNode.insertBefore(box,f.nextSibling)}
+  const maps=edMaps();box.innerHTML=`<button id="edGo" type="button">Open the map editor on this place</button>`+(maps.length?`<b style="margin-top:6px">Your maps</b>`+maps.map(m=>`<span style="display:flex;gap:6px;align-items:center"><span style="flex:1">${m.name.replace(/</g,'')} <small style="opacity:.7">· ${SCN[m.sc]?SCN[m.sc].nm:m.sc} · ${m.s.length} strokes</small></span><button type="button" data-edm="${m.id}">Start city</button><button type="button" data-edd="${m.id}" aria-label="Delete map">×</button></span>`).join(''):'');
+  box.querySelector('#edGo').onclick=()=>{window.__newHills=!!($('#newHills')&&$('#newHills').checked);store('pc-edgo',JSON.stringify({mode:'edit'}));const nm=($('#newName').value.trim()||'New map');if(pickSc!==SC.id)foundCity(nm,pickSc,false);else travel(()=>foundCity(nm,null,false))};
+  box.querySelectorAll('[data-edm]').forEach(b=>b.onclick=()=>{window.__newHills=!!($('#newHills')&&$('#newHills').checked);const m=edMaps().find(q=>q.id===b.dataset.edm);if(!m)return;store('pc-edgo',JSON.stringify({mode:'map',id:m.id}));const nm=$('#newName').value.trim()||m.name;if(m.sc!==SC.id)foundCity(nm,m.sc,false);else travel(()=>foundCity(nm,null,false))});
+  box.querySelectorAll('[data-edd]').forEach(b=>b.onclick=()=>{edSaveMaps(edMaps().filter(q=>q.id!==b.dataset.edd));sfx('doze');edNewUI()})}
+{const _hp=homePanel;homePanel=function(id){_hp(id);if(id==='pNew')edNewUI()}}
+setTimeout(()=>{try{edNewUI();edBar()}catch(e){}},500);
+setInterval(()=>{try{const d=$('#edBar');if(d&&!d.hidden!==(edOn()&&!atTitle))edBar()}catch(e){}},700);
 
 /* ---------- boot ---------- */
 function start(data){applyGrade();

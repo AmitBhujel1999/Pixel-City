@@ -7677,9 +7677,9 @@ function netCarPath(c){if(!G||!G.net||!G.net.s.length)return null;const M=netMap
   if(a===c.b||cc===c.b)return null;const L=laneOf(c.b,c),La=(laneOf(a,c)+L)/2,Lc=(laneOf(cc,c)+L)/2;return{J:netJ(a,c.b,cc,La,Lc)}}
 var NETCY=null;
 function netCar(c,t,out){NETCY=null;const p=netCarPath(c);if(!p)return false;
-  if(p.st){const{g,k,dir}=p.st,s=dir>0?g.e0[k]+(g.e1[k]-g.e0[k])*t:g.e1[k]-(g.e1[k]-g.e0[k])*t,q=cvAt(g,s),dx=q[2]*dir,dz=q[3]*dir,L=laneOf(c.b,c);if(g.sg.e)NETCY=0.06+netHs(g,s);
+  if(p.st){const{g,k,dir}=p.st,s=dir>0?g.e0[k]+(g.e1[k]-g.e0[k])*t:g.e1[k]-(g.e1[k]-g.e0[k])*t,q=cvAt(g,s),dx=q[2]*dir,dz=q[3]*dir,L=laneOf(c.b,c);if(g.sg.e)NETCY=0.06+netHs(g,s)+(TERRAIN_ON&&g.sg.e>0&&typeof netGPs==='function'?netGPs(g,s)-Hs(q[0],q[1]):0);
     out.pos.set(q[0]-dz*L,0,q[1]+dx*L);out.yaw=Math.atan2(dx,dz);return true}
-  if(c.b>=N*N)NETCY=0.06+NETEH;const P=p.J,q=bzAt(P,t),u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dz=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]);
+  if(c.b>=N*N){NETCY=0.06+NETEH;if(TERRAIN_ON&&typeof netNodeH==='function'){const id=NET.nodeAt.get(c.b),p=id!==undefined&&G.net.n[id];if(p)NETCY+=netNodeH(id)-Hs(p[0],p[1])}}const P=p.J,q=bzAt(P,t),u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dz=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]);
   out.pos.set(q[0],0,q[1]);out.yaw=Math.atan2(dx,dz);return true}
 function netRate(c){const p=netCarPath(c);if(!p)return null;if(p.st){const{g,k}=p.st;return Math.min(25,1/Math.max(0.04,g.e1[k]-g.e0[k]))}return Math.min(25,1/Math.max(0.04,bzLen(p.J)))}
 {const _cc=carCurve;carCurve=function(c,t,out){if(netCar(c,t,out))return;_cc(c,t,out)}}
@@ -7938,37 +7938,42 @@ function netWedge(g,c,w,L,h,x,z,ry){const A=[-w/2,0,0],B=[w/2,0,0],C=[w/2,h,0],D
   const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));bg.computeVertexNormals();bg.userData.net=1;
   const m=new THREE.Mesh(bg,mat(c));m.position.set(x,0,z);m.rotation.y=ry;m.receiveShadow=true;g.add(m);return m}
 function netElevDraw(){NETV.dirty=false;if(NETELG){if(NETELG.parent)NETELG.parent.remove(NETELG);NETELG.traverse(o=>{if(o.geometry)o.geometry.dispose()});NETELG=null}
-  if(!G||!G.net)return;const g=new THREE.Group();let any=false;
+  if(!G||!G.net)return;const g=new THREE.Group(),gt=new THREE.Group();let any=false;
   for(const geo of NET.geo.values()){const sg=geo.sg;if(!sg.e||geo.v0===undefined)continue;any=true;const v=sg.t|0,W=NETW[v]||NETW[0],a=geo.v0-0.02,b=geo.v1+0.02;
+    /* on hills the deck sits on a smooth line over the ground instead of following every bump */
+    const gp=sg.e>0&&typeof netGP==='function'?netGP(geo):null,gd=gp?Object.assign({},geo,{H:geo.H.map((h,k)=>h+gp[k])}):geo;
     if(sg.e>0){const air=geo.air||[false,false],rjA=air[0]?Math.min(geo.L*0.45,netRJ(sg.a)):a,rjB=air[1]?Math.max(rjA,geo.L-Math.min(geo.L*0.45,netRJ(sg.b))):b;
-      if(air[0])netRoadStrip(g,geo,a,rjA,0,0,v,false,0,0);netRoadStrip(g,geo,rjA,rjB,0,0,v,true,0,0);if(air[1])netRoadStrip(g,geo,rjB,b,0,0,v,false,0,0);netBridge(g,geo,air[0]?rjA:a,air[1]?rjB:b,0,0,true);
-      {const hw=netHW(v);for(const[s0,s1]of[air[0]?[a,rjA]:null,air[1]?[rjB,b]:null].filter(Boolean))if(s1>s0){netStrip(g,geo,s0,s1,0,0,-hw,0.015,hw,0.015,'down',null,'#8f9398');for(const sd of[-1,1])netStrip(g,geo,s0,s1,0,0,sd*hw,0.06,sd*hw,0.015,sd,null,'#a3a7ac')}}
+      if(air[0])netRoadStrip(g,gd,a,rjA,0,0,v,false,0,0);netRoadStrip(g,gd,rjA,rjB,0,0,v,true,0,0);if(air[1])netRoadStrip(g,gd,rjB,b,0,0,v,false,0,0);netBridge(g,gd,air[0]?rjA:a,air[1]?rjB:b,0,0,true);
+      {const hw=netHW(v);for(const[s0,s1]of[air[0]?[a,rjA]:null,air[1]?[rjB,b]:null].filter(Boolean))if(s1>s0){netStrip(g,gd,s0,s1,0,0,-hw,0.015,hw,0.015,'down',null,'#8f9398');for(const sd of[-1,1])netStrip(g,gd,s0,s1,0,0,sd*hw,0.06,sd*hw,0.015,sd,null,'#a3a7ac')}}
       /* round columns with a cap beam, not where they would stand on a road, track or in the river */
       for(let s=Math.ceil(a/1.3)*1.3;s<b;s+=1.3){const q=cvAt(geo,s),h=netHs(geo,s),j=netTile(q[0],q[1]);if(j<0||h<0.15)continue;const t=tiles[j];
         if(t.t===T.ROAD||t.t===T.RAIL||t.t===T.RIVER||inRiverBand(j%N,(j/N)|0))continue;const ry=Math.atan2(q[2],q[3]);
-        part(g,CYL,'#b3b0a8',0.075,h,0.075,q[0],0,q[1]);const cap=box(g,'#a9a59c',netHW(v)*2-0.14,0.05,0.12,q[0],h-0.04,q[1]);cap.rotation.y=ry}
-      for(let s=Math.ceil((a-0.75)/1.5)*1.5+0.75;s<b;s+=1.5){const n=Math.round((s-0.75)/1.5),sd=n%2?1:-1,q=cvAt(geo,s),nx=-q[3]*sd,nz=q[2]*sd,h=netHs(geo,s);
+        const hd=netHs(gd,s);part(g,CYL,'#b3b0a8',0.075,hd,0.075,q[0],0,q[1]);const cap=box(g,'#a9a59c',netHW(v)*2-0.14,0.05,0.12,q[0],hd-0.04,q[1]);cap.rotation.y=ry}
+      for(let s=Math.ceil((a-0.75)/1.5)*1.5+0.75;s<b;s+=1.5){const n=Math.round((s-0.75)/1.5),sd=n%2?1:-1,q=cvAt(geo,s),nx=-q[3]*sd,nz=q[2]*sd,h=netHs(gd,s);
         model(g,'prop_streetlight',null,q[0]+nx*(netHW(v)-0.05),0.075+h,q[1]+nz*(netHW(v)-0.05),Math.atan2(nz,-nx))}}
     else{/* portal at each end: concrete headwall round a dark mouth, wing walls, earth bank sloping away over the tube */
       for(const[s0,dir]of[[NETTP-0.02,1],[geo.L-NETTP+0.02,-1]]){const q=cvAt(geo,s0),tx=q[2]*dir,tz=q[3]*dir,ry=Math.atan2(tx,tz),hw=Math.max(0.42,W.hw-0.08),at=(f,o)=>[q[0]+tx*f-tz*o,q[1]+tz*f+tx*o];
-        const P=(c,w,h,d,f,o,y)=>{const p=at(f,o),m=box(g,c,w,h,d,p[0],y,p[1]);m.rotation.y=ry;return m};
+        const P=(c,w,h,d,f,o,y)=>{const p=at(f,o),m=box(gt,c,w,h,d,p[0],y,p[1]);m.rotation.y=ry;return m};
         P('#0d0f11',hw*2,0.26,0.24,0.2,0,0.04);
         for(const sd of[-1,1])P('#bdbab2',0.09,0.36,0.1,0.05,sd*(hw+0.045),0);
         P('#c6c3bb',hw*2+0.18,0.1,0.1,0.05,0,0.31);P('#b1aea6',hw*2+0.22,0.03,0.12,0.05,0,0.41);
-        for(const sd of[-1,1]){const p=at(-0.12,sd*(hw+0.16)),m=box(g,'#bdbab2',0.06,0.22,0.3,p[0],0,p[1]);m.rotation.y=ry+sd*0.55}
-        const p=at(0.1,0);netWedge(g,'#5d7a3c',hw*2+0.5,1.7,0.42,p[0],p[1],ry)}}}
-  for(const id in G.net.n){const p=G.net.n[id];if(!p[2]||!NET.deg.get(+id))continue;any=true;let hw=0.5;for(const geo of NET.geo.values())if(geo.sg.a===+id||geo.sg.b===+id)hw=Math.max(hw,netHW(geo.sg.t|0));
-    part(g,CYL,'#71757a',hw*1.02,0.02,hw*1.02,p[0],NETEH+0.032,p[1],false).receiveShadow=false;
+        for(const sd of[-1,1]){const p=at(-0.12,sd*(hw+0.16)),m=box(gt,'#bdbab2',0.06,0.22,0.3,p[0],0,p[1]);m.rotation.y=ry+sd*0.55}
+        const p=at(0.1,0);netWedge(gt,'#5d7a3c',hw*2+0.5,1.7,0.42,p[0],p[1],ry)}}}
+  for(const id in G.net.n){const p=G.net.n[id];if(!p[2]||!NET.deg.get(+id))continue;any=true;const nh=TERRAIN_ON&&typeof netNodeH==='function'?netNodeH(+id):0;let hw=0.5;for(const geo of NET.geo.values())if(geo.sg.a===+id||geo.sg.b===+id)hw=Math.max(hw,netHW(geo.sg.t|0));
+    part(g,CYL,'#71757a',hw*1.02,0.02,hw*1.02,p[0],NETEH+nh+0.032,p[1],false).receiveShadow=false;
     {/* parapet walls joining the wall ends of neighbouring arms round the junction */
       const arms=[];for(const geo of NET.geo.values()){const sg=geo.sg;if(sg.a!==+id&&sg.b!==+id)continue;const atA=sg.a===+id,rj=Math.min(geo.L*0.45,netRJ(+id)),q=cvAt(geo,atA?rj:geo.L-rj),sd=atA?1:-1,dx=q[2]*sd,dz=q[3]*sd,w=netHW(sg.t|0)-0.008;
         arms.push({an:Math.atan2(dz,dx),L:[q[0]-dz*w,q[1]+dx*w],R:[q[0]+dz*w,q[1]-dx*w]})}
       arms.sort((u,v)=>u.an-v.an);if(arms.length>1)for(let k=0;k<arms.length;k++){const u=arms[k],v=arms[(k+1)%arms.length];let gap=v.an-u.an;if(gap<=0)gap+=Math.PI*2;if(gap<0.2)continue;
-        const P=u.L,Q=v.R,len=Math.hypot(Q[0]-P[0],Q[1]-P[1]);if(len<0.02)continue;const m=box(g,'#c9ccd0',len+0.01,0.05,0.016,(P[0]+Q[0])/2,NETEH+0.06,(P[1]+Q[1])/2);m.rotation.y=-Math.atan2(Q[1]-P[1],Q[0]-P[0]);
-        const n=box(g,'#a3a7ac',len+0.01,0.06,0.012,(P[0]+Q[0])/2,NETEH,(P[1]+Q[1])/2);n.rotation.y=m.rotation.y}}part(g,CYL,'#9a9ea3',hw*1.02,0.07,hw*1.02,p[0],NETEH-0.02,p[1],false).receiveShadow=false;
-    const j=netTile(p[0],p[1]),t=j>=0?tiles[j]:null;if(t&&t.t!==T.ROAD&&t.t!==T.RAIL&&t.t!==T.RIVER&&!inRiverBand(j%N,(j/N)|0))part(g,CYL,'#b3b0a8',0.11,NETEH,0.11,p[0],0,p[1])}
+        const P=u.L,Q=v.R,len=Math.hypot(Q[0]-P[0],Q[1]-P[1]);if(len<0.02)continue;const m=box(g,'#c9ccd0',len+0.01,0.05,0.016,(P[0]+Q[0])/2,NETEH+nh+0.06,(P[1]+Q[1])/2);m.rotation.y=-Math.atan2(Q[1]-P[1],Q[0]-P[0]);
+        const n=box(g,'#a3a7ac',len+0.01,0.06,0.012,(P[0]+Q[0])/2,NETEH+nh,(P[1]+Q[1])/2);n.rotation.y=m.rotation.y}}part(g,CYL,'#9a9ea3',hw*1.02,0.07,hw*1.02,p[0],NETEH+nh-0.02,p[1],false).receiveShadow=false;
+    const j=netTile(p[0],p[1]),t=j>=0?tiles[j]:null;if(t&&t.t!==T.ROAD&&t.t!==T.RAIL&&t.t!==T.RIVER&&!inRiverBand(j%N,(j/N)|0))part(g,CYL,'#b3b0a8',0.11,NETEH+nh,0.11,p[0],0,p[1])}
   if(!any)return;
   const d=bakeData(g);g.traverse(o=>{if(o.geometry&&o.geometry.userData.net){NI.delete(o.geometry);o.geometry.dispose()}});
-  NETELG=meshesFrom([d.buckets]);world.add(NETELG)}
+  NETELG=meshesFrom([d.buckets]);if(TERRAIN_ON)NETELG.traverse(o=>{if(o.material)o.material=netNoTerr(o.material)});
+  if(gt.children.length){const dt=bakeData(gt);gt.traverse(o=>{if(o.geometry&&o.geometry.userData.net){NI.delete(o.geometry);o.geometry.dispose()}});NETELG.add(meshesFrom([dt.buckets]))}
+  world.add(NETELG)}
+const NETNT=new Map();function netNoTerr(m){let c=NETNT.get(m.uuid);if(!c){c=m.clone();c.defines=Object.assign({},m.defines||{},{NO_TERRAIN:''});c.needsUpdate=true;NETNT.set(m.uuid,c)}return c}
 {const _nr=netRebuild;netRebuild=function(){_nr();if(typeof world!=='undefined')netElevDraw()}}
 /* nothing but roads, track and paths may be built under an elevated deck */
 {const _cfe=costFor;costFor=function(tl,i){const c=_cfe(tl,i);if(c===null||!tl||!G||!G.net||!G.net.s.length)return c;netMap();if(NETWIDE.has(i)&&!['doze','areas','road','rail'].includes(tl.id))return null;if(NETV.cover.has(i)&&!['road','rail','doze','path','tramtrack','line','mline','areas'].includes(tl.id))return null;return c}}
@@ -9696,6 +9701,44 @@ function hwShowRoute(badI){if(HWY.route){scene.remove(HWY.route);HWY.route.geome
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
   HWY.route=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,depthTest:false,transparent:true,opacity:0.85,side:THREE.DoubleSide}));HWY.route.renderOrder=11;HWY.route.frustumCulled=false;scene.add(HWY.route);
   clearTimeout(HWY.routeT);HWY.routeT=setTimeout(()=>{if(HWY.route){scene.remove(HWY.route);HWY.route.geometry.dispose();HWY.route=null}},15000)}
+
+/* ---------- roads on hills (patch_net.py) ----------
+   With hills on, every road vertex is lifted to the ground under it. The old grading only followed grid roads tile by
+   tile, so curved network roads got bumps, steps and walls at their edges, and raised decks followed every bump.
+   Now each network road has a smooth height profile along its curve (the natural ground, averaged over ~3 tiles,
+   slope kept under 12%, the same height where roads meet). The ground under the road is set to that profile right
+   across its width and eased back to the natural ground over ~1.3 tiles beside it. Raised decks use the same smooth
+   profile plus their own height, drawn at fixed heights instead of following the ground; their columns reach down. */
+const NTG={best:null,hgt:null,seg:null};
+/* natural ground (before any grading), bilinear between tile corners */
+function netNatH(x,z){const px=x+HALF,pz=z+HALF;if(!(px>0&&pz>0&&px<N&&pz<N))return 0;const fx=Math.floor(px),fz=Math.floor(pz),u=px-fx,v=pz-fz,k=fz*TN+fx,c=q=>Math.max(0,TB[q]+TD[q]);
+  return(c(k)*(1-u)+c(k+1)*u)*(1-v)+(c(k+TN)*(1-u)+c(k+TN+1)*u)*v}
+function netNodeH(id){const p=G.net.n[id];if(!p)return 0;let s=0,c=0;for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){s+=netNatH(p[0]+dx*0.5,p[1]+dz*0.5);c++}return s/c}
+/* smooth profile along a segment (one value per sample of its curve) */
+function netGP(g){if(!TERRAIN_ON||typeof TB==='undefined'||!TB)return null;const key=terrKey+':'+(G.td?Object.keys(G.td).length:0);if(g._gp&&g._gpk===key)return g._gp;
+  const n=g.n,h=new Float32Array(n+1),ds=g.L/Math.max(1,n);for(let k=0;k<=n;k++)h[k]=netNatH(g.X[k],g.Z[k]);
+  const ha=netNodeH(g.sg.a),hb=netNodeH(g.sg.b),w=Math.max(1,Math.round((g.sg.e>0?3:1.5)/ds)),t=new Float32Array(n+1);
+  for(let pass=0;pass<3;pass++){h[0]=ha;h[n]=hb;let acc=0;const pre=new Float64Array(n+2);for(let k=0;k<=n;k++){acc+=h[k];pre[k+1]=acc}
+    for(let k=0;k<=n;k++){const a=Math.max(0,k-w),b=Math.min(n,k+w);t[k]=(pre[b+1]-pre[a])/(b-a+1)}h.set(t)}
+  h[0]=ha;h[n]=hb;const G0=0.12*ds;
+  for(let it=0;it<6;it++){for(let k=1;k<=n;k++){const lo=h[k-1]-G0,hi=h[k-1]+G0;if(k<n)h[k]=Math.min(hi,Math.max(lo,h[k]))}for(let k=n-1;k>=0;k--){const lo=h[k+1]-G0,hi=h[k+1]+G0;if(k>0)h[k]=Math.min(hi,Math.max(lo,h[k]))}h[0]=ha;h[n]=hb}
+  for(let k=0;k<=n;k++)if(h[k]<0)h[k]=0;g._gp=h;g._gpk=key;return h}
+function netGPs(g,s){const h=netGP(g);if(!h)return 0;const S=g.S;let lo=0,hi=g.n;if(s<=0)return h[0];if(s>=g.L)return h[g.n];while(hi-lo>1){const m=(lo+hi)>>1;if(S[m]<=s)lo=m;else hi=m}const f=(s-S[lo])/Math.max(1e-9,S[hi]-S[lo]);return h[lo]+(h[hi]-h[lo])*f}
+/* write the profiles into the ground (after the old grid grading) */
+function netTerrGrade(){if(!TERRAIN_ON||!G||!G.net||!G.net.s.length)return;const M=netMap(),L=TC.length;
+  if(!NTG.best||NTG.best.length!==L){NTG.best=new Float32Array(L);NTG.hgt=new Float32Array(L);NTG.R=new Float32Array(L);NTG.W=new Float32Array(L)}
+  const B=NTG.best,Hh=NTG.hgt,R=NTG.R,Wd=NTG.W,touched=[];
+  for(const g of M.geo.values()){const sg=g.sg;if(sg.e<0)continue;const gp=netGP(g);if(!gp)continue;const hw=g.kind==='rail'?0.35:netHW(sg.t|0),rr=hw+1.4,step=Math.max(1,Math.round(0.25/(g.L/g.n)));
+    for(let k=0;k<=g.n;k+=step){const s=g.S[k];if(sg.e>0&&g.v0!==undefined&&s>g.v0+0.05&&s<g.v1-0.05)continue;const x=g.X[k]+HALF,z=g.Z[k]+HALF;
+      for(let cz=Math.ceil(z-rr);cz<=Math.floor(z+rr);cz++)for(let cx=Math.ceil(x-rr);cx<=Math.floor(x+rr);cx++){if(cx<1||cz<1||cx>=N||cz>=N)continue;const d=Math.hypot(cx-x,cz-z);if(d>rr)continue;const q=cz*TN+cx;
+        if(!B[q]){B[q]=1e9;touched.push(q)}if(d<B[q]){B[q]=d;Hh[q]=gp[k];R[q]=hw;Wd[q]=1}}}}
+  for(const q of touched){const d=B[q],hw=R[q];B[q]=0;if(TPD&&TPD[q]===0)continue;const x=q%TN,z=(q/TN)|0;
+    let wet=false;for(let dz=-1;dz<=0&&!wet;dz++)for(let dx=-1;dx<=0;dx++){const tx=x+dx,tz=z+dz;if(tx<0||tz<0||tx>=N||tz>=N)continue;const t=tiles[tz*N+tx];if(t.t===T.RIVER||t.w){wet=true;break}}if(wet)continue;
+    const w=(d<=hw+0.15?1:1-sstep(hw+0.15,hw+1.4,d))*Wd[q];if(w<=0)continue;TC[q]=TC[q]+(Hh[q]-TC[q])*w}
+  TMAX=0;for(let k=0;k<L;k++)if(TC[k]>TMAX)TMAX=TC[k]}
+{const _trl=terrRoadLevel;terrRoadLevel=function(){_trl();try{netTerrGrade()}catch(e){console.warn(e)}}}
+/* roads changed: re-grade the ground */
+{const _rb=netRebuild;netRebuild=function(){_rb();if(TERRAIN_ON&&typeof terrDirty!=='undefined')terrDirty=true}}
 
 /* ---------- boot ---------- */
 function start(data){applyGrade();

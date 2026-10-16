@@ -2,5 +2,6 @@
   "appId": "com.ameet.pixelcity",
   "appName": "Pixel City",
   "webDir": "www",
-  "android": { "backgroundColor": "#cfe4ec" }
+  "android": { "backgroundColor": "#cfe4ec" },
+  "ios": { "backgroundColor": "#0e141b", "scrollEnabled": false, "contentInset": "never" }
 }

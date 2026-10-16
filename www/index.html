@@ -115,7 +115,7 @@ body.cine #cineStop{display:block}#cineStop .dot{display:inline-block;width:8px;
   </div>
   <p class="lcopy">© 2026 Amit Rijal</p>
 </div>
-<script>window.addEventListener('error',function(){var l=document.getElementById('loadScr');if(l)l.remove()});(function (){try{var go=JSON.parse(localStorage.getItem('pc-go')||'null'),el={};if(go&&(go.sc||go.id))document.getElementById('loadScr').classList.add('cloud');var M={classic:'Classic valley',snow:'Snowy mountain town',island:'Tropical island',desert:'Desert oasis',coast:'Ocean coast',bay:'Mountain bay',rich:'Rich mayor sandbox'};
+<script>window.addEventListener('error',function(){var l=document.getElementById('loadScr');if(l)l.remove()});(function (){try{var go=JSON.parse(localStorage.getItem('pc-go')||'null'),el={};if(go&&(go.sc||go.id))document.getElementById('loadScr').classList.add('cloud');var M={classic:'Riverbend valley',snow:'Snowy mountain town',island:'Tropical island',desert:'Desert oasis',coast:'Ocean coast',bay:'Mountain bay',rich:'Rich mayor sandbox'};
   if(go&&go.sc)el.textContent='Building '+(go.name||'your new city')+' · '+(M[go.sc]||'new map');
   else{var id=go&&go.id||localStorage.getItem('pc-last'),a=JSON.parse(localStorage.getItem('pc-cities')||'[]'),c=Array.isArray(a)&&a.find(function(q){return q.id===id});if(c&&c.name)el.textContent='Opening '+c.name}}catch(e){}})();</script>
 <meta charset="utf-8">
@@ -629,7 +629,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <div id="scPick" class="scgrid" role="group" aria-label="Scenario"></div>
       <p id="scDesc" class="scdesc"></p>
       <label class="tutchk"><input type="checkbox" id="newTut" checked> Show me how to play (step-by-step tutorial)</label>
-      <label class="tutchk"><input type="checkbox" id="newHills"> Hills and valleys (test): the land rises and falls, roads climb the slopes</label>
+      <label class="tutchk"><input type="checkbox" id="newHills" checked> Hills and valleys on the far side of the map (the start stays flat)</label>
       <form id="newCityForm"><input id="newName" placeholder="City name" maxlength="24" spellcheck="false" aria-label="New city name"><button type="submit">Start</button></form>
       <button class="back" type="button">Back</button>
     </section>
@@ -902,8 +902,8 @@ const TOOLS=[
  {id:'road',nm:'Street',key:'1',kind:'line',col:'#9aa2ad',ct:'$10',rt:0},
  {id:'res',nm:'Homes',key:'2',kind:'rect',col:'#5cc46f',ct:'$5',t:T.RES,zs:1},
  {id:'com',nm:'Shops',key:'3',kind:'rect',col:'#4a90f0',ct:'$5',t:T.COM,zs:1},
- {id:'ind',nm:'Industry',key:'4',kind:'rect',col:'#f0a531',ct:'$5',t:T.IND,zs:0},
- {id:'off',nm:'Offices',key:'',kind:'rect',col:'#a678e0',ct:'$5',t:T.COM,zs:10},
+ {id:'ind',nm:'Work',key:'4',kind:'rect',col:'#f0a531',ct:'$5',t:T.IND,zs:0},
+ {id:'off',nm:'Offices',key:'',kind:'rect',col:'#a678e0',ct:'$5',t:T.COM,zs:10,hidden:1},
  {id:'chain',nm:'Supply',key:'',kind:'single',col:'#c98a3a',t:26,sz:0},
  {id:'areas',nm:'Areas',key:'',kind:'none',col:'#6be08a',ct:'buy land'},
  {id:'dist',nm:'Districts',key:'',kind:'rect',col:'#ff8ad8',ct:'paint'},
@@ -1003,7 +1003,7 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color('#cfe4ec');
 scene.fog=new THREE.Fog('#cfe4ec',120,340);
 const camera=new THREE.PerspectiveCamera(45,1,0.05,2600);
-const CAMMAX=135;let AREAMODE=false,OB={x0:-HALF,x1:HALF,z0:-HALF,z1:HALF};
+const CAMMAX=220;let AREAMODE=false,OB={x0:-HALF,x1:HALF,z0:-HALF,z1:HALF};
 function areaBounds(){{const A=[...OWN].sort((a,b)=>a-b),o=new Int32Array(A.length*AREA*AREA);let k=0;for(const a of A)areaTiles(a,i=>{o[k++]=i});OWNIDX=o}let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const a of OWN){const ax=(a%AGRID)*AREA-HALF,az=((a/AGRID)|0)*AREA-HALF;x0=Math.min(x0,ax);x1=Math.max(x1,ax+AREA);z0=Math.min(z0,az);z1=Math.max(z1,az+AREA)}OB={x0:x0-6,x1:x1+6,z0:z0-6,z1:z1+6}}const cam={theta:Math.PI*0.22,phi:0.92,dist:36,target:new THREE.Vector3(-1,0,-3)};
 let chase=false,chaseD=1,camSave=null;const _lookT=new THREE.Vector3();
 /* aerial haze starts a little beyond what the camera is looking at, so zooming out never fogs the city itself */
@@ -1024,7 +1024,7 @@ function scaleBar(){const el=document.getElementById('scaleBar');if(!el||typeof 
   el.querySelector('small').textContent=`1 tile = ${TILE_M} m · map ${fmtM(N*TILE_M)} × ${fmtM(N*TILE_M)}`}
 let _sbq=0;function scaleBarQ(){if(_sbq)return;_sbq=requestAnimationFrame(()=>{_sbq=0;scaleBar()})}
 function updateCamera(){scaleBarQ();
-  cam.phi=Math.max(0.3,Math.min(chase?1.42:cam.dist>35?Math.max(0.95,1.45-(cam.dist-35)/40*0.5):1.45,cam.phi));
+  cam.phi=Math.max(0.3,Math.min(chase?1.42:cam.dist>35?Math.max(1.12,1.45-(cam.dist-35)/40*0.5):1.45,cam.phi));
   cam.dist=Math.max(chase?0.35:2.2,Math.min(AREAMODE?560:CAMMAX,cam.dist));
   {const B=cam.free?{x0:-HALF-400,x1:HALF+400,z0:-HALF-400,z1:HALF+400}:AREAMODE?{x0:-HALF,x1:HALF,z0:-HALF,z1:HALF}:OB;cam.target.x=Math.max(B.x0,Math.min(B.x1,cam.target.x));cam.target.z=Math.max(B.z0,Math.min(B.z1,cam.target.z))}
   const s=Math.sin(cam.phi),ty=(chase?cam.target.y:(cam.fy||0))+Hs(cam.target.x,cam.target.z);
@@ -1070,7 +1070,7 @@ scene.add(sun);
 /* ---------- scenarios: each one reshapes the land, the water and the climate.
    The landscape is built once per page load, so starting or opening a city from another scenario reloads the page. ---------- */
 const SCN={
-  classic:{nm:'Classic valley',d:'A green valley with a river, a hilltop castle, windmills and hot air balloons. Four seasons: warm summers and snowy winters.',money:30000,river:1,town:'Riverbend'},
+  classic:{nm:'Riverbend valley',d:'A green valley with a river, a hilltop castle, windmills and hot air balloons. Four seasons: warm summers and snowy winters.',money:30000,river:1,town:'Riverbend'},
   snow:{nm:'Snowy mountain town',d:'A frozen valley under huge peaks with a ski gondola. Wolves, bears and deer roam the slopes. Blizzards and avalanches, and heating makes buildings use more power.',money:20000,river:1,cold:1,pw:1.25,trees:'pine',town:'Frostpeak',
     mean:[-14,-12,-8,-3,2,6,9,8,4,-2,-8,-12],swing:4,wx:{winter:{snow:38,blizzard:20,cloudy:20,clear:15,fog:7},spring:{snow:35,blizzard:8,cloudy:25,clear:24,fog:8},summer:{clear:40,cloudy:28,rain:14,snow:12,fog:6},autumn:{snow:32,blizzard:10,cloudy:28,clear:22,fog:8}},
     pal:{wall:['#8b5a3c','#a0694a','#6e4a33','#c9b79c','#e8e0d0','#9c7a5a'],roof:['#3b3f45','#5a3a2c','#2f3b46','#6b2f2a']}},
@@ -1086,7 +1086,7 @@ const SCN={
   bay:{nm:'Mountain bay',d:'A green valley opening onto a sea bay with forested islands, a long coast to the south and big mountains behind the city. Thick forests everywhere. Mild, with sea fog and rain.',money:30000,sea:'bay',forest:1,town:'Bayview',
     mean:[4,5,8,11,15,19,22,22,18,13,8,5],swing:5,wx:{winter:{clear:25,cloudy:30,rain:25,fog:12,snow:8},spring:{clear:40,cloudy:25,rain:20,fog:15},summer:{clear:60,cloudy:18,rain:12,fog:6,storm:4},autumn:{clear:30,cloudy:28,rain:26,fog:14,storm:2}},
     pal:{wall:['#e9e4da','#d8cfc0','#c9c2b6','#efe9df','#b9b2a6','#d2c3ad'],roof:['#3f4a52','#5b4a3e','#2f3b46','#6b5a4a']}},
-  rich:{nm:'Rich mayor sandbox',d:'The classic valley with $1,000,000, fireworks at night and no power or water shortages. Build whatever you like.',money:1000000,river:1,free:1,town:'Goldhaven',
+  rich:{nm:'Rich mayor sandbox',d:'Riverbend valley with $1,000,000, fireworks at night and no power or water shortages. Build whatever you like.',money:1000000,river:1,free:1,town:'Goldhaven',
     pal:{wall:['#f4efe4','#e9dcc0','#f7f2e8','#e0d6c2'],roof:['#c9a227','#2f3b46','#b8912a']}}};
 const SC_ID=(()=>{let go=null;try{go=JSON.parse(store('pc-go')||'null')}catch(e){}
   if(go&&go.sc&&SCN[go.sc])return go.sc;
@@ -1185,17 +1185,74 @@ function tfbm(x,z){return(vnoise(x,z)*0.57+vnoise(x*2.01+3.1,z*2.01+1.7)*0.29+vn
 function terrRaw(x,z,ox,oz){const A=SC.cold?7:SC.sand?3:SC.sea?3.5:5;
   const n=tfbm(x*0.013+ox,z*0.013+oz),m=tfbm(x*0.03+oz,z*0.03+ox);
   let h=A*sstep(0.3,0.78,n)*(0.75+0.5*m);
+  if(farHills())return farLand(x,z,ox,oz);
   h*=sstep(1,30,Math.min(HALF-Math.abs(x),HALF-Math.abs(z)));
   if(SC.river)h*=sstep(1.5,34,Math.abs(z-riverZ(x))-RIVW-0.2);
   if(SC.sea)h*=sstep(1.5,30,-seaW(x,z));
   return h}
+/* far-side hills (G.hills=2). A new city is built before G.hills is set, so no value yet with hills on means this kind */
+function farHills(){return!!G&&(G.hills===2||(G.hills==null&&TERRAIN_ON))}
+/* the start area and the areas beside it stay flat; the land eases into hills over 30 tiles past their edge */
+function farHillK(x,z){const sx=START_A%AGRID,sz=(START_A/AGRID)|0;let d=1e9;
+  for(const[ax,az]of[[sx,sz],[sx+1,sz],[sx-1,sz],[sx,sz+1],[sx,sz-1]]){if(ax<0||az<0||ax>=AGRID||az>=AGRID)continue;
+    const x0=ax*AREA-HALF,z0=az*AREA-HALF,dx=Math.max(0,x0-x,x-x0-AREA),dz=Math.max(0,z0-z,z-z0-AREA);d=Math.min(d,Math.hypot(dx,dz))}
+  /* inside the flat areas: hills in a band along the map border, gone 70 tiles in, so the land climbs
+     from the city to the foothills; the highway in from the west stays flat */
+  const e=Math.min(HALF-Math.abs(x),HALF-Math.abs(z)),band=(1-sstep(15,70,e))*(x<-HALF+70?sstep(2.5,9,Math.abs(z-HWZ)):1);
+  return Math.max(sstep(0,30,d),band)}
+/* hilly and flat land side by side: broad patches (soft edges) decide where hills grow; gentle rolling hills (about
+   6 tiles high, 60 tiles across) all through them, and big rounded hills (up to about 24, 150+ tiles across) where a
+   slower noise rises. Smooth bumps, no sharp ridges, so slopes stay gentle */
+function farRaw(x,z,ox,oz){const reg=sstep(0.3,0.7,tfbm(x*0.005+oz+11,z*0.005+ox+7));
+  const small=6*sstep(0.3,0.85,tfbm(x*0.012+ox,z*0.012+oz));
+  const big=tfbm(x*0.0045+oz+5,z*0.0045+ox+3),tall=34*sstep(0.42,0.74,big)*sstep(0.3,0.62,tfbm(x*0.003+ox+9,z*0.003+oz+4));
+  return reg*(small+tall)}
+/* land rising toward the map border (up to about 22 tiles) so it meets the foothills outside */
+function farRamp(x,z,ox,oz){const e=Math.min(HALF-Math.abs(x),HALF-Math.abs(z));return(1-sstep(10,80,e))*(12+10*tfbm(x*0.016+ox,z*0.016+oz))}
+/* the land of a far-hills city. The per-city noise offset fades out over the last 30-80 tiles, so at the edge the
+   height is the same for every city and the scenery outside can start at exactly that height */
+function farLand(x,z,ox,oz){const e=Math.min(HALF-Math.abs(x),HALF-Math.abs(z)),k=sstep(30,80,e),qx=ox*k,qz=oz*k;
+  let h=farRaw(x,z,qx,qz)+farRamp(x,z,qx,qz);
+  if(SC.river)h*=sstep(3,43,Math.abs(z-riverZ(x))-RIVW);
+  if(SC.sea)h*=sstep(1.5,30,-seaW(x,z));
+  return h*farHillK(x,z)}
+/* is the city on this page a far-hills one? (the scenery is built at page load, before the city) */
+let FAR_EDGE=null;
+function farEdge(){if(FAR_EDGE!==null)return FAR_EDGE;FAR_EDGE=false;if(!TERRAIN_ON)return false;
+  try{const go=JSON.parse(store('pc-go')||'null');if(go&&go.sc&&!go.id)FAR_EDGE=true;
+    else{let id=go&&go.id;if(!id){const a=JSON.parse(store('pc-cities')||'[]'),last=store('pc-last');const l=Array.isArray(a)?a.slice().sort((p,q)=>(q.t||0)-(p.t||0)):[];id=(l.find(c=>c.id===last)||l[0]||{}).id}
+      const o=JSON.parse(store('pc-city-'+id)||'null');FAR_EDGE=!(o&&o.G&&o.G.hills===1)}}catch(e){}
+  return FAR_EDGE}
 function terrBase(key){let k=0;for(const c of String(key))k=(k*31+c.charCodeAt(0))>>>0;
   const ox=(k%997)*0.37,oz=((k/997|0)%991)*0.41;
   /* every 2nd corner from noise, the rest interpolated */
   for(let z=0;z<=N;z+=2)for(let x=0;x<=N;x+=2)TB[z*TN+x]=terrRaw(x-HALF,z-HALF,ox,oz);
   for(let z=0;z<=N;z+=2)for(let x=1;x<=N;x+=2)TB[z*TN+x]=x<N?(TB[z*TN+x-1]+TB[z*TN+x+1])/2:TB[z*TN+x-1];
   for(let z=1;z<=N;z+=2)for(let x=0;x<=N;x++)TB[z*TN+x]=z<N?(TB[(z-1)*TN+x]+TB[(z+1)*TN+x])/2:TB[(z-1)*TN+x];
+  if(farHills())farSmooth();
   TMAX=0;for(let i=0;i<TB.length;i++)TMAX=Math.max(TMAX,TB[i])}
+/* far hills, shaped so you can build on them (patch_farhills.py):
+   1. two box-blur passes (radius 4) round everything off;
+   2. the river valley and the shore are cut again (the blur spreads hills into them), banks flat 3 tiles then
+      rising over 40;
+   3. slope cap: no corner more than FARSL above its neighbour (two raster sweeps, lowering only). Every slope
+      stays under the road limit and the hilltops become broad level plateaus for streets and homes;
+   4. one more blur pass softens the plateau rims;
+   5. the last 6 tiles at the map edge keep their exact height so the scenery outside joins without a step */
+const FARSL=0.2;
+function farBlur(n){const R=4,t=new Float32Array(TB.length);for(let pass=0;pass<n;pass++){
+    for(let z=0;z<=N;z++){let acc=0;for(let x=-R;x<=R;x++)acc+=TB[z*TN+Math.max(0,Math.min(N,x))];
+      for(let x=0;x<=N;x++){t[z*TN+x]=acc/(2*R+1);acc+=TB[z*TN+Math.min(N,x+R+1)]-TB[z*TN+Math.max(0,x-R)]}}
+    for(let x=0;x<=N;x++){let acc=0;for(let z=-R;z<=R;z++)acc+=t[Math.max(0,Math.min(N,z))*TN+x];
+      for(let z=0;z<=N;z++){TB[z*TN+x]=acc/(2*R+1);acc+=t[Math.min(N,z+R+1)*TN+x]-t[Math.max(0,z-R)*TN+x]}}}}
+function farSmooth(){const o=TB.slice();farBlur(2);
+  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const wx=x-HALF,wz=z-HALF,i=z*TN+x;let k=1;
+    if(SC.river)k*=sstep(3,43,Math.abs(wz-riverZ(wx))-RIVW);if(SC.sea)k*=sstep(1.5,30,-seaW(wx,wz));TB[i]*=k}
+  for(let r=0;r<2;r++){
+    for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const i=z*TN+x;let h=TB[i];if(x>0)h=Math.min(h,TB[i-1]+FARSL);if(z>0)h=Math.min(h,TB[i-TN]+FARSL);TB[i]=h}
+    for(let z=N;z>=0;z--)for(let x=N;x>=0;x--){const i=z*TN+x;let h=TB[i];if(x<N)h=Math.min(h,TB[i+1]+FARSL);if(z<N)h=Math.min(h,TB[i+TN]+FARSL);TB[i]=h}}
+  farBlur(1);
+  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const e=Math.min(x,z,N-x,N-z);if(e<6){const k=e/6,i=z*TN+x;TB[i]=o[i]*(1-k)+TB[i]*k}}}
 /* level pads under multi-tile buildings, rigid mask for building tiles, then the texture */
 
 /* ramps round leveled pads (patch_terrblend.py) */
@@ -1213,8 +1270,8 @@ function terrPadBlend(Q){if(!Q.length)return;const RMAX=24;
   TMAX=0;for(let k=0;k<TC.length;k++)if(TC[k]>TMAX)TMAX=TC[k]}
 
 /* roads graded along their length: cut through hills, fill dips (patch_roadgrade.py) */
-const RGRADE=0.08,RITER=140;let TRD=null,RGI=null,RGD=null,RGS=null,RGF=null,RGQ=null;
-function terrRoadGrade(){if(!TERRAIN_ON)return;
+let RGRADE=0.08;const RITER=140;let TRD=null,RGI=null,RGD=null,RGS=null,RGF=null,RGQ=null;
+function terrRoadGrade(){if(!TERRAIN_ON)return;RGRADE=farHills()?0.2:0.08;
   const L=TC.length;if(!RGI||RGI.length!==L){RGI=new Int32Array(L);RGD=new Float32Array(L);RGS=new Int32Array(L);RGF=new Uint8Array(L);RGQ=new Int32Array(L)}
   RGI.fill(-1);
   const ks=[];for(const i of OWNIDX){const t=tiles[i];if(!(t.t===T.ROAD||t.t===T.RAIL)||t.w)continue;const x=i%N,z=(i/N)|0,k=z*TN+x;
@@ -1261,7 +1318,7 @@ function terrBuild(){terrDirty=false;terrT=performance.now();TMAX=0;for(let k=0;
   /* one texel per tile: its four corner heights, +1000 on the first when the tile is a building */
   for(let z=0;z<N;z++)for(let x=0;x<N;x++){const k=z*TN+x,o=(z*N+x)*4;TDAT[o]=TC[k]+(TRG[z*N+x]?1000:0);TDAT[o+1]=TC[k+1];TDAT[o+2]=TC[k+TN];TDAT[o+3]=TC[k+TN+1]}
   TTEX.needsUpdate=true}
-function terrInit(){landLoad();const key=(G&&G.rseed!=null?'r'+G.rseed:(curId||(G&&G.name)||'city'))+'|'+(SC.id||'');
+function terrInit(){landLoad();const key=(G&&G.rseed!=null?'r'+G.rseed:(curId||(G&&G.name)||'city'))+'|'+(SC.id||'')+(farHills()?'|far':'');
   if(key!==terrKey){terrKey=key;terrBase(key)}terrBuild();terrGroundAll()}
 /* the same height the shader uses: bilinear between tile corners */
 function Hs(x,z){const px=x+HALF,pz=z+HALF;if(!(px>0&&pz>0&&px<N&&pz<N))return 0;
@@ -1334,6 +1391,9 @@ function terrainH(x,z){
   const r=1-Math.abs(2*fbm(x*0.016+7,z*0.016+3)-1);
   const dM=d+20;   /* distance from where the mountains always started (80 tiles from the centre) */
   let mount=sstep(22,95,dM)*Math.pow(r,2.3)*52+sstep(40,140,dM)*8;
+  /* foothills from the map edge out to the mountains and the same hills on their slopes (every city: scenery only).
+     Part of the mountains, so the river valley eases them away over 34 tiles instead of cutting a wall */
+  mount+=sstep(0,8,d)*(3+10*Math.pow(tfbm(x*0.035+3,z*0.035+8),1.5)+farRaw(x,z,0,0)*2)+sstep(4,70,d)*24*(0.6+0.4*tfbm(x*0.02+1,z*0.02+6));
   if(SC.cold){hills*=1.6;mount=sstep(6,55,d)*Math.pow(r,1.8)*66+sstep(18,90,d)*16}
   if(SC.sand){hills=sstep(1.5,14,d)*(fbm(x*0.03,z*0.03)*3.2-0.6);mount*=0.45}
   if(SC.sea==='island'){const land=-seaW(x,z),k=sstep(-0.5,5,land);let h=-0.6;
@@ -1346,6 +1406,8 @@ function terrainH(x,z){
     mount*=sstep(w,w+34,dist);hills*=sstep(w,w+6,dist);
     if(dist<w)return -0.35;if(dist<w+2.2)return -0.2+(hills+mount+0.2)*sstep(w,w+2.2,dist)}
   let h=hills+mount;
+  /* far-hills city: start from the height the land has at the nearest map edge point, fading over 40 tiles */
+  if(farEdge())h+=farLand(Math.max(-HALF,Math.min(HALF,x)),Math.max(-HALF,Math.min(HALF,z)),0,0)*(1-sstep(0,40,d));
   if(x<-HALF+0.5){const hd=Math.abs(z-hwZ(x));if(hd<7){const k=sstep(1.2,7,hd);h=h*k;if(hd<2.5)h=Math.max(h,0)}}
   return h;
 }
@@ -2001,15 +2063,32 @@ function updateAirportOne(dt,now){
     /* the runway is free again once a departing jet is climbing away */
     }
 }
-/* drifting clouds */
-const CLN=16,PUFF=6,cloudM=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshLambertMaterial({color:'#ffffff',transparent:true,opacity:0.92}),CLN*PUFF);
-cloudM.frustumCulled=false;scene.add(cloudM);
-const clouds=[];{const rc=mulberry32(99);for(let k=0;k<CLN;k++){const cl={x:(rc()-0.5)*420,y:150+rc()*25,z:(rc()-0.5)*420,sp:0.6+rc()*0.8,p:[]};
-  for(let j=0;j<PUFF;j++)cl.p.push([(rc()-0.5)*26,(rc()-0.3)*5,(rc()-0.5)*13,6+rc()*7]);clouds.push(cl)}}
-function updateClouds(dt){const o=dummy;let n=0;
-  for(const cl of clouds){cl.x+=dt*cl.sp;if(cl.x>HALF+30)cl.x=-HALF-30;
-    for(const p of cl.p){o.position.set(cl.x+p[0],cl.y+p[1],cl.z+p[2]);o.scale.set(p[3],p[3]*0.6,p[3]);o.rotation.set(0,0,0);o.updateMatrix();cloudM.setMatrixAt(n++,o.matrix)}}
-  o.scale.set(1,1,1);cloudM.instanceMatrix.needsUpdate=true}
+/* drifting clouds: soft cumulus made of camera-facing quads (patch_sky.py) */
+function cloudTex(seed){const S=256,cv=document.createElement('canvas');cv.width=cv.height=S;const g=cv.getContext('2d'),rc=mulberry32(seed);
+  /* many soft white blobs in a dome with a flat base */
+  for(let k=0;k<70;k++){const a=rc()*Math.PI,r=rc()*0.36,x=S*(0.5+Math.cos(a)*r*1.15),y=S*(0.62-Math.sin(a)*r*0.9),rad=S*(0.07+rc()*0.13);
+    const gr=g.createRadialGradient(x,y,0,x,y,rad);gr.addColorStop(0,'rgba(255,255,255,0.55)');gr.addColorStop(0.6,'rgba(255,255,255,0.22)');gr.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,rad,0,Math.PI*2);g.fill()}
+  /* shade the underside: grey-blue towards the flat base */
+  g.globalCompositeOperation='source-atop';const sh=g.createLinearGradient(0,S*0.3,0,S*0.75);sh.addColorStop(0,'rgba(255,255,255,0)');sh.addColorStop(1,'rgba(120,135,155,0.55)');
+  g.fillStyle=sh;g.fillRect(0,0,S,S);g.globalCompositeOperation='source-over';
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace||t.colorSpace;return t}
+const CLN=MOBILE?18:30,CLTX=[cloudTex(11),cloudTex(23),cloudTex(37)];
+/* camera-facing quads (THREE.Sprite does not draw here); one instanced mesh per texture */
+const cloudMats=CLTX.map(map=>new THREE.MeshBasicMaterial({map,color:'#ffffff',transparent:true,opacity:0.95,depthWrite:false,fog:true}));
+const CLQ=new THREE.PlaneGeometry(1,1),CLP=[[],[],[]];
+const cloudM=new THREE.Group();cloudM.material={color:new THREE.Color('#ffffff')};scene.add(cloudM);
+const clouds=[];{const rc=mulberry32(99),SP=HALF+160;for(let k=0;k<CLN;k++){const cl={x:(rc()-0.5)*2*SP,y:120+rc()*45,z:(rc()-0.5)*2*SP,sp:0.6+rc()*0.8};
+  const W=24+rc()*34,n=6+((rc()*6)|0);
+  for(let j=0;j<n;j++){const sz=W*(0.45+rc()*0.5);const u=(rc()-0.5)*2;CLP[(rc()*3)|0].push({cl,o:[u*W*0.55,(1-Math.abs(u))*W*0.22+rc()*W*0.08+sz*0.3,(rc()-0.5)*W*0.6],w:sz,h:sz*0.8})}
+  clouds.push(cl)}}
+const CLI=CLP.map((L,k)=>{const m=new THREE.InstancedMesh(CLQ,cloudMats[k],Math.max(1,L.length));m.frustumCulled=false;m.renderOrder=-1;cloudM.add(m);return m});
+const _clP=new THREE.Vector3(),_clS=new THREE.Vector3(),_clM=new THREE.Matrix4();
+function updateClouds(dt){const col=cloudM.material.color;for(const m of cloudMats)m.color.copy(col);
+  const SP=HALF+160;for(const cl of clouds){cl.x+=dt*cl.sp;if(cl.x>SP)cl.x=-SP}
+  for(let k=0;k<3;k++){const L=CLP[k],m=CLI[k];for(let i=0;i<L.length;i++){const p=L[i];
+      _clP.set(p.cl.x+p.o[0],p.cl.y+p.o[1],p.cl.z+p.o[2]);_clS.set(p.w,p.h,1);_clM.compose(_clP,camera.quaternion,_clS);m.setMatrixAt(i,_clM)}
+    m.count=L.length;m.instanceMatrix.needsUpdate=true}}
 
 
 /* shared geometry + materials */
@@ -4960,7 +5039,7 @@ function updateCars(dt){updateHeli(dt);
       else{if(c.pk&&pkEnter(c)){endAgent(c,true);cars.splice(k,1);continue}if(c.to===OUT&&c.b===ENTRY)outAway(c);else if(c.to===OUT&&c.b===HWY.eastJ)hwAway(c);if(!(c.toAir&&lotusOK()&&LOTUS.i===c.to&&LOTUS.enter(c))&&!(c.toCargo&&cargoOK()&&CARGO.i===c.to&&CARGO.enter(c)))arrive(c);if(svcBack(c))continue;endAgent(c,true);cars.splice(k,1);continue}
     }
     while(c.t>=1){c.t-=1;c.k++;c.a=c.b;c.b=c.path[c.k]??nextTile(c.b,c.a);c.c=c.path[c.k+1]??nextTile(c.b,c.a);uDetour(c);netLaneAhead(c)}
-    if(c.ld){c.ld*=Math.exp(-dt*2.2);if(Math.abs(c.ld)<0.002)c.ld=0}if(queued||c.hold){c.wx=undefined;continue}
+    if(c.ld){c.ld*=Math.exp(-dt*Math.max(0,c.v||0)*NETLDK);if(Math.abs(c.ld)<0.002)c.ld=0}if(queued||c.hold){c.wx=undefined;continue}
     carCurve(c,c.t,_cc);
     const w=tiles[c.b].w;
     if(c.role==='bus'){c.po=(c.po||0)+((((c.wait>0||(last&&c.t>0.15))?0.11:0)-(c.po||0))*Math.min(1,dt*c.v*7));_cc.pos.x-=Math.cos(_cc.yaw)*c.po;_cc.pos.z+=Math.sin(_cc.yaw)*c.po}
@@ -4978,6 +5057,16 @@ function updateCars(dt){updateHeli(dt);
   beams.count=beamOn()?beamN:0;beams.instanceMatrix.needsUpdate=true;
 }
 
+/* near plane grows with height and distance to the target, so the depth buffer keeps its precision high up */
+function camNear(){const p=camera.position,h=p.y-Math.max(0,Hs(p.x,p.z)),d=p.distanceTo(_lookT);
+  const n=Math.max(0.05,Math.min(2,h*0.04,d*0.25));if(Math.abs(n-camera.near)>camera.near*0.05){camera.near=n;camera.updateProjectionMatrix()}}
+/* shadow box: on the ground under a high target, snapped to whole texels so shadows do not crawl */
+const _shC=new THREE.Vector3(),_shR=new THREE.Vector3(),_shU=new THREE.Vector3(),_shUp=new THREE.Vector3(0,1,0);
+function shadowHigh(){return(cam.fy||0)+cam.target.y-Math.max(0,Hs(cam.target.x,cam.target.z))>4}
+function shadowFollow(hi,ext){_shC.copy(cam.target);if(hi)_shC.y=Math.max(0,Hs(_shC.x,_shC.z));
+  _shR.crossVectors(_shUp,sunDir).normalize();_shU.crossVectors(sunDir,_shR).normalize();const tx=2*ext/sun.shadow.mapSize.x;
+  const a=_shC.dot(_shR),b=_shC.dot(_shU);_shC.addScaledVector(_shR,Math.round(a/tx)*tx-a).addScaledVector(_shU,Math.round(b/tx)*tx-b);
+  sun.target.position.copy(_shC);sun.position.copy(_shC).addScaledVector(sunDir,110);sun.shadow.normalBias=ext*0.0012}
 /* ---------- new city / save ---------- */
 const LOCK=Object.freeze({t:0,l:0,w:0,s:0,d:0,seed:1,g:null,lock:1});
 let OWN=new Set([START_A]),OWNIDX=new Int32Array(0);
@@ -6326,7 +6415,7 @@ TOOLS.forEach(tl=>{
     if(tl.id==='rail'){$('#sizeMenu').hidden=true;$('#roadMenu').hidden=true;toggleRailMenu();if(tool!==tl&&tool.id!=='station')setRailMode('track');return}$('#railMenu').hidden=true;
     if(tl.id==='road'){$('#sizeMenu').hidden=true;toggleRoadMenu();if(tool!==tl)setTool(tl);return}$('#roadMenu').hidden=true;
     if(tl.kind==='single'){const open=!$('#sizeMenu').hidden&&$('#sizeMenu').dataset.t===tl.id;if(open){$('#sizeMenu').hidden=true;setTool(TOOLS[0]);return}setTool(tl);showSizeMenu(tl);return}
-    if(ZMENU[tl.id]){const open=!$('#sizeMenu').hidden&&$('#sizeMenu').dataset.t===tl.id;if(open){$('#sizeMenu').hidden=true;setTool(TOOLS[0]);return}setTool(tl);showZoneMenu(tl);return}
+    if(ZMENU[tl.id]){const open=!$('#sizeMenu').hidden&&$('#sizeMenu').dataset.t===tl.id;if(open){$('#sizeMenu').hidden=true;setTool(TOOLS[0]);return}const ft=tl.id==='ind'&&tool&&tool.id==='off'?tool:tl;setTool(ft);showZoneMenu(ft);return}
     if(tl.id==='dist'){$('#sizeMenu').hidden=true;setTool(tl);toggleDistMenu();return}$('#distMenu').hidden=true;
     $('#sizeMenu').hidden=true;setTool(tool===tl?TOOLS[0]:tl)};toolbar.appendChild(b);
 });
@@ -6342,14 +6431,17 @@ function zonePic(k){const z=ZT[k];if(ZPIC[k])return`<img src="data:image/jpeg;ba
   return`<svg viewBox="0 0 120 64" style="display:block;width:100%;height:64px;border-radius:6px;margin-bottom:2px"><rect width="120" height="64" fill="${z.col}" opacity=".28"/><rect x="0" y="50" width="120" height="14" fill="#4a5058"/>`+
     [0,1,2].map(k=>{const h=z.f==='res'&&k===0?14:12+((k*13+z.k.length*7)%26)+(z.f==='off'?14:0);return`<rect x="${10+k*36}" y="${50-h}" width="26" height="${h}" rx="2" fill="${z.col}"/>`}).join('')+'</svg>'}
 function zoneFits(k,i){const n=(ZT[k]||{}).need;return!n||resOK(i,+k.split(':')[1])}
-function showZoneMenu(tl){const m=$('#sizeMenu'),Z=ZMENU[tl.id];m.dataset.t=tl.id;
-  const opts=Z.list.map(sv=>{const k=Z.t+':'+sv,z=ZT[k],lock=lvl()<z.lv,sel=(tl.zs|0)===sv;
-    return`<button data-zs="${sv}" aria-pressed="${sel}" ${lock?'disabled':''}>${zonePic(k)}<span class="szh"><i>${z.need?('NEEDS '+{forest:'FOREST',fert:'FERTILE LAND',oil:'OIL',ore:'ORE'}[z.need]):Z.nm.toUpperCase()}</i></span><b>${z.nm}</b><span>${z.d}</span><span class="cost">$5 a tile · ${z.cap[1]}–${z.cap[3]} ${z.f==='res'?'residents':'jobs'}</span>${lock?`<span class="lk">${LOCKSVG}Unlocks at level ${z.lv}</span>`:''}</button>`});
+/* WORKMENU: industry and offices share the Work button */
+const WORKMENU=['ind','off'],workTool=tl=>WORKMENU.includes(tl.id);
+function showZoneMenu(tl){const m=$('#sizeMenu'),bt=workTool(tl)?'ind':tl.id;m.dataset.t=bt;
+  const fams=workTool(tl)?WORKMENU.map(id=>TOOLS.find(t=>t.id===id)):[tl];
+  const opts=fams.flatMap(ft=>{const Z=ZMENU[ft.id];return Z.list.map(sv=>{const k=Z.t+':'+sv,z=ZT[k],lock=lvl()<z.lv,sel=tl===ft&&(tl.zs|0)===sv;
+    return`<button data-zs="${sv}" data-zt="${ft.id}" aria-pressed="${sel}" ${lock?'disabled':''}>${zonePic(k)}<span class="szh"><i>${z.need?('NEEDS '+{forest:'FOREST',fert:'FERTILE LAND',oil:'OIL',ore:'ORE'}[z.need]):Z.nm.toUpperCase()}</i></span><b>${z.nm}</b><span>${z.d}</span><span class="cost">$5 a tile · ${z.cap[1]}–${z.cap[3]} ${z.f==='res'?'residents':'jobs'}</span>${lock?`<span class="lk">${LOCKSVG}Unlocks at level ${z.lv}</span>`:''}</button>`})});
   m.innerHTML=opts.join('');m.classList.toggle('four',opts.length===4);
-  m.querySelectorAll('button').forEach(x=>x.onclick=()=>{tl.zs=+x.dataset.zs;zoneBtn(tl);setTool(tl);m.hidden=true;sfx('ui');
-    const z=ZT[Z.t+':'+tl.zs];if(z.need){setOverlayAuto('resources')}});
-  m.hidden=false;const b=$('#tool-'+tl.id).getBoundingClientRect();m.style.left=Math.max(12,Math.min(innerWidth-m.offsetWidth-12,b.left+b.width/2-m.offsetWidth/2))+'px'}
-function zoneBtn(tl){const b=$('#tool-'+tl.id);if(!b||!ZMENU[tl.id])return;const z=ZT[ZMENU[tl.id].t+':'+(tl.zs|0)];b.querySelector('.ct').textContent=z.k;b.title=tl.nm+' · '+z.nm}
+  m.querySelectorAll('button').forEach(x=>x.onclick=()=>{const ft=TOOLS.find(t=>t.id===x.dataset.zt),Z=ZMENU[ft.id];ft.zs=+x.dataset.zs;zoneBtn(ft);setTool(ft);m.hidden=true;sfx('ui');
+    const z=ZT[Z.t+':'+ft.zs];if(z.need){setOverlayAuto('resources')}});
+  m.hidden=false;const b=$('#tool-'+bt).getBoundingClientRect();m.style.left=Math.max(12,Math.min(innerWidth-m.offsetWidth-12,b.left+b.width/2-m.offsetWidth/2))+'px'}
+function zoneBtn(tl){const b=$('#tool-'+(tl.id==='off'?'ind':tl.id));if(!b||!ZMENU[tl.id])return;const z=ZT[ZMENU[tl.id].t+':'+(tl.zs|0)];b.querySelector('.ct').textContent=z.k;b.title=(tl.id==='off'||tl.id==='ind'?'Work':tl.nm)+' · '+z.nm}
 /* districts */
 const DCOL=['#ff8ad8','#7fd1ff','#ffd166','#9be564','#c49bff','#ff9f68','#6be0c3','#f27a7a'];
 function distOf(d){return(G.dists||[]).find(o=>o.id===d)}
@@ -6437,7 +6529,7 @@ $('#resumeBtn').onclick=()=>setSpeed(1);
 canvas.addEventListener('pointerdown',()=>{$('#menu').hidden=true;$('#roadMenu').hidden=true;$('#railMenu').hidden=true;if(tool.id!=='dist')$('#distMenu').hidden=true;$('#sizeMenu').hidden=true;$('#ovMenu').hidden=true});
 const TOOLOV={dist:'districts',fun:'parks',power:'power',water:'water',hosp:'health',fire:'fire',police:'police',garb:'garbage',school:'education',college:'education',ind:'pollution',park:'parks',stadium:'parks',airport:null};
 function setTool(tl){if(typeof setAreaMode==='function')setAreaMode(!!tl&&tl.id==='areas');if(tl&&tl.id!=='move'){moveSrc=-1;moveGhostOff();const d=$('#moveAsk');if(d)d.hidden=true}tool=tl;TOOLS.forEach(t=>{const b=$('#tool-'+t.id);if(b)b.setAttribute('aria-pressed',t===tl)});canvas.style.cursor=tl.id==='select'?'default':'crosshair';setHL([]);tip.hidden=true;
-  if(tl.kind!=='single')$('#sizeMenu').hidden=true;if(tl.kind==='single'&&!SV[tl.t].land)tl.land=false;if(tl.id!=='road'&&tl.id!=='rbt')$('#roadMenu').hidden=true;if(tl.id==='rbt'){const rb=$('#tool-road');if(rb)rb.setAttribute('aria-pressed','true')}if(tl.id!=='rail'&&tl.id!=='station')$('#railMenu').hidden=true;if(tl.id!=='dist'&&$('#distMenu'))$('#distMenu').hidden=true;if(tl.id==='station'){const rb=$('#tool-rail');if(rb)rb.setAttribute('aria-pressed','true')}if(tl.id==='parking'){const pb=$('#tool-park');if(pb)pb.setAttribute('aria-pressed','true')}if(typeof setOverlayAuto==='function')setOverlayAuto(TOOLOV[tl.id]||null)}
+  if(tl.kind!=='single')$('#sizeMenu').hidden=true;if(tl.kind==='single'&&!SV[tl.t].land)tl.land=false;if(tl.id!=='road'&&tl.id!=='rbt')$('#roadMenu').hidden=true;if(tl.id==='rbt'){const rb=$('#tool-road');if(rb)rb.setAttribute('aria-pressed','true')}if(tl.id!=='rail'&&tl.id!=='station')$('#railMenu').hidden=true;if(tl.id!=='dist'&&$('#distMenu'))$('#distMenu').hidden=true;if(tl.id==='station'){const rb=$('#tool-rail');if(rb)rb.setAttribute('aria-pressed','true')}if(tl.id==='parking'){const pb=$('#tool-park');if(pb)pb.setAttribute('aria-pressed','true')}if(tl.id==='off'){const wb=$('#tool-ind');if(wb)wb.setAttribute('aria-pressed','true')}if(typeof setOverlayAuto==='function')setOverlayAuto(TOOLOV[tl.id]||null)}
 function setSpeed(s){speed=s;{const pb=document.getElementById('paused');if(pb)pb.hidden=s!==0}for(let k=0;k<4;k++)$('#sp'+k).setAttribute('aria-pressed',k===s)}
 for(let k=0;k<4;k++)$('#sp'+k).onclick=()=>setSpeed(k);
 $('#taxBtn').onclick=()=>{const tp=$('#taxPanel'),show=tp.hidden;$('#menu').hidden=true;$('#trafPanel').hidden=true;$('#roadMenu').hidden=true;tp.hidden=!show;
@@ -7105,6 +7197,13 @@ const WXMSG={blizzard:'Blizzard! Howling wind and thick snow. Almost nobody goes
 const SEASONW={winter:{clear:25,cloudy:25,snow:35,fog:10,rain:5},spring:{clear:35,cloudy:30,rain:25,storm:5,fog:5},summer:{clear:55,cloudy:18,rain:12,storm:12,fog:3},autumn:{clear:28,cloudy:30,rain:25,fog:12,storm:5}};
 const MEAN=[-1,1,8,14,19,23,26,25,21,14,7,1];
 const W={type:'clear',left:10,over:0,rain:0,snow:0,fogK:0,wet:0,cover:0,temp:12,flash:0,flashT:6};
+/* haze on clear days: every 1.5-4 minutes a new spell is picked (hazy 0.25-0.55 about 3 times in 10, else clear)
+   and the haze drifts there slowly; mist also hangs around sunrise */
+const HZ={v:0,tg:0,next:0,last:0};
+function hazeK(){const now=performance.now()/1000;if(!HZ.last){HZ.last=now;HZ.next=now+90+Math.random()*150}
+  if(now>HZ.next){HZ.tg=Math.random()<0.3?0.25+Math.random()*0.3:0;HZ.next=now+90+Math.random()*150}
+  HZ.v+=(HZ.tg-HZ.v)*Math.min(1,(now-HZ.last)*0.03);HZ.last=now;const t=dayNight?tod:0.5;
+  return Math.max(HZ.v,0.45*Math.max(0,1-Math.abs(t-0.27)/0.08))}
 function season(){const m=Math.floor((G?G.day:0)/30)%12;return m<2||m===11?'winter':m<5?'spring':m<8?'summer':'autumn'}
 function baseTemp(){const m=Math.floor((G?G.day:0)/30)%12,h=(dayNight?tod:0.5)*24;return(SC.mean||MEAN)[m]+(SC.swing||6)*Math.cos((h-15)/24*Math.PI*2)}
 function pickWeather(){const se=season(),tbl=SC.wx?SC.wx[se]:SEASONW[se];let tot=0;for(const k in tbl)tot+=tbl[k];let r=Math.random()*tot;for(const k in tbl){r-=tbl[k];if(r<=0)return k}return'clear'}
@@ -7192,7 +7291,7 @@ function applyTime(){
   if(W.flash>0.02){cA.lerp(_cT.set('#dfe6ff'),W.flash*0.5);cB.lerp(_cT.set('#dfe6ff'),W.flash*0.5)}
   if(W.dust>0.01){cA.lerp(_cT.set(dayLight>0.3?'#c9955a':'#4a3522'),Math.min(1,W.dust)*0.75);cB.lerp(_cT.set(dayLight>0.3?'#b88a55':'#3a2a1c'),Math.min(1,W.dust)*0.6)}
   scene.background.copy(cA);scene.fog.color.copy(cA);skyU.bot.value.copy(cA);skyU.top.value.copy(cB);
-  const fogNear=40-102*W.fogK-40*Math.min(1,W.rain),fogFar=(190-255*W.fogK)*(1-0.35*Math.min(1,W.rain));fogBase.n=Math.max(8,fogNear*gq().fogK);fogBase.f=Math.max(60,fogFar*(0.5+0.5*gq().fogK));fogByCam();
+  const hz=Math.max(W.fogK,hazeK()),fogNear=150-212*hz-60*Math.min(1,W.rain),fogFar=(650-715*hz)*(1-0.45*Math.min(1,W.rain));fogBase.n=Math.max(8,fogNear*gq().fogK);fogBase.f=Math.max(60,fogFar*(0.5+0.5*gq().fogK));fogByCam();
   sunDir.set(Math.cos(ang),Math.max(0.06,el),0.35).normalize();
   /* golden hour: strongest with the sun just on the horizon, gone by mid-morning and after dusk */
   const gold=Math.pow(Math.max(0,1-Math.abs(el-0.03)/0.3),1.4)*(1-0.85*over),pal=t<0.5?GLOW.rise:GLOW.set;
@@ -7463,9 +7562,10 @@ function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.t
 function hideTitle(){atTitle=false;$('#app').classList.remove('at-title');$('#title').hidden=true;setSpeed(1);if(!store('pm-help-seen'))$('#help').hidden=false}
 function openCity(id){if(scOf(id)!==SC.id||(SC.river&&rwOf(id)!==RIVW)||hillsOf(id)!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({id}));location.reload();return}if(curId===id&&G){if(!camBefore||!camOk(camBefore.x,camBefore.z))camHome(id);else{cam.dist=camBefore.d;cam.phi=camBefore.p;cam.theta=camBefore.th;cam.target.set(camBefore.x,0,camBefore.z);updateCamera()}hideTitle();return}if(curId&&G)save();const str=store('pc-city-'+id);if(!str||!load(str)){toast('That city could not be opened.');return}
   curId=id;store('pc-last',id);camHome(id);save();hideTitle();sfx('level')}
-function foundCity(name,sc,tut){if((sc&&sc!==SC.id)||(SCN[sc||SC.id].river&&RIVW!==RIVW_NEW)||!!window.__newHills!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({sc:sc||SC.id,name,tut:!!tut,hills:!!window.__newHills}));location.reload();return}if(curId&&G)save();curId='c'+Date.now().toString(36)+((Math.random()*1e4)|0);newCity(name||SC.town);G.hills=TERRAIN_ON?1:0;G.tut=tut?0:-1;store('pc-last',curId);save();hideTitle();sfx('level')}
+function foundCity(name,sc,tut){if((sc&&sc!==SC.id)||(SCN[sc||SC.id].river&&RIVW!==RIVW_NEW)||!!window.__newHills!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({sc:sc||SC.id,name,tut:!!tut,hills:!!window.__newHills}));location.reload();return}if(curId&&G)save();curId='c'+Date.now().toString(36)+((Math.random()*1e4)|0);newCity(name||SC.town);G.hills=TERRAIN_ON?2:0;G.tut=tut?0:-1;store('pc-last',curId);save();hideTitle();sfx('level')}
 let pickSc='classic';
-function drawScPick(){const box=$('#scPick');box.innerHTML=Object.keys(SCN).map(k=>`<button type="button" class="scb" data-sc="${k}" aria-pressed="${k===pickSc}"><b>${SCN[k].nm}</b><small>${fmt(SCN[k].money)} to start</small></button>`).join('');
+const SCLIST=['classic','bay'];
+function drawScPick(){const box=$('#scPick');box.innerHTML=SCLIST.map(k=>`<button type="button" class="scb" data-sc="${k}" aria-pressed="${k===pickSc}"><b>${SCN[k].nm}</b><small>${fmt(SCN[k].money)} to start</small></button>`).join('');
   box.querySelectorAll('.scb').forEach(b=>b.onclick=()=>{sfx('ui');pickSc=b.dataset.sc;drawScPick()});$('#scDesc').textContent=SCN[pickSc].d;$('#newName').placeholder=SCN[pickSc].town}
 drawScPick();
 $('#newCityForm').onsubmit=e=>{e.preventDefault();window.__newHills=!!($('#newHills')&&$('#newHills').checked);const nm=$('#newName').value.trim()||SCN[pickSc].town;$('#newName').blur();const tut=$('#newTut').checked;if(pickSc!==SC.id){foundCity(nm,pickSc,tut);return}travel(()=>foundCity(nm,null,tut))};
@@ -7477,7 +7577,7 @@ const TUT=[
   {t:'Zone homes',tool:'res',d:'Pick <b>Homes</b> and drag a rectangle beside your road. Zones must be within 2 tiles of a road. Houses appear on their own once the zone has power and water.',ok:()=>tutZone(T.RES)>=8,h:()=>`Home lots: ${Math.min(8,tutZone(T.RES))} of 8`},
   {t:'Turn on the power',tool:'power',d:()=>'Homes need electricity. Pick <b>Power</b> and place a power plant next to a road. Power flows along roads to every building.'+(SC.cold?' In the snow, heating makes buildings use 25% more power.':''),ok:()=>(S.cnt[T.POWER]||0)>=1},
   {t:'Add clean water',tool:'water',d:()=>'Pick <b>Water</b> and place a water tower next to a road.'+(SC.sand?' In the desert, towers pump 40% less, so you may need two.':''),ok:()=>(S.cnt[T.WATER]||0)>=1},
-  {t:'Create jobs',tool:'com',d:'People need work. Zone some <b>Shops</b> and some <b>Industry</b> beside your roads. Keep factories a little away from homes, because they pollute the air.',ok:()=>tutZone(T.COM)>=4&&tutZone(T.IND)>=4,h:()=>`Shops ${Math.min(4,tutZone(T.COM))}/4 · Industry ${Math.min(4,tutZone(T.IND))}/4`},
+  {t:'Create jobs',tool:'com',d:'People need work. Zone some <b>Shops</b> and some industry (the <b>Work</b> button) beside your roads. Keep factories a little away from homes, because they pollute the air.',ok:()=>tutZone(T.COM)>=4&&tutZone(T.IND)>=4,h:()=>`Shops ${Math.min(4,tutZone(T.COM))}/4 · Industry ${Math.min(4,tutZone(T.IND))}/4`},
   {t:'Watch the city grow',d:'Press <b>▶▶</b> in the bottom-left corner to speed up time. The R, C and I bars show what people want more of: homes, shops or industry. Grow the town to 40 people.',ok:()=>S.pop>=40,h:()=>`People: ${Math.min(40,S.pop)} of 40`},
   {t:'Keep people happy',tool:'park',d:'Build a <b>Park</b> and a <b>School</b> near homes. Parks, schools, clinics and police let houses grow into bigger buildings.',ok:()=>(S.cnt[T.PARK]||0)>=1&&(S.cnt[T.SCHOOL]||0)>=1,h:()=>`Park ${(S.cnt[T.PARK]||0)?'✓':'—'} · School ${(S.cnt[T.SCHOOL]||0)?'✓':'—'}`},
   {t:'Money and taxes',d:'Your money is shown at the bottom. Every month you earn taxes and pay upkeep. Tap <b>Tax</b> to change tax rates: low taxes grow the city faster, high taxes earn more. Tap any building to see what it needs.',next:1},
@@ -7590,8 +7690,8 @@ function frame(now){
   updateWeather(dt,dh);pcGuard('match',()=>matchUpdate(sdt));
   applyTime();
   skyDome.position.copy(camera.position);sunDisc.position.copy(camera.position).addScaledVector(sunDir,800);moonDisc.position.copy(camera.position).addScaledVector(moonDir,800);
-  {const ext=Math.min(80,Math.max(10,cam.dist*0.8));if(Math.abs(ext-shadowExt)>0.5){shadowExt=ext;const sc=sun.shadow.camera;sc.left=-ext;sc.right=ext;sc.top=ext;sc.bottom=-ext;sc.updateProjectionMatrix()}
-   sun.target.position.copy(cam.target);sun.position.copy(cam.target).addScaledVector(sunDir,110);}
+  {const hi=shadowHigh(),ext=hi?60:Math.min(80,Math.max(10,cam.dist*0.8));if(Math.abs(ext-shadowExt)>0.5){shadowExt=ext;const sc=sun.shadow.camera;sc.left=-ext;sc.right=ext;sc.top=ext;sc.bottom=-ext;sc.updateProjectionMatrix()}
+   shadowFollow(hi,ext);}
   tlT+=sdt;updateLights(sdt);
   if(ov.mode==='traffic'){ovT-=dt;if(ovT<=0){ovT=0.5;drawOverlay()}}
   riverU.time.value+=dt*(speed?0.8+0.25*speed:0.35)*(SC.cold?0.02:1);
@@ -7602,7 +7702,7 @@ function frame(now){
   if(inspI>=0){placeInspect();inspT-=dt;if(inspT<=0){inspT=1;renderInspect()}}
   if(intro)stepIntro(dt);
   audioTick(dt);
-  if(!atTitle)renderer.render(scene,camera);
+  if(!atTitle){camNear();renderer.render(scene,camera)}
   requestAnimationFrame(frame);
 }
 
@@ -7743,11 +7843,20 @@ const bzLen=P=>(Math.hypot(P[3][0]-P[0][0],P[3][1]-P[0][1])+Math.hypot(P[1][0]-P
 function netCarPath(c){if(!G||!G.net||!G.net.s.length)return null;const M=netMap();if(!M.TR[c.b])return null;
   let a=c.a,cc=c.c;if(a===c.b){const o=netOther(c.b,cc);if(o>=0)a=o}if(cc===c.b){const o=netOther(c.b,a);if(o>=0)cc=o}
   const st=a!==c.b&&cc!==c.b?netStep(a,c.b,cc):null;if(st)return{st};
-  if(a===c.b||cc===c.b)return null;const L=laneOf(c.b,c),La=(laneOf(a,c)+L)/2,Lc=(laneOf(cc,c)+L)/2;return{J:netJ(a,c.b,cc,La,Lc)}}
+  if(a===c.b||cc===c.b)return null;
+  /* junction curve is fixed when the car enters: it starts where the car is (left-over lane-change offset included) and
+     ends on the exit lane with no offset, so the car does not slide sideways while it turns */
+  const jk=a+','+c.b+','+cc;if(c.jK===jk&&c.jM===M)return{J:c.jP};
+  const L=laneOf(c.b,c),La=(laneOf(a,c)+L)/2;c.ld=0;const L0=laneOf(c.b,c),Lc=(laneOf(cc,c)+L0)/2;
+  c.jK=jk;c.jM=M;c.jP=netJ(a,c.b,cc,La,Lc);return{J:c.jP}}
 var NETCY=null;
+/* lane-change offset c.ld fades over distance: e^(-NETLDK * distance), about 95% done after 1.2 units */
+const NETLDK=2.5;
 function netCar(c,t,out){NETCY=null;const p=netCarPath(c);if(!p)return false;
   if(p.st){const{g,k,dir}=p.st,s=dir>0?g.e0[k]+(g.e1[k]-g.e0[k])*t:g.e1[k]-(g.e1[k]-g.e0[k])*t,q=cvAt(g,s),dx=q[2]*dir,dz=q[3]*dir,L=laneOf(c.b,c);if(g.sg.e)NETCY=0.06+netHs(g,s)+(TERRAIN_ON&&g.sg.e>0&&typeof netGPs==='function'?netGPs(g,s)-Hs(q[0],q[1]):0);
-    out.pos.set(q[0]-dz*L,0,q[1]+dx*L);out.yaw=Math.atan2(dx,dz);return true}
+    out.pos.set(q[0]-dz*L,0,q[1]+dx*L);
+    /* a lane change steers: the offset shrinks with distance driven, so the car heads along that slope instead of sliding sideways */
+    const m=c.ld?-NETLDK*c.ld:0;out.yaw=Math.atan2(dx-dz*m,dz+dx*m);return true}
   if(c.b>=N*N){NETCY=0.06+NETEH;if(TERRAIN_ON&&typeof netNodeH==='function'){const id=NET.nodeAt.get(c.b),p=id!==undefined&&G.net.n[id];if(p)NETCY+=netNodeH(id)-Hs(p[0],p[1])}}const P=p.J,q=bzAt(P,t),u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dz=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]);
   out.pos.set(q[0],0,q[1]);out.yaw=Math.atan2(dx,dz);return true}
 function netRate(c){const p=netCarPath(c);if(!p)return null;if(p.st){const{g,k}=p.st;return Math.min(25,1/Math.max(0.04,g.e1[k]-g.e0[k]))}return Math.min(25,1/Math.max(0.04,bzLen(p.J)))}
@@ -9125,7 +9234,7 @@ let BLIMP=null;
 function txBlimp(dt){const on=(S.pop||0)>=1500&&!atTitle;if(!on){if(BLIMP){world.remove(BLIMP.g);BLIMP=null}return}
   if(!BLIMP){const g=new THREE.Group();world.add(g);model(g,'blimp',{paint:'#eeeeea',paint2:'#c8202a'},0,0,0,0);BLIMP={g,a:Math.random()*6.28}}
   BLIMP.ft=(BLIMP.ft||0)-dt;if(BLIMP.ft<=0||!BLIMP.f){BLIMP.ft=20;BLIMP.f=cityFocus()}const f=BLIMP.f,cx=f.x??f[0],cz=f.z??f[1],R=Math.min(40,10+Math.sqrt(S.pop)/8);BLIMP.a+=dt*0.025;const x=cx+Math.cos(BLIMP.a)*R,z=cz+Math.sin(BLIMP.a)*R*0.8;
-  BLIMP.g.position.set(x,7+Math.sin(BLIMP.a*3)*0.3,z);BLIMP.g.rotation.y=Math.atan2(-Math.sin(BLIMP.a),Math.cos(BLIMP.a)*0.8)+Math.PI}
+  BLIMP.g.position.set(x,7+Math.sin(BLIMP.a*3)*0.3,z);BLIMP.g.rotation.y=Math.atan2(-Math.sin(BLIMP.a),Math.cos(BLIMP.a)*0.8)}
 {const _uc=updateCars;updateCars=function(dt){_uc(dt);txTick(dt);tbDraw()}}
 /* ---- building them: tap points, Finish ---- */
 const TXCOST={mono:{st:5000,u:400,up:150,upu:20,fare:2},cable:{st:8000,u:300,up:400,upu:15,fare:3}};
@@ -9193,12 +9302,27 @@ function svhTick(dt){for(let k=SVH.length-1;k>=0;k--){const h=SVH[k],m=h.m;m.rot
   /* the old drawer only knows the grid: hide network tiles from it, then draw those along their segments */
   const keep={};if(G&&G.tram&&G.net&&G.net.s.length){const M=netMap();for(const k in G.tram){if(k==='idx')continue;if(M.TR[+k]){keep[k]=G.tram[k];delete G.tram[k]}}}
   _td();for(const k in keep)G.tram[k]=keep[k];if(!G||!G.tram||!Object.keys(keep).length)return;
-  const M=netMap(),R=[],Wr=[],poles=[];
+  const M=netMap(),R=[],Wr=[],poles=[],arms=new Map();
+  /* rails stop at the junction mouth; the junction gets its own curved rails below */
+  const jm=(n,g)=>(M.deg.get(n)||0)+netGridArms(n)>=2?netRJs(n,g.sg.id):0;
+  const tramAt=(g,s)=>{for(let k=0;k<g.ext.length;k++)if(s>=g.e0[k]-1e-4&&s<=g.e1[k]+1e-4)return!!G.tram[g.ext[k]];return false};
   for(const g of M.geo.values()){if(g.kind!=='road'||g.sg.e)continue;const lane=Math.min(0.2,(NETLN[g.sg.t|0]||NETLN[0])[0]),hw=netHW(g.sg.t);
-    for(let k=0;k<g.ext.length;k++){const j=g.ext[k];if(!G.tram[j])continue;const s0=g.e0[k],s1=g.e1[k];
+    const ja=jm(g.sg.a,g),jb=g.L-jm(g.sg.b,g);
+    for(const[n,sm,u]of[[g.sg.a,ja,1],[g.sg.b,jb,-1]]){if(sm===0||sm===g.L||!tramAt(g,sm))continue;const q=cvAt(g,sm);if(!arms.has(n))arms.set(n,[]);arms.get(n).push({x:q[0],z:q[1],ux:q[2]*u,uz:q[3]*u,lane})}
+    for(let k=0;k<g.ext.length;k++){const j=g.ext[k];if(!G.tram[j])continue;const s0=Math.max(g.e0[k],ja),s1=Math.min(g.e1[k],jb);if(s1<=s0)continue;
       for(let s=s0;s<s1-1e-4;s+=0.1){const s2=Math.min(s1,s+0.1),a=cvAt(g,s),b=cvAt(g,s2),na=[-a[3],a[2]],nb=[-b[3],b[2]];
         for(const sd of[-1,1]){for(const gg of[-0.04,0.04]){const o=sd*lane+gg;R.push([a[0]+na[0]*o,a[1]+na[1]*o,b[0]+nb[0]*o,b[1]+nb[1]*o])}const o=sd*lane;Wr.push([a[0]+na[0]*o,a[1]+na[1]*o,b[0]+nb[0]*o,b[1]+nb[1]*o])}}
       const sm=(s0+s1)/2,jr=n=>(M.deg.get(n)||0)+netGridArms(n)>=2?netRJs(n,g.sg.id)+0.15:0;if(k%2===0&&sm>jr(g.sg.a)&&sm<g.L-jr(g.sg.b)){const q=cvAt(g,sm);poles.push([q[0]-q[3]*(hw-0.04),q[1]+q[2]*(hw-0.04),Math.atan2(q[2],q[3])])}}}
+  /* through a junction: join tram arms that line up (or the only two), as curves from mouth to mouth */
+  for(const L of arms.values()){if(L.length<2)continue;const pairs=[];
+    const st=(A,B)=>-(A.ux*B.ux+A.uz*B.uz)>0.7,lone=L.map(A=>!L.some(B=>B!==A&&st(A,B)));
+    /* straight pairs run through; an arm with no straight partner turns into each of the others */
+    for(let a=0;a<L.length;a++)for(let b=a+1;b<L.length;b++)if(L.length===2||st(L[a],L[b])||lone[a]||lone[b])pairs.push([L[a],L[b]]);
+    for(const[A,B]of pairs){const d=Math.hypot(B.x-A.x,B.z-A.z),kk=Math.max(0.1,d*0.42),ln=Math.min(A.lane,B.lane);
+      /* travel A -> B: in along -uA, out along uB; offsets measured to the right of travel at both ends */
+      const P=o=>{const ax=-A.ux,az=-A.uz,bx=B.ux,bz=B.uz,p0=[A.x-az*o,A.z+ax*o],p3=[B.x-bz*o,B.z+bx*o];return[p0,[p0[0]+ax*kk,p0[1]+az*kk],[p3[0]-bx*kk,p3[1]-bz*kk],p3]};
+      const seg=(C,out)=>{let pr=C[0];for(let q=1;q<=10;q++){const t=q/10,c=bzAt(C,t);out.push([pr[0],pr[1],c[0],c[1]]);pr=c}};
+      for(const sd of[-1,1]){for(const gg of[-0.04,0.04])seg(P(sd*ln+gg),R);seg(P(sd*ln),Wr)}}}
   const strip=(L,w,y,col)=>{const V=[],I=[];let q=0;for(const[x0,z0,x1,z1]of L){const dx=x1-x0,dz=z1-z0,l=Math.hypot(dx,dz)||1,nx=-dz/l*w/2,nz=dx/l*w/2;
       V.push(x0+nx,y,z0+nz,x0-nx,y,z0-nz,x1+nx,y,z1+nz,x1-nx,y,z1-nz);I.push(q,q+1,q+2,q+1,q+3,q+2);q+=4}
     const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(V,3));bg.setIndex(I);bg.computeVertexNormals();

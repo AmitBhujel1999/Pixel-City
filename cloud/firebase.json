@@ -1,4 +1,10 @@
 {
   "firestore": { "rules": "firestore.rules" },
-  "hosting": { "public": "owner", "ignore": ["**/.*"] }
+  "hosting": { "public": "owner", "ignore": ["**/.*"] },
+  "auth": {
+    "providers": {
+      "anonymous": true,
+      "googleSignIn": { "oAuthBrandDisplayName": "Pixel's City", "supportEmail": "amitbhujel3aa@gmail.com" }
+    }
+  }
 }

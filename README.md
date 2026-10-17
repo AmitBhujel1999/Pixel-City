@@ -22,7 +22,7 @@ This folder is the complete Android app for Pixel City. You don't need Android S
 2. If Android asks, allow your browser or Files app to **install unknown apps**.
 3. Tap **Install**, then **Open**. Pixel City appears on your home screen.
 
-To update the game later, replace `www/index.html` in the repository. GitHub builds a new APK automatically.
+To update the game later, replace `www/index.html` in the repository (and `www/models.bin` if the 3D models changed). GitHub builds a new APK automatically.
 
 ## Fits any screen
 

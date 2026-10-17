@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel's City Owner</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#0e141b;--panel:#16202b;--line:rgba(255,255,255,.1);--ink:#e8eef3;--muted:#93a1ae;--accent:#8be0c9;--warn:#ffd27a;--bad:#ff8f84}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:20px}header h1 span{color:var(--accent)}
+header .sp{flex:1}
+main{padding:16px;max-width:1200px;margin:0 auto}
+button{font:inherit;color:inherit;background:#22303e;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{background:#2b3c4d}button.pri{background:var(--accent);color:#0f1a1f;border-color:var(--accent);font-weight:700}
+input{font:inherit;color:inherit;background:#101820;border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:24px}.stat small{color:var(--muted)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.bar input{flex:1;min-width:180px}
+.player{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.player>h2{margin:0;padding:10px 12px;font-size:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;border-bottom:1px solid var(--line)}
+.player>h2 code{color:var(--accent);font-size:13px}.player>h2 small{color:var(--muted);font-weight:400}
+.devs{padding:8px 12px;color:var(--muted);font-size:12.5px;border-bottom:1px solid var(--line)}
+.devs span{display:inline-block;margin-right:14px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:12px}
+tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;text-align:right}th.n{text-align:right}
+.tag{font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(139,224,201,.14);color:var(--accent)}
+.tag.ios{background:rgba(160,180,255,.16);color:#b8c6ff}.tag.android{background:rgba(140,220,120,.16);color:#a6e39a}
+.msg{color:var(--muted);padding:24px 0}.msg.bad{color:var(--bad)}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;width:min(560px,calc(100vw - 32px))}
+dialog textarea{width:100%;height:160px;background:#101820;color:var(--ink);border:1px solid var(--line);border-radius:8px;font:12px ui-monospace,monospace}
+dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+@media (max-width:600px){header,main{padding:12px 16px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pixel's <span>City</span> · Owner</h1>
+  <div class="sp"></div>
+  <span id="who"></span>
+  <button id="signIn" class="pri" hidden>Sign in with Google</button>
+  <button id="signOut" hidden>Sign out</button>
+</header>
+<main>
+  <div id="stats" class="stats" hidden></div>
+  <div class="bar" id="bar" hidden><input id="q" placeholder="Search city, device or sync code"><button id="reload">Refresh</button></div>
+  <div id="out"><p class="msg">Loading…</p></div>
+</main>
+<dialog id="dlg"><h3 id="dlgT" style="margin:0 0 6px"></h3><p style="margin:0 0 8px;color:var(--muted)">Paste this code in the game: Load game → Import a city from a save code.</p>
+  <textarea id="dlgCode" readonly></textarea><div class="row"><button id="dlgDl">Download .txt</button><button id="dlgCopy" class="pri">Copy</button><button id="dlgClose">Close</button></div></dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* same project as the game (PC_CLOUD in the game's net_cloud section) */
+const FIREBASE_CONFIG = {apiKey:'AIzaSyA0ltVhmbKAvVMrBrLbNuS6CtHDgIEITMI',authDomain:'pixel-city-d0480.firebaseapp.com',projectId:'pixel-city-d0480'};
+const OWNER = 'amitbhujel3aa@gmail.com';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtN = n => (n|0).toLocaleString('en-US');
+const ago = t => { if (!t) return '—'; const s = (Date.now()-t)/1000; return s<90?'just now':s<5400?Math.round(s/60)+' min ago':s<129600?Math.round(s/3600)+' h ago':Math.round(s/86400)+' days ago'; };
+const when = t => t ? new Date(t).toLocaleString() : '';
+const show = c => String(c||'').replace(/(.{4})(?=.)/g, '$1-');
+let DATA = null;
+
+if (!FIREBASE_CONFIG.apiKey) { $('#out').innerHTML = '<p class="msg bad">Firebase is not set up yet: FIREBASE_CONFIG is empty.</p>'; throw new Error('no config'); }
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth(), db = firebase.firestore();
+
+$('#signIn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => { $('#out').innerHTML = `<p class="msg bad">Sign-in failed: ${esc(e.message)}</p>`; });
+$('#signOut').onclick = () => auth.signOut();
+$('#reload').onclick = () => load();
+$('#q').oninput = () => render();
+
+auth.onAuthStateChanged(u => {
+  $('#signIn').hidden = !!u; $('#signOut').hidden = !u; $('#who').textContent = u ? u.email : '';
+  if (!u) { $('#stats').hidden = $('#bar').hidden = true; $('#out').innerHTML = '<p class="msg">Sign in with the owner Google account to see every city.</p>'; return; }
+  if (u.email !== OWNER) { $('#out').innerHTML = `<p class="msg bad">${esc(u.email)} is not the owner account.</p>`; return; }
+  load();
+});
+
+async function load() {
+  $('#out').innerHTML = '<p class="msg">Loading every city…</p>';
+  try {
+    const [cs, ds] = await Promise.all([db.collectionGroup('cities').get(), db.collectionGroup('devices').get()]);
+    const players = new Map();
+    const P = code => { if (!players.has(code)) players.set(code, { code, cities: [], devices: [] }); return players.get(code); };
+    cs.forEach(d => { const m = d.data(); const code = d.ref.parent.parent.id; P(code).cities.push({ ...m, ref: d.ref }); });
+    ds.forEach(d => { const m = d.data(); const code = d.ref.parent.parent.id; P(code).devices.push({ ...m, id: d.id }); });
+    DATA = [...players.values()];
+    for (const p of DATA) { p.cities.sort((a,b) => (b.t||0)-(a.t||0)); p.devices.sort((a,b) => (b.last||0)-(a.last||0)); p.last = Math.max(0, ...p.cities.map(c => c.t||0), ...p.devices.map(d => d.last||0)); }
+    DATA.sort((a,b) => b.last-a.last);
+    render();
+  } catch (e) { $('#out').innerHTML = `<p class="msg bad">Could not load: ${esc(e.message)}</p>`; }
+}
+
+function render() {
+  if (!DATA) return;
+  const q = $('#q').value.trim().toLowerCase().replace(/-/g, '');
+  const match = (p, c) => !q || p.code.toLowerCase().includes(q) || (c && ((c.name||'').toLowerCase().includes(q) || (c.devName||'').toLowerCase().includes(q)));
+  const cities = DATA.flatMap(p => p.cities), devices = DATA.flatMap(p => p.devices), day = Date.now()-86400000;
+  $('#stats').hidden = $('#bar').hidden = false;
+  $('#stats').innerHTML = [
+    [DATA.length, 'players (sync codes)'], [devices.length, 'devices'], [cities.length, 'cities'],
+    [fmtN(cities.reduce((s,c) => s+(c.pop|0), 0)), 'people in all cities'], [devices.filter(d => (d.last||0) > day).length, 'devices active today']
+  ].map(([v,l]) => `<div class="stat"><b>${v}</b><small>${l}</small></div>`).join('');
+  const html = DATA.map(p => {
+    const rows = p.cities.filter(c => match(p, c));
+    if (!rows.length && !match(p)) return '';
+    return `<section class="player"><h2>Sync code <code>${show(p.code)}</code><small>${p.cities.length} cities · ${p.devices.length} devices · last seen ${ago(p.last)}</small></h2>
+      <div class="devs">${p.devices.map(d => `<span title="${esc(d.ua)}">${esc(d.name)} <span class="tag ${esc(d.app)}">${esc(d.app)}</span> · ${ago(d.last)}</span>`).join('') || 'No devices recorded'}</div>
+      <div class="tw"><table><thead><tr><th>City</th><th>Device</th><th class="n">Level</th><th class="n">People</th><th class="n">Money</th><th>Map</th><th>Saved</th><th class="n">Size</th><th></th></tr></thead><tbody>
+      ${rows.map(c => `<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.devName)} <span class="tag ${esc(c.app)}">${esc(c.app)}</span></td><td class="n">${c.lvl|0}</td><td class="n">${fmtN(c.pop)}</td>
+        <td class="n">$${fmtN(c.money)}</td><td>${esc(c.sc)}</td><td title="${esc(when(c.t))}">${ago(c.t)}</td><td class="n">${Math.round((c.size|0)/1024)} KB</td>
+        <td><button data-p="${esc(p.code)}" data-c="${esc(c.id)}">Save code</button></td></tr>`).join('') || '<tr><td colspan="9" style="color:var(--muted)">No cities</td></tr>'}
+      </tbody></table></div></section>`;
+  }).join('');
+  $('#out').innerHTML = html || '<p class="msg">Nothing matches.</p>';
+  $('#out').querySelectorAll('button[data-c]').forEach(b => b.onclick = () => saveCode(b));
+}
+
+async function unpack(enc, d) {
+  if (enc !== 'gz64') return d;
+  const bin = atob(d), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+}
+async function saveCode(btn) {
+  const p = DATA.find(x => x.code === btn.dataset.p), c = p.cities.find(x => x.id === btn.dataset.c);
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const ps = await c.ref.collection('parts').get();
+    const parts = ps.docs.filter(d => +d.id.slice(1) < c.parts).sort((a,b) => a.id < b.id ? -1 : 1).map(d => d.data().d);
+    if (parts.length !== c.parts) throw new Error('missing parts');
+    const str = await unpack(c.enc, parts.join(''));
+    const code = 'PXC1:' + btoa(unescape(encodeURIComponent(str)));
+    $('#dlgT').textContent = c.name; $('#dlgCode').value = code;
+    $('#dlgCopy').onclick = () => navigator.clipboard.writeText(code).then(() => $('#dlgCopy').textContent = 'Copied');
+    $('#dlgDl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], {type:'text/plain'})); a.download = (c.name||'city').replace(/[^\w -]/g,'') + '.txt'; a.click(); };
+    $('#dlgClose').onclick = () => $('#dlg').close();
+    $('#dlgCopy').textContent = 'Copy'; $('#dlg').showModal();
+  } catch (e) { alert('Could not get that save: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Save code';
+}
+</script>
+</body>
+</html>

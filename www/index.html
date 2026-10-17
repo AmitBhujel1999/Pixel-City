@@ -115,6 +115,21 @@ body.cine #cineStop{display:block}#cineStop .dot{display:inline-block;width:8px;
   </div>
   <p class="lcopy">© 2026 Amit Rijal</p>
 </div>
+<script>/* recovery mode: each start notes how far it got (pc-boot). A start that never reached 30 s of play counts
+   as failed; after two failed starts in a row the game opens in safe mode (no city, low graphics, citizens paused). */
+(function(){var K='pc-boot',B=null,force=false;
+try{B=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
+try{force=localStorage.getItem('pc-safe')==='1';localStorage.removeItem('pc-safe')}catch(e){}
+var died=!!(B&&B.run&&!B.ok),fails=died?(B.fails|0)+1:0,t0=Date.now();
+var cur={run:1,ok:0,fails:fails,stage:'page',err:'',sec:0};
+function put(){try{localStorage.setItem(K,JSON.stringify(cur))}catch(e){}}
+var R=window.PCBOOT={prev:died?{stage:B.stage||'?',err:B.err||'',sec:B.sec|0}:null,fails:fails,safe:force||fails>=2,pick:null,
+  stage:function(st){cur.stage=st;cur.sec=Math.round((Date.now()-t0)/1000);put()},
+  ok:function(){cur.ok=1;cur.fails=0;put()},
+  reset:function(){cur={run:0,ok:1,fails:0,stage:'',err:'',sec:0};put()}};
+addEventListener('error',function(e){cur.err=String(e&&e.message||'error').slice(0,160)+(e&&e.lineno?' (line '+e.lineno+')':'');put()});
+addEventListener('unhandledrejection',function(e){var r=e&&e.reason;cur.err=String(r&&r.message||r||'promise rejected').slice(0,160);put()});
+put()})();</script>
 <script>window.addEventListener('error',function(){var l=document.getElementById('loadScr');if(l)l.remove()});(function (){try{var go=JSON.parse(localStorage.getItem('pc-go')||'null'),el={};if(go&&(go.sc||go.id))document.getElementById('loadScr').classList.add('cloud');var M={classic:'Riverbend valley',snow:'Snowy mountain town',island:'Tropical island',desert:'Desert oasis',coast:'Ocean coast',bay:'Mountain bay',rich:'Rich mayor sandbox'};
   if(go&&go.sc)el.textContent='Building '+(go.name||'your new city')+' · '+(M[go.sc]||'new map');
   else{var id=go&&go.id||localStorage.getItem('pc-last'),a=JSON.parse(localStorage.getItem('pc-cities')||'[]'),c=Array.isArray(a)&&a.find(function(q){return q.id===id});if(c&&c.name)el.textContent='Opening '+c.name}}catch(e){}})();</script>
@@ -982,6 +997,7 @@ const inB=(x,z)=>x>=0&&z>=0&&x<N&&z<N;
 const fmt=n=>(n<0?'−$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+const SAFE=!!(window.PCBOOT&&PCBOOT.safe);const bootStage=st=>{try{PCBOOT.stage(st)}catch(e){}};bootStage('script');
 
 /* ---------- renderer ---------- */
 const canvas=$('#view');
@@ -992,7 +1008,7 @@ const GFXP={
   low:{nm:'Low',pr:1,sh:1024,soft:false,tone:false,sunK:1.3,hemiK:0.8,fogK:1,ao:false,tex:256,glass:false,aniso:2},
   normal:{nm:'Normal',pr:1.5,sh:2048,soft:true,tone:false,sunK:1.6,hemiK:0.6,fogK:0.85,ao:true,tex:512,glass:false,aniso:4},
   ultra:{nm:'Ultra',pr:2,sh:4096,soft:true,tone:false,sunK:1.7,hemiK:0.56,fogK:0.75,ao:true,tex:512,glass:true,aniso:8}};
-const GFX={lv:GFXP[store('pc_gfx')]?store('pc_gfx'):(MOBILE?'low':'normal'),fps:[30,60,120].includes(+store('pc_fps'))?+store('pc_fps'):60};
+const GFX={lv:SAFE?'low':GFXP[store('pc_gfx')]?store('pc_gfx'):(MOBILE?'low':'normal'),fps:[30,60,120].includes(+store('pc_fps'))?+store('pc_fps'):60};
 const gq=()=>GFXP[GFX.lv];
 const gfxPR=()=>Math.min(window.devicePixelRatio||1,gq().pr);
 renderer.setPixelRatio(gfxPR());
@@ -10011,6 +10027,7 @@ const AGR={n:0,cap:0,free:[],homes:new Map(),jobs:new Map(),pupils:new Map(),
 const AGST=['At home','At work','At school','Shopping','At the park','On the way','At college','Out of town'];
 const AGCAT={home:0,work:1,school:2,shop:3,park:4,college:6};
 const AGMAX=()=>MOBILE?80000:160000;
+if(SAFE)AGR.on=false;   /* recovery mode: citizens paused */
 function agHash(a,b){let h=(a*374761393+b*668265263)|0;h=(h^(h>>>13))*1274126177|0;return(h^(h>>>16))>>>0}
 function agGrow(n){if(n<=AGR.cap)return;const c=Math.max(1024,AGR.cap*2,n);
   const T_=(A,old)=>{const x=new A(c);if(old)x.set(old);return x};
@@ -10499,14 +10516,28 @@ netGhost=function(plan,pts){if(NB.ghost){scene.remove(NB.ghost);NB.ghost.travers
 })();
 
 /* ---------- boot ---------- */
+function safeCard(){const B=window.PCBOOT||{},p=B.prev,stN={page:'loading the page',script:'loading the game',city:'opening your city','city-ok':'setting up the map',drawn:'the first picture',running:'the first 30 seconds of play'};
+  const d=document.createElement('div');d.id='safeCard';d.className='card';
+  d.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:16px 18px;font-size:14px;line-height:1.45';
+  const why=p?`The last start stopped at: ${stN[p.stage]||p.stage} (after ${p.sec} s)${p.err?`. Error: ${p.err.replace(/[<>&]/g,'')}`:', with no error message (the phone closed the game, usually because it ran out of memory)'}.`:'';
+  d.innerHTML=`<h3 style="margin:0 0 6px">Safe start</h3><p style="margin:0 0 8px">Pixel's City closed by itself while starting, twice in a row. This time it started without opening your city, with low graphics and citizens paused.</p>
+    <p style="margin:0 0 12px;color:var(--muted)">${why}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${B.pick?'<button data-k="open" class="primary">Open my city</button>':''}<button data-k="normal">Start normally</button><button data-k="close">Close</button></div>`;
+  document.body.appendChild(d);
+  const q=k=>d.querySelector(`[data-k="${k}"]`);
+  if(q('open'))q('open').onclick=()=>{d.remove();try{B.ok()}catch(e){}openCity(B.pick)};
+  q('normal').onclick=()=>{try{B.reset()}catch(e){}location.reload()};
+  q('close').onclick=()=>d.remove()}
 function start(data){applyGrade();
   if(!shadowsOn){sun.castShadow=false;$('#shadowBtn').textContent='Shadows: off'}
   W.temp=baseTemp();setWeather('clear',true);drawSign('Riverbend');
   resize();updateCamera();setTool(TOOLS[0]);setSpeed(1);
   migrateOld();
   {const list=cityIndex().sort((p,q)=>(q.t||0)-(p.t||0)),last=store('pc-last'),pick=(list.find(c=>c.id===last)||list[0]||{}).id;let ok=false;
-   if(pick){const str=store('pc-city-'+pick);if(str&&load(str)){curId=pick;ok=true}}
+   if(SAFE)PCBOOT.pick=pick||null;bootStage('city');
+   if(pick&&!SAFE){const str=store('pc-city-'+pick);if(str&&load(str)){curId=pick;ok=true}}
    if(!ok){curId=null;newCity('Riverbend')}}
+  bootStage('city-ok');
   if(MOBILE){$('#help dl').innerHTML=`<dt>One finger</dt><dd>Drag to move around the map. Tap a person, car or building to see details</dd>
       <dt>Pick a tool</dt><dd>Tap a tool at the bottom, then tap or drag on the map to build. Tap the tool again to drop it</dd>
       <dt>Two fingers</dt><dd>Pinch to zoom, twist to rotate</dd>
@@ -10514,10 +10545,13 @@ function start(data){applyGrade();
       <dt>Side pad</dt><dd>＋ / － zoom · ⟲ ⟳ rotate · ▲ ▼ tilt the camera</dd>
       <dt>Follow</dt><dd>Tap Follow on a person's card and the camera rides along</dd>`}
   let go=null;try{go=JSON.parse(store('pc-go')||'null')}catch(e){}if(go){try{localStorage.removeItem('pc-go')}catch(e){}}
+  if(SAFE)go=null;
   showTitle();
   if(go&&(go.sc||go.id)){$('#start').hidden=true;if(go.sc){foundCity(go.name||SC.town,null,go.tut)}else openCity(go.id)}
   else $('#start').focus();
   requestAnimationFrame(frame);
+  requestAnimationFrame(()=>{bootStage('drawn');setTimeout(()=>bootStage('running'),5000);setTimeout(()=>{try{PCBOOT.ok()}catch(e){}},30000)});
+  if(SAFE)safeCard();
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=document.getElementById('loadScr');if(!l)return;if(!l.classList.contains('cloud')){l.classList.add('done');setTimeout(()=>l.remove(),600);return}const c=$('#clouds');travel.busy=true;c.hidden=false;c.classList.remove('open');c.classList.add('inst','shut');void c.offsetWidth;l.remove();c.classList.remove('inst');if(!atTitle){const g={d:cam.dist,p:cam.phi,th:cam.theta};intro={t:0,dur:2.4,g,d0:85,p0:0.3,th0:g.th+0.9};cam.dist=85;cam.phi=0.3;cam.theta=intro.th0;updateCamera()}setTimeout(()=>{c.classList.remove('shut');c.classList.add('open');setTimeout(()=>{c.hidden=true;c.classList.remove('open');travel.busy=false},1250)},150)}));
 }
 try{start({})}catch(e){const l=document.getElementById('loadScr');if(l)l.remove();showErr(e)}

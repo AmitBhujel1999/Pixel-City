@@ -411,6 +411,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 #newCityForm button{background:var(--accent);color:#0f1a1f;border-color:var(--accent);font-weight:700;padding:9px 16px}
 .tcard .empty{color:var(--muted);font-size:13px;margin:0}
 .tcard .foot{margin:0;color:var(--muted);font-size:11.5px}
+#cloudBox{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:10px;border-top:1px solid var(--line)}#cloudBox[hidden]{display:none}
+#cloudBox .clh{margin:0;font-family:var(--display);font-size:17px}#cloudBox .clh small{font:500 11.5px var(--mono);color:var(--muted);margin-left:6px}
+#clList{display:flex;flex-direction:column;gap:6px}#clList .cityRow{grid-template-columns:1fr auto auto}#clList .cityRow b{font-size:16px}
+.cityRow .cst{font-size:10.5px;padding:2px 7px;border-radius:999px;background:rgba(139,224,201,.14);color:var(--accent);margin-left:6px;font-family:var(--mono);vertical-align:2px}.cityRow .cst.new{background:rgba(255,200,90,.16);color:#ffd27a}
+.clRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}.clRow>span{color:var(--muted);min-width:84px}.clRow b{font-family:var(--mono);letter-spacing:.06em}
+.clRow input{flex:1;min-width:0;font:inherit;color:inherit;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
 #app.at-title #bar,#app.at-title #feedPanel,#app.at-title #sndHint,#app.at-title #utilPanel,#app.at-title #lvlPop,#app.at-title #pad,#app.at-title #notes,#app.at-title #paused,#app.at-title #inspect,#app.at-title #agent,#app.at-title #ovLegend,#app.at-title #help{display:none!important}
 @media (max-height:520px){#app #inspect{width:min(330px,calc(100vw - 24px));padding:8px 11px 8px;gap:4px}#inspect h3{font-size:14px}#inspect .isub{font-size:10.5px}
   #inspect ul{grid-template-columns:1fr 1fr;column-gap:14px;font-size:10.5px;gap:1px 14px}.prob{font-size:10px}.prob img{width:14px;height:14px}.need{font-size:10.5px}
@@ -652,6 +658,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <h2 class="ph">Load game</h2>
       <div id="cityList"></div>
       <button id="importBtn" class="linkBtn" type="button">Import a city from a save code</button>
+      <div id="cloudBox" hidden>
+        <h3 class="clh">Cloud cities <small>all your devices</small></h3>
+        <p id="clMsg" class="foot"></p>
+        <div id="clList"></div>
+        <div class="clRow"><span>Sync code</span><b id="clCode"></b><button id="clCopy" type="button">Copy</button><button id="clUse" type="button">Use another code</button></div>
+        <div class="clRow" id="clUseRow" hidden><input id="clCodeIn" placeholder="Code from your other device" autocomplete="off" spellcheck="false"><button id="clCodeGo" type="button">Link</button></div>
+        <div class="clRow"><span>This device</span><input id="clDevName" maxlength="40" autocomplete="off"></div>
+        <p class="foot">Your cities are backed up online with this device's name. Put the same sync code on your other devices to see and open all your cities there.</p>
+      </div>
       <p class="foot">Cities are saved on this device. Use Export to keep a copy or move a city to another device.</p>
       <button class="back" type="button">Back</button>
     </section>
@@ -10516,6 +10531,92 @@ netGhost=function(plan,pts){if(NB.ghost){scene.remove(NB.ghost);NB.ghost.travers
 })();
 
 /* ---------- boot ---------- */
+/* ---------- cloud saves (net_cloud.js) ----------
+   Every city on this device is backed up to Firestore under a sync code (players/<code>/cities/<id>, the save
+   gzipped and split into parts/<pNN> documents of 700 000 characters). Devices that use the same code see each
+   other's cities in Load game > Cloud cities and can download them. Sign-in is anonymous over the REST API, so it
+   works in the browser and inside the Android and iPhone apps. The owner page (cloud/owner) lists every city. */
+const PC_CLOUD={apiKey:'',projectId:''};
+const CL={on:!!(PC_CLOUD.apiKey&&PC_CLOUD.projectId),tok:null,exp:0,busy:false,lastUp:{},list:null,listT:0,msg:''};
+const CLA='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const clRand=n=>{const u=new Uint8Array(n);crypto.getRandomValues(u);let s='';for(const x of u)s+=CLA[x%32];return s};
+function clCode(){let c=store('pc-player');if(!c||!/^[A-Z2-9]{12}$/.test(c)){c=clRand(12);store('pc-player',c)}return c}
+const clShow=c=>c.replace(/(.{4})(?=.)/g,'$1-');
+function clDev(){let d=store('pc-dev');if(!d){d=clRand(10);store('pc-dev',d)}return d}
+function clApp(){const u=navigator.userAgent;return/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1)?'ios':/Android/.test(u)?'android':'web'}
+function clDevName(){const n=store('pc-devname');if(n)return n;const u=navigator.userAgent;
+  return/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1)?'iPad':/iPhone/.test(u)?'iPhone':/Android/.test(u)?'Android phone':/Windows/.test(u)?'Windows PC':/Mac/.test(u)?'Mac':'Computer'}
+const CLDOC=()=>`projects/${PC_CLOUD.projectId}/databases/(default)/documents`;
+const CLURL='https://firestore.googleapis.com/v1/';
+async function clAuth(){if(CL.tok&&Date.now()<CL.exp-60000)return CL.tok;const rt=store('pc-cl-rt');let r,j;
+  if(rt){r=await fetch('https://securetoken.googleapis.com/v1/token?key='+PC_CLOUD.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(rt)});
+    if(r.ok){j=await r.json();CL.tok=j.id_token;CL.exp=Date.now()+(+j.expires_in)*1000;store('pc-cl-rt',j.refresh_token);return CL.tok}}
+  r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+PC_CLOUD.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:'{"returnSecureToken":true}'});
+  if(!r.ok)throw new Error('sign-in '+r.status);j=await r.json();CL.tok=j.idToken;CL.exp=Date.now()+(+j.expiresIn)*1000;store('pc-cl-rt',j.refreshToken);return CL.tok}
+async function clFetch(path,opt={}){const tok=await clAuth();const r=await fetch(CLURL+path,{...opt,headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok}});
+  if(!r.ok)throw new Error('cloud '+r.status);return r.json()}
+const clV=v=>typeof v==='number'?(Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v}):typeof v==='boolean'?{booleanValue:v}:v==null?{nullValue:null}:{stringValue:String(v)};
+const clF=o=>{const f={};for(const k in o)f[k]=clV(o[k]);return f};
+const clR=d=>{const o={};const f=d.fields||{};for(const k in f){const x=f[k];o[k]=x.stringValue!==undefined?x.stringValue:x.integerValue!==undefined?+x.integerValue:x.doubleValue!==undefined?x.doubleValue:x.booleanValue!==undefined?x.booleanValue:null}return o};
+async function clPack(str){if(typeof CompressionStream==='undefined')return{enc:'raw',d:str};
+  const u=new Uint8Array(await new Response(new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  let b='';for(let i=0;i<u.length;i+=0x8000)b+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return{enc:'gz64',d:btoa(b)}}
+async function clUnpack(enc,d){if(enc!=='gz64')return d;const bin=atob(d),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}
+const clUp=()=>{try{return JSON.parse(store('pc-cl-up')||'{}')||{}}catch(e){return{}}};
+const clSetUp=(id,t)=>{const u=clUp();if(t==null)delete u[id];else u[id]=t;store('pc-cl-up',JSON.stringify(u))};
+const CLPART=700000;
+async function clUpload(id){const str=store('pc-city-'+id);if(!str)return;let o;try{o=JSON.parse(str)}catch(e){return}
+  const c=cityIndex().find(x=>x.id===id)||{},pk=await clPack(str),P=[];for(let i=0;i<pk.d.length;i+=CLPART)P.push(pk.d.slice(i,i+CLPART));
+  const code=clCode(),root=`${CLDOC()}/players/${code}`,cn=`${root}/cities/${id}`,t=c.t||Date.now();
+  const writes=[{update:{name:cn,fields:clF({id,name:c.name||o.G.name||'City',pop:c.pop|0,lvl:c.lvl|0,money:Math.round(c.money||0),day:c.day|0,sc:o.G.sc||'classic',
+    dev:clDev(),devName:clDevName(),app:clApp(),t,parts:P.length,enc:pk.enc,size:str.length,player:code})}}];
+  P.forEach((d,k)=>writes.push({update:{name:`${cn}/parts/p${String(k).padStart(2,'0')}`,fields:clF({d})}}));
+  for(let k=P.length;k<P.length+4;k++)writes.push({delete:`${cn}/parts/p${String(k).padStart(2,'0')}`});
+  writes.push({update:{name:`${root}/devices/${clDev()}`,fields:clF({name:clDevName(),app:clApp(),ua:navigator.userAgent.slice(0,160),last:Date.now(),cities:cityIndex().length,player:code})}});
+  await clFetch(`${CLDOC()}:commit`,{method:'POST',body:JSON.stringify({writes})});
+  clSetUp(id,t);CL.lastUp[id]=Date.now()}
+/* one city at a time, every 15 s: anything saved since its last upload (the open city at most every 2 minutes) */
+async function clTick(force){if(!CL.on||CL.busy||(navigator.onLine===false))return;const u=clUp(),now=Date.now();
+  const due=cityIndex().filter(c=>c.t&&c.t>(u[c.id]||0)&&(force||c.id!==curId||atTitle||now-(CL.lastUp[c.id]||0)>120000));if(!due.length)return;
+  CL.busy=true;try{await clUpload(due[0].id);CL.msg=''}catch(e){CL.msg='Cloud backup will try again soon ('+e.message+').'}finally{CL.busy=false}}
+async function clCities(){const out=[];let tok='';for(let n=0;n<10;n++){const j=await clFetch(`${CLDOC()}/players/${clCode()}/cities?pageSize=100${tok?'&pageToken='+tok:''}`);
+  for(const d of j.documents||[])out.push(clR(d));if(!j.nextPageToken)break;tok=j.nextPageToken}return out}
+async function clDownload(m){const cn=`${CLDOC()}/players/${clCode()}/cities/${m.id}`,j=await clFetch(`${cn}/parts?pageSize=50`);
+  const parts=(j.documents||[]).map(d=>[d.name.split('/').pop(),clR(d).d]).filter(x=>+x[0].slice(1)<m.parts).sort((a,b)=>a[0]<b[0]?-1:1);
+  if(parts.length!==m.parts)throw new Error('missing parts');const str=await clUnpack(m.enc,parts.map(x=>x[1]).join(''));const o=JSON.parse(str);if(!o||!o.G||!o.g)throw new Error('bad save');
+  store('pc-city-'+m.id,str);const a=cityIndex();let e=a.find(c=>c.id===m.id);if(!e){e={id:m.id};a.push(e)}
+  Object.assign(e,{name:m.name,pop:m.pop,money:m.money,day:m.day,lvl:m.lvl||1,prize:o.G.prize||0,t:m.t});saveIndex(a);clSetUp(m.id,m.t);if(curId===m.id)curId=null}
+async function clRemove(m){const cn=`${CLDOC()}/players/${clCode()}/cities/${m.id}`,writes=[{delete:cn}];for(let k=0;k<Math.max(m.parts|0,1)+3;k++)writes.push({delete:`${cn}/parts/p${String(k).padStart(2,'0')}`});
+  await clFetch(`${CLDOC()}:commit`,{method:'POST',body:JSON.stringify({writes})});clSetUp(m.id,null)}
+const clAgo=t=>{const s=(Date.now()-t)/1000;return s<90?'just now':s<5400?Math.round(s/60)+' min ago':s<129600?Math.round(s/3600)+' h ago':Math.round(s/86400)+' days ago'};
+async function clRender(reload){const box=$('#cloudBox');if(!box)return;box.hidden=!CL.on;if(!CL.on)return;
+  $('#clCode').textContent=clShow(clCode());const dn=$('#clDevName');if(document.activeElement!==dn)dn.value=clDevName();
+  const L=$('#clList'),msg=$('#clMsg');
+  if(reload||!CL.list||Date.now()-CL.listT>15000){msg.textContent='Checking the cloud…';try{CL.list=await clCities();CL.listT=Date.now();msg.textContent=CL.msg}catch(e){msg.textContent=navigator.onLine===false?'Offline. Cloud cities show when you are online.':'Could not reach the cloud ('+e.message+').';if(!CL.list)return}}
+  const loc=new Map(cityIndex().map(c=>[c.id,c])),dev=clDev(),rows=CL.list.slice().sort((p,q)=>(q.t||0)-(p.t||0));
+  if(!rows.length){L.innerHTML='<p class="empty">Nothing in the cloud yet. Your cities upload a few seconds after they are saved.</p>';return}
+  L.innerHTML=rows.map(m=>{const l=loc.get(m.id),st=!l?'':(m.t>(l.t||0)?'<span class="cst new">newer in cloud</span>':'<span class="cst">on this device</span>');
+    return`<div class="cityRow" data-id="${esc(m.id)}"><div><b>${esc(m.name||'City')}</b>${st}<small>${m.lvl?'Level '+m.lvl+' · ':''}${(m.pop|0).toLocaleString('en-US')} people · ${m.dev===dev?'this device':esc(m.devName||'other device')} · ${clAgo(m.t||0)}</small></div>`+
+      `<button class="del" type="button">${l?'Unlink':'Remove'}</button><button class="play" type="button">${!l?'Get':m.t>(l.t||0)?'Update':'Play'}</button></div>`}).join('');
+  L.querySelectorAll('.cityRow').forEach(r=>{const m=rows.find(x=>x.id===r.dataset.id),l=loc.get(m.id),pl=r.querySelector('.play'),d=r.querySelector('.del');
+    pl.onclick=async()=>{sfx('ui');if(l&&!(m.t>(l.t||0))){travel(()=>openCity(m.id));return}pl.disabled=true;pl.textContent='…';
+      try{await clDownload(m);toast(`${m.name} is on this device now.`);renderCities()}catch(e){pl.disabled=false;pl.textContent='Retry';toast('Could not download that city ('+e.message+').')}};
+    d.title=l?'Remove the cloud copy (the city stays on this device)':'Remove the cloud copy';
+    d.onclick=async()=>{if(!d.classList.contains('arm')){d.classList.add('arm');d.textContent='Sure?';setTimeout(()=>{d.classList.remove('arm');d.textContent=l?'Unlink':'Remove'},3000);return}
+      d.disabled=true;try{await clRemove(m);CL.list=CL.list.filter(x=>x.id!==m.id);clRender()}catch(e){d.disabled=false;toast('Could not remove it ('+e.message+').')}}})}
+if(CL.on){
+  {const _sv=save;save=function(){_sv();setTimeout(()=>clTick(false),3000)}}
+  {const _rc=renderCities;renderCities=function(){_rc();clRender(false)}}
+  setInterval(()=>clTick(false),15000);setTimeout(()=>clTick(false),8000);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clTick(true)});
+  for(const id of['clCodeIn','clDevName'])$('#'+id).addEventListener('keydown',e=>e.stopPropagation());
+  $('#clCopy').onclick=()=>{const t=clShow(clCode());try{navigator.clipboard.writeText(t).then(()=>toast('Sync code copied.'),()=>toast('Sync code: '+t))}catch(e){toast('Sync code: '+t)}};
+  $('#clUse').onclick=()=>{const r=$('#clUseRow');r.hidden=!r.hidden;if(!r.hidden)$('#clCodeIn').focus()};
+  $('#clCodeGo').onclick=()=>{const c=$('#clCodeIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^[A-Z2-9]{12}$/.test(c)){toast('A sync code has 12 letters and numbers, like ABCD-EFGH-JKLM.');return}
+    store('pc-player',c);store('pc-cl-up','{}');CL.list=null;$('#clUseRow').hidden=true;$('#clCodeIn').value='';toast('Linked. Your cities on this device upload to that code now.');clRender(true)};
+  $('#clDevName').onchange=e=>{const v=e.target.value.trim().slice(0,40);store('pc-devname',v);store('pc-cl-up','{}');toast(v?`This device is called ${v}.`:'Device name reset.')};
+}
 function safeCard(){const B=window.PCBOOT||{},p=B.prev,stN={page:'loading the page',script:'loading the game',city:'opening your city','city-ok':'setting up the map',drawn:'the first picture',running:'the first 30 seconds of play'};
   const d=document.createElement('div');d.id='safeCard';d.className='card';
   d.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:16px 18px;font-size:14px;line-height:1.45';

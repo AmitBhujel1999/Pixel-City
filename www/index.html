@@ -1023,7 +1023,10 @@ const GFXP={
   low:{nm:'Low',pr:1,sh:1024,soft:false,tone:false,sunK:1.3,hemiK:0.8,fogK:1,ao:false,tex:256,glass:false,aniso:2},
   normal:{nm:'Normal',pr:1.5,sh:2048,soft:true,tone:false,sunK:1.6,hemiK:0.6,fogK:0.85,ao:true,tex:512,glass:false,aniso:4},
   ultra:{nm:'Ultra',pr:2,sh:4096,soft:true,tone:false,sunK:1.7,hemiK:0.56,fogK:0.75,ao:true,tex:512,glass:true,aniso:8}};
+if(MOBILE)GFXP.ultra.sh=2048;   /* phones: a 4096 shadow map alone is 64 MB of GPU memory */
 const GFX={lv:SAFE?'low':GFXP[store('pc_gfx')]?store('pc_gfx'):(MOBILE?'low':'normal'),fps:[30,60,120].includes(+store('pc_fps'))?+store('pc_fps'):60};
+/* the last start died after the city was opened: one step lower graphics this time (and from now on) */
+if(!SAFE&&window.PCBOOT&&PCBOOT.prev&&['city','city-ok','drawn','running'].includes(PCBOOT.prev.stage)&&GFX.lv!=='low'){GFX.lv=GFX.lv==='ultra'?'normal':'low';store('pc_gfx',GFX.lv);PCBOOT.lowered=GFX.lv}
 const gq=()=>GFXP[GFX.lv];
 const gfxPR=()=>Math.min(window.devicePixelRatio||1,gq().pr);
 renderer.setPixelRatio(gfxPR());
@@ -10041,7 +10044,7 @@ const AGR={n:0,cap:0,free:[],homes:new Map(),jobs:new Map(),pupils:new Map(),
   wheel:[],slotDone:-1,h:-1,day:0,abs:0,q:[],syncT:0,ver:0,on:true,trips:0,real:0,abst:0};
 const AGST=['At home','At work','At school','Shopping','At the park','On the way','At college','Out of town'];
 const AGCAT={home:0,work:1,school:2,shop:3,park:4,college:6};
-const AGMAX=()=>MOBILE?80000:160000;
+const AGMAX=()=>MOBILE?25000:160000;
 if(SAFE)AGR.on=false;   /* recovery mode: citizens paused */
 function agHash(a,b){let h=(a*374761393+b*668265263)|0;h=(h^(h>>>13))*1274126177|0;return(h^(h>>>16))>>>0}
 function agGrow(n){if(n<=AGR.cap)return;const c=Math.max(1024,AGR.cap*2,n);
@@ -10149,7 +10152,7 @@ function agPath(src,dst){if(src===dst)return[src];if(src<N*N&&dst<N*N&&comp[src]
   const push=(k,f)=>{H.push([f,k]);let c=H.length-1;while(c>0){const p=(c-1)>>1;if(H[p][0]<=H[c][0])break;[H[p],H[c]]=[H[c],H[p]];c=p}};
   const pop=()=>{const top=H[0],l=H.pop();if(H.length){H[0]=l;let c=0;for(;;){const a=2*c+1,b=a+1;let m=c;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m===c)break;[H[m],H[c]]=[H[c],H[m]];c=m}}return top};
   const s0=src*5+4;best.set(s0,0);push(s0,hx(src));let found=-1,n=0;
-  while(H.length&&n<40000){const[f,k]=pop();n++;const i=(k/5)|0,din=k%5===4?-1:k%5,g=best.get(k);if(f-hx(i)>g+1e-6)continue;if(i===dst){found=k;break}
+  while(H.length&&n<(MOBILE?12000:40000)){const[f,k]=pop();n++;const i=(k/5)|0,din=k%5===4?-1:k%5,g=best.get(k);if(f-hx(i)>g+1e-6)continue;if(i===dst){found=k;break}
     const step=(j,d)=>{if(!canMove(i,j,'car'))return;const w=(jam[j]>2?3:jam[j]>0.8?2:1)+(d>=0?agTurnCost(din,d,i):0),nk=j*5+(d>=0?d:4),ng=g+w;
       const o=best.get(nk);if(o!==undefined&&o<=ng)return;best.set(nk,ng);prev.set(nk,k);push(nk,ng+hx(j))};
     const vx=NETV.adj.get(i);if(vx)for(const j of vx)step(j,-1);
@@ -10242,7 +10245,7 @@ function rPath(src,dst){if(src===dst)return null;if(src<N*N&&dst<N*N&&comp[src]!
   const pop=()=>{const top=H[0],l=H.pop();if(H.length){H[0]=l;let c=0;for(;;){const a=2*c+1,b=a+1;let m=c;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m===c)break;[H[m],H[c]]=[H[c],H[m]];c=m}}return top};
   const L0=rLanes(src);for(let s=0;s<3;s++){if(L0===1?s!==1:s>=L0)continue;const k=key(src,4,s);best.set(k,0);push(k,hx(src))}
   let found=-1,n=0;
-  while(H.length&&n<60000){const[f,k]=pop();n++;const i=(k/15)|0,din=((k/3)|0)%5,s=k%3,g=best.get(k);if(f-hx(i)>g+1e-6)continue;if(i===dst){found=k;break}
+  while(H.length&&n<(MOBILE?15000:60000)){const[f,k]=pop();n++;const i=(k/15)|0,din=((k/3)|0)%5,s=k%3,g=best.get(k);if(f-hx(i)>g+1e-6)continue;if(i===dst){found=k;break}
     const step=(j,d)=>{if(!canMove(i,j,'car'))return;const side=din<4&&d>=0&&isJunction(i)?rSideDir(din,d):0;
       const base=(jam[j]>2?3:jam[j]>0.8?2:1)+(din<4&&d>=0?agTurnCost(din,d,i):0),dd=d>=0?d:4;rMoves(i,j,s,side,mv);
       for(let m=0;m<mv.length;m+=2){const s2=mv[m],nk=key(j,dd,s2),ng=g+base+mv[m+1]+rLaneCost(j,s2),o=best.get(nk);if(o!==undefined&&o<=ng)continue;best.set(nk,ng);prev.set(nk,k);push(nk,ng+hx(j))}};
@@ -10284,7 +10287,7 @@ function pwJam(){const now=performance.now();if(now-PWJt<2000)return PWJ;PWJt=no
 {const _go=agGo;agGo=function(id,to,cat){_go(id,to,cat);if(AGR.st[id]===5){const k=1+pwJam()*0.5;if(k>1.02){AGR.next[id]=AGR.abs+(AGR.next[id]-AGR.abs)*k;agWheel(id,AGR.next[id])}}}}
 /* rush hour: when many residents are setting off, more cars join the streets each frame */
 {const _uc2=updateCars;updateCars=function(dt){const r=_uc2(dt);try{if(AGR.n&&AGR.q.length>40&&S&&S.pop){const h=hour(),rush=(h>=7&&h<9.5)||(h>=16.5&&h<19)?1.3:h<5.5||h>=23?0.35:1;
-    const want=Math.min(NETCARCAP,Math.floor(S.pop/14*rush*trCarK()),Math.floor(S.roads/3)),k=Math.min(3,Math.floor(AGR.q.length/60));
+    const want=Math.min(NETCARCAP,Math.floor(S.pop/14*rush*trCarK()),Math.floor(S.roads/3)),k=Math.min(MOBILE?1:3,Math.floor(AGR.q.length/60));
     for(let n=0;n<k&&cars.length+PK.n<want;n++)spawnCar()}}catch(e){}return r}}
 /* cars on each road piece (by the tile they are leaving), for the gap check in updateCars */
 const CBA=new Map(),_cnb=[];
@@ -10653,6 +10656,7 @@ function start(data){applyGrade();
   requestAnimationFrame(frame);
   requestAnimationFrame(()=>{bootStage('drawn');setTimeout(()=>bootStage('running'),5000);setTimeout(()=>{try{PCBOOT.ok()}catch(e){}},30000)});
   if(SAFE)safeCard();
+  else if(window.PCBOOT&&PCBOOT.lowered)setTimeout(()=>toast(`The game closed by itself last time, so graphics are now ${GFXP[PCBOOT.lowered].nm}. You can change it in Settings.`),2500);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=document.getElementById('loadScr');if(!l)return;if(!l.classList.contains('cloud')){l.classList.add('done');setTimeout(()=>l.remove(),600);return}const c=$('#clouds');travel.busy=true;c.hidden=false;c.classList.remove('open');c.classList.add('inst','shut');void c.offsetWidth;l.remove();c.classList.remove('inst');if(!atTitle){const g={d:cam.dist,p:cam.phi,th:cam.theta};intro={t:0,dur:2.4,g,d0:85,p0:0.3,th0:g.th+0.9};cam.dist=85;cam.phi=0.3;cam.theta=intro.th0;updateCamera()}setTimeout(()=>{c.classList.remove('shut');c.classList.add('open');setTimeout(()=>{c.hidden=true;c.classList.remove('open');travel.busy=false},1250)},150)}));
 }
 try{start({})}catch(e){const l=document.getElementById('loadScr');if(l)l.remove();showErr(e)}

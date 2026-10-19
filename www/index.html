@@ -2282,7 +2282,9 @@ function bakeData(root){
       b.u.push(a,c);if(VC){const q=k*3;b.c.push(_c3.r*f*VC[q],_c3.g*f*VC[q+1],_c3.b*f*VC[q+2])}else{/* roofTop (patch_roofs2.py): light flat tops of building boxes become roofing membrane */let rr=1,rg=1,rb=1;if(roofy&&_v.y>0.95&&wy>0.25&&(_c3.r*0.3+_c3.g*0.59+_c3.b*0.11)>0.55){const h=Math.sin(wx*91.7+wz*37.3+wy*13.1)*0.03;rr=0.6+h;rg=0.61+h;rb=0.635+h}b.c.push(_c3.r*f*rr,_c3.g*f*rg,_c3.b*f*rb)}
     }});
   /* normals and colours are kept as bytes (-127..127 and 0..255) and read back as -1..1 and 0..1 by the graphics chip */
-  for(const b of buckets.values()){b.p=new Float32Array(b.p);b.n=Int8Array.from(b.n,v=>Math.round(v*127));b.u=new Float32Array(b.u);b.c=Uint8Array.from(b.c,v=>v<=0?0:v>=1?255:Math.round(v*255))}
+  for(const b of buckets.values()){b.p=new Float32Array(b.p);b.u=new Float32Array(b.u);
+    /* plain loops: TypedArray.from with a map function was ~3x slower when opening big cities */
+    const n=b.n,c=b.c,L=n.length,N8=new Int8Array(L),C8=new Uint8Array(L);for(let k=0;k<L;k++){N8[k]=Math.round(n[k]*127);const v=c[k];C8[k]=v<=0?0:v>=1?255:(v*255+0.5)|0}b.n=N8;b.c=C8}
   return{buckets,top};
 }
 /* after a merged mesh is on the graphics chip its arrays are dropped from memory (see meshesFrom) */

@@ -44,7 +44,9 @@ edit the PC file by hand.
 ## Smooth on slow devices
 
 - Building LOD: each 8 × 8 chunk (`chunkLod`) is flat parts (roads, ground; always drawn), tall parts (shadow casters)
-  and one plain box per tile (`userData.lo`). `chunkCull` shows the boxes when the chunk is farther than
-  `BLOD * drawK` (30 phone / 70 PC). A 100k city on a phone went from about 9 million triangles a frame to about 2.3.
+  and a simplified copy of the tall parts (`chunkLo`, `userData.lo`): vertices snapped to a `LODC` grid (0.16 phone,
+  0.1 PC), collapsed triangles dropped, one draw call with `lodMat` (window grid + night lights). `chunkCull` shows the
+  copy when the chunk is farther than `BLOD * drawK` (30 phone / 70 PC). Looks the same as full detail from there.
+  Plain boxes were tried first and rejected by the user: far buildings must keep their shapes, colours and windows.
 - `drawK` (0.5-1): when frames stay slow after the pixel ratio is already 1, `frame()` lowers it by 0.1 (fog and
   chunk culling come closer, LOD distance shrinks); it creeps back up by 0.05 after 10 s of smooth frames.

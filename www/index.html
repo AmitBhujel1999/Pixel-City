@@ -2341,41 +2341,61 @@ const chunkOf=i=>Math.floor((i/N|0)/CH)*NC+Math.floor((i%N)/CH);
 function rebuildChunk(ci){const cx=ci%NC,cz=(ci/NC)|0,list=[];
   for(let z=cz*CH;z<Math.min(N,cz*CH+CH);z++)for(let x=cx*CH;x<Math.min(N,cx*CH+CH);x++){const t=tiles[z*N+x];if(t.bk&&!t.anim)list.push(t.bk)}
   if(chunkG[ci]){world.remove(chunkG[ci]);for(const q of chunkG[ci].userData.geos)q.dispose();chunkG[ci]=null}
-  if(list.length){chunkG[ci]=chunkLod(list);if(true)chunkG[ci].traverse(m=>{const g=m.geometry;if(!g)return;if(!g.boundingSphere)g.computeBoundingSphere();g.boundingSphere=g.boundingSphere.clone();g.boundingSphere.radius+=9.5});chunkG[ci].matrixAutoUpdate=false;world.add(chunkG[ci])}}
-/* building LOD: a chunk is its flat parts (roads, ground, always drawn), its tall parts (the shadow casters) and one
-   plain box per tile (userData.lo) drawn instead of the tall parts when the chunk is far from the camera (chunkCull).
-   Dense cities drew 7-9 million triangles a frame on phones; far boxes are 10 triangles a building. */
-const BLOD=MOBILE?30:70;let _lb=null;
-function chunkLod(list){const flat=[],tall=[];
+  if(list.length){chunkG[ci]=chunkLod(list,ci);if(true)chunkG[ci].traverse(m=>{const g=m.geometry;if(!g)return;if(!g.boundingSphere)g.computeBoundingSphere();g.boundingSphere=g.boundingSphere.clone();g.boundingSphere.radius+=9.5});chunkG[ci].matrixAutoUpdate=false;world.add(chunkG[ci])}}
+/* building LOD: a chunk is its flat parts (roads, ground, always drawn), its tall parts (the shadow casters) and a
+   simplified copy of the tall parts (userData.lo) drawn instead when the chunk is far from the camera (chunkCull).
+   Dense cities drew 7-9 million triangles a frame on phones; the far copy has about 85% fewer (phone grid). */
+const BLOD=MOBILE?30:70,LODC=MOBILE?0.16:0.1;let _lb=null;
+function chunkLod(list,ci){const flat=[],tall=[];
   for(const bk of list){const f=new Map(),t=new Map();for(const[k,b]of bk)(b.cast?t:f).set(k,b);if(f.size)flat.push(f);if(t.size)tall.push(t)}
   const out=new THREE.Group();out.userData.geos=[];
   if(flat.length){const g=meshesFrom(flat);for(const m of [...g.children])out.add(m);out.userData.geos.push(...g.userData.geos)}
-  if(tall.length){const hi=meshesFrom(tall);hi.matrixAutoUpdate=false;out.add(hi);out.userData.geos.push(...hi.userData.geos);out.userData.hi=hi;
-    const lo=chunkBoxes(tall);if(lo){lo.visible=false;out.add(lo);out.userData.geos.push(lo.geometry);out.userData.lo=lo}}
+  if(tall.length){out.userData.tall=tall;lodSet(out,chunkFar(ci))}
   return out}
-function chunkBoxes(tall){/* one box per tile: bounds and average colour of its tall parts */
-  const P=[],Nn=[],C=[];
-  const face=(a,b,c,d,nx,ny,nz,r,g,bl)=>{for(const v of [a,b,c,a,c,d]){P.push(v[0],v[1],v[2]);Nn.push(nx,ny,nz);C.push(r,g,bl)}};
-  for(const bk of tall){let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9,r=0,g=0,bl=0,n=0;
-    for(const b of bk.values()){const p=b.p,c=b.c;for(let k=0;k<p.length;k+=3){const x=p[k],y=p[k+1],z=p[k+2];if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(z<z0)z0=z;if(z>z1)z1=z}
-      for(let k=0;k<c.length;k+=27){r+=c[k];g+=c[k+1];bl+=c[k+2];n++}}
-    if(!(x1>x0)||y1-y0<0.02)continue;n=Math.max(1,n);r=r/n|0;g=g/n|0;bl=bl/n|0;
-    const A=[x0,y0,z0],B=[x1,y0,z0],Cc=[x1,y0,z1],D=[x0,y0,z1],E=[x0,y1,z0],F=[x1,y1,z0],Gg=[x1,y1,z1],H=[x0,y1,z1];
-    const tr=Math.min(255,r+28),tg=Math.min(255,g+28),tb=Math.min(255,bl+30);
-    face(E,H,Gg,F,0,127,0,tr,tg,tb);face(A,E,F,B,0,0,-127,r,g,bl);face(Cc,Gg,H,D,0,0,127,r,g,bl);face(D,H,E,A,-127,0,0,r,g,bl);face(B,F,Gg,Cc,127,0,0,r,g,bl)}
-  if(!P.length)return null;
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P),3));geo.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(Nn),3,true));
-  geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(P.length/3*2),2));geo.setAttribute('color',new THREE.BufferAttribute(new Uint8Array(C),3,true));
+/* only the version in use is kept (arrays of a mesh never drawn are never freed); chunkCull queues swaps (lodQ) */
+const lodQ=new Set();
+function chunkFar(ci){const cx=(ci%NC)*CH+CH/2-HALF,cz=((ci/NC)|0)*CH+CH/2-HALF,p=camera.position;
+  return Math.hypot(Math.max(0,Math.hypot(cx-p.x,cz-p.z)-CH*0.71),p.y)>BLOD*drawK}
+function lodSet(g,far){const u=g.userData;if(u.far===far&&(u.hi||u.lo))return;
+  const old=u.hi||u.lo;
+  let m=null;if(far)m=chunkLo(u.tall);else{m=meshesFrom(u.tall);m.matrixAutoUpdate=false}
+  if(m){m.traverse(o=>{const q=o.geometry;if(q){q.boundingSphere=q.boundingSphere.clone();q.boundingSphere.radius+=9.5}});g.add(m)}
+  if(old){g.remove(old);old.traverse(o=>{if(o.geometry){o.geometry.dispose();const k=u.geos.indexOf(o.geometry);if(k>=0)u.geos.splice(k,1)}})}
+  if(m)m.traverse(o=>{if(o.geometry)u.geos.push(o.geometry)});
+  u.hi=far?null:m;u.lo=far?m:null;u.far=far;if(!m)u.tall=null}
+function lodFlush(t0){for(const ci of lodQ){lodQ.delete(ci);const g=chunkG[ci];if(g&&g.userData.tall)lodSet(g,chunkFar(ci));if(performance.now()-t0>4)break}}
+function chunkLo(tall){/* far version of the tall parts: the real models with vertices snapped to a LODC grid,
+   triangles that collapse are dropped (small details, window frames); keeps shapes and colours, one draw call */
+  let L=0;for(const bk of tall)for(const b of bk.values())L+=b.p.length;
+  const P=new Float32Array(L),Nn=new Int8Array(L),C=new Uint8Array(L),q=1/LODC,_k=new Float32Array(9);let o=0;
+  for(const bk of tall)for(const b of bk.values()){const p=b.p,n=b.n,c=b.c,mc=b.mat&&b.mat!==VCOL&&b.mat.color&&!b.mat.vertexColors?b.mat.color:null;
+    const cr=mc?mc.r:1,cg=mc?mc.g:1,cb=mc?mc.b:1;
+    for(let t=0;t<p.length;t+=9){for(let k=0;k<9;k++)_k[k]=Math.round(p[t+k]*q)*LODC;
+      if((_k[0]===_k[3]&&_k[1]===_k[4]&&_k[2]===_k[5])||(_k[0]===_k[6]&&_k[1]===_k[7]&&_k[2]===_k[8])||(_k[3]===_k[6]&&_k[4]===_k[7]&&_k[5]===_k[8]))continue;
+      /* sliver: area too small after snapping */
+      const ax=_k[3]-_k[0],ay=_k[4]-_k[1],az=_k[5]-_k[2],bx=_k[6]-_k[0],by=_k[7]-_k[1],bz=_k[8]-_k[2];const cx=ay*bz-az*by,cy=az*bx-ax*bz,cz=ax*by-ay*bx;if(cx*cx+cy*cy+cz*cz<1e-10)continue;
+      for(let k=0;k<9;k++){P[o+k]=_k[k];Nn[o+k]=n[t+k]}
+      for(let k=0;k<9;k+=3){C[o+k]=c[t+k]*cr;C[o+k+1]=c[t+k+1]*cg;C[o+k+2]=c[t+k+2]*cb}o+=9}}
+  if(!o)return null;
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P.slice(0,o),3));geo.setAttribute('normal',new THREE.BufferAttribute(Nn.slice(0,o),3,true));
+  geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(o/3*2),2));geo.setAttribute('color',new THREE.BufferAttribute(C.slice(0,o),3,true));
   geo.computeBoundingBox();geo.boundingSphere=geo.boundingBox.getBoundingSphere(new THREE.Sphere());for(const k in geo.attributes)geo.attributes[k].onUpload(meshFreeArr);
-  if(!_lb)_lb=new THREE.MeshLambertMaterial({vertexColors:true});const m=new THREE.Mesh(geo,_lb);m.matrixAutoUpdate=false;m.receiveShadow=true;return m}
+  if(!_lb)_lb=lodMat();const m=new THREE.Mesh(geo,_lb);m.matrixAutoUpdate=false;m.receiveShadow=true;return m}
+/* far copy material: keeps a window grid on walls (storeys every 3 m = 0.2 units) that the snapping removed; windows
+   fade into an even tone when smaller than a few pixels; at night some light up like the real buildings (winMats) */
+function lodMat(){const m=new THREE.MeshLambertMaterial({color:'#ffffff',vertexColors:true,emissive:'#ffffff',emissiveIntensity:0});m.extensions={derivatives:true};winMats.push(m);
+  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWpL;\nvarying vec3 vNL;').replace(/}\s*$/,'vWpL=(modelMatrix*vec4(transformed,1.0)).xyz;vNL=normal;\n}');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWpL;\nvarying vec3 vNL;\nfloat lH(vec3 c){return fract(sin(dot(c,vec3(12.9898,78.233,37.719)))*43758.5453);}\nfloat lW=0.0;')
+      .replace('#include <color_fragment>','#include <color_fragment>\nif(abs(vNL.y)<0.5){float u=(abs(vNL.x)>abs(vNL.z)?vWpL.z:vWpL.x)/0.2,v=vWpL.y/0.2;vec2 f=fract(vec2(u,v));float w=step(0.16,f.x)*step(f.x,0.84)*step(0.3,f.y)*step(f.y,0.82)*step(0.6,v);float k=clamp(2.0-max(fwidth(u),fwidth(v))*1.5,0.0,1.0);lW=w*k;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*0.28+vec3(0.05,0.07,0.1),lW*0.85+(1.0-k)*0.3);}')
+      .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{vec3 c=vec3(floor((vWpL.x+vWpL.z)/0.2),floor(vWpL.y/0.2),0.0);float h=lH(c),h2=lH(c+17.0);vec3 tint=h2<0.5?vec3(1.0,0.8,0.5):(h2<0.8?vec3(1.0,0.92,0.75):vec3(0.75,0.85,1.0));totalEmissiveRadiance*=lW*step(h,0.3)*tint*(0.45+0.45*fract(h2*7.3));}')};
+  m.customProgramCacheKey=()=>'lodWin';return m}
 let _cvT=0;const TLOD=38;
 Object.defineProperty(THREE.InstancedBufferAttribute.prototype,'needsUpdate',{configurable:true,set(v){if(v===true){this.version++;const o=this.__im;if(o&&o.count<this.count){this.updateRange.offset=0;this.updateRange.count=Math.max(1,o.count)*this.itemSize}}}});
 let _imT=0;function tagInst(now){if(now-_imT<2000)return;_imT=now;scene.traverse(o=>{if(o.isInstancedMesh){o.instanceMatrix.__im=o;if(o.instanceColor)o.instanceColor.__im=o}})}
 function chunkCull(now){tagInst(now);if(typeof ZCG!=='undefined')zcUpd(now);if(typeof tileGrid!=='undefined')terrGridUpd(false);if(now-_cvT<400)return;_cvT=now;const R=(scene.fog?scene.fog.far:400)+24,R2=R*R,tx=cam.target.x,tz=cam.target.z;{const RL=(R+LF.CS*0.71)**2;for(const cg of LF.cells)cg.visible=(cg.userData.x-tx)**2+(cg.userData.z-tz)**2<RL;const RT=(R+22)**2;const px=camera.position.x,py=camera.position.y,pz=camera.position.z;for(const g of TI.A.values())for(const im of g.children)if(im.userData.cx!==undefined){const ud=im.userData,far=Math.hypot(Math.max(0,Math.hypot(ud.cx-px,ud.cz-pz)-43),py)>TLOD;im.visible=(ud.cx-tx)**2+(ud.cz-tz)**2<RT&&!(far&&ud.lo===null);if(ud.hi){const want=far&&ud.lo?ud.lo:ud.hi;if(im.geometry!==want)im.geometry=want;im.castShadow=!far}}}
-  const cpx=camera.position.x,cpy=camera.position.y,cpz=camera.position.z,BL=BLOD*drawK;
   for(let ci=0;ci<chunkG.length;ci++){const g=chunkG[ci];if(!g)continue;const cx=(ci%NC)*CH+CH/2-HALF,cz=((ci/NC)|0)*CH+CH/2-HALF,d=(cx-tx)**2+(cz-tz)**2;g.visible=d<R2;
-    const u=g.userData;if(u.lo&&g.visible){const far=Math.hypot(Math.max(0,Math.hypot(cx-cpx,cz-cpz)-CH*0.71),cpy)>BL;u.hi.visible=!far;u.lo.visible=far}}}
-function flushChunks(max){const t0=performance.now();chunkCull(t0);if(TI.dirty)TI.rebuild();let n=0;for(const ci of dirtyChunks){rebuildChunk(ci);dirtyChunks.delete(ci);if(++n>=max||performance.now()-t0>6)break}}
+    const u=g.userData;if(u.tall&&g.visible&&chunkFar(ci)!==u.far)lodQ.add(ci)}}
+function flushChunks(max){const t0=performance.now();chunkCull(t0);if(lodQ.size)lodFlush(t0);if(TI.dirty)TI.rebuild();let n=0;for(const ci of dirtyChunks){rebuildChunk(ci);dirtyChunks.delete(ci);if(++n>=max||performance.now()-t0>6)break}}
 
 /* ---------- state ---------- */
 let G, tiles=[], S={pop:0,jc:0,ji:0,roads:0,parks:0,powers:0,waters:0,zones:[],roadList:[],noRoad:0,noPower:0,noWater:0};
@@ -7758,7 +7778,7 @@ function frame(now){
   if(keys.has('e')){cam.theta-=dt*1.4;updateCamera()}
   for(let k=growing.length-1;k>=0;k--){const o=growing[k];o.t=Math.min(1,o.t+dt*2.2);o.g.scale.y=0.05+0.95*(1-Math.pow(1-o.t,3));
     if(o.t>=1){growing.splice(k,1);const t=tiles[o.i];if(t&&t.ag===o.g){world.remove(o.g);for(const q of o.g.userData.geos)q.dispose();t.ag=null;t.anim=false;dirtyChunks.add(chunkOf(o.i))}}}
-  if(terrDirty&&performance.now()-terrT>500)terrBuild();chunkCull(performance.now());if(dirtyChunks.size)flushChunks(4);
+  if(terrDirty&&performance.now()-terrT>500)terrBuild();chunkCull(performance.now());if(dirtyChunks.size)flushChunks(4);else if(lodQ.size)lodFlush(performance.now());
   const sdt=dt*CARSPEED[speed];
   let dh=0;if(dayNight&&speed>0){const hh=tod*24,rate=(hh>=4.8&&hh<7.6)||(hh>=16.8&&hh<19.6)?0.3:1;const d=sdt/480*rate;tod=(tod+d)%1;dh=d*24}
   else if(!dayNight&&speed>0)dh=sdt/20;

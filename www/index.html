@@ -1041,7 +1041,8 @@ const CAMMAX=220;let AREAMODE=false,OB={x0:-HALF,x1:HALF,z0:-HALF,z1:HALF};
 function areaBounds(){{const A=[...OWN].sort((a,b)=>a-b),o=new Int32Array(A.length*AREA*AREA);let k=0;for(const a of A)areaTiles(a,i=>{o[k++]=i});OWNIDX=o}let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const a of OWN){const ax=(a%AGRID)*AREA-HALF,az=((a/AGRID)|0)*AREA-HALF;x0=Math.min(x0,ax);x1=Math.max(x1,ax+AREA);z0=Math.min(z0,az);z1=Math.max(z1,az+AREA)}OB={x0:x0-6,x1:x1+6,z0:z0-6,z1:z1+6}}const cam={theta:Math.PI*0.22,phi:0.92,dist:36,target:new THREE.Vector3(-1,0,-3)};
 let chase=false,chaseD=1,camSave=null;const _lookT=new THREE.Vector3();
 /* aerial haze starts a little beyond what the camera is looking at, so zooming out never fogs the city itself */
-const fogBase={n:102,f:300};function fogByCam(){if(!scene.fog)return;scene.fog.near=fogBase.n+cam.dist*0.55;scene.fog.far=Math.max(fogBase.f,fogBase.n+20)+cam.dist*(AREAMODE?2.2:0.9)}
+/* drawK: view distance 0.5-1, lowered while the device can't keep up (frame() below); chunkCull follows the fog */
+let drawK=1;const fogBase={n:102,f:300};function fogByCam(){if(!scene.fog)return;scene.fog.near=(fogBase.n+cam.dist*0.55)*drawK;scene.fog.far=(Math.max(fogBase.f,fogBase.n+20)+cam.dist*(AREAMODE?2.2:0.9))*drawK}
 /* colour grade: slightly muted, warm and contrasty like a photo (skipped on Low graphics) */
 function applyGrade(){const warm=LOOK.warm;canvas.style.filter=GFX.lv==='low'?'none':warm?'saturate(0.86) contrast(1.08) sepia(0.2) brightness(1.03)':'saturate(0.82) contrast(1.1) sepia(0.06)';
   tiltSh()}
@@ -2340,12 +2341,40 @@ const chunkOf=i=>Math.floor((i/N|0)/CH)*NC+Math.floor((i%N)/CH);
 function rebuildChunk(ci){const cx=ci%NC,cz=(ci/NC)|0,list=[];
   for(let z=cz*CH;z<Math.min(N,cz*CH+CH);z++)for(let x=cx*CH;x<Math.min(N,cx*CH+CH);x++){const t=tiles[z*N+x];if(t.bk&&!t.anim)list.push(t.bk)}
   if(chunkG[ci]){world.remove(chunkG[ci]);for(const q of chunkG[ci].userData.geos)q.dispose();chunkG[ci]=null}
-  if(list.length){chunkG[ci]=meshesFrom(list);if(true)chunkG[ci].traverse(m=>{const g=m.geometry;if(!g)return;if(!g.boundingSphere)g.computeBoundingSphere();g.boundingSphere=g.boundingSphere.clone();g.boundingSphere.radius+=9.5});chunkG[ci].matrixAutoUpdate=false;world.add(chunkG[ci])}}
+  if(list.length){chunkG[ci]=chunkLod(list);if(true)chunkG[ci].traverse(m=>{const g=m.geometry;if(!g)return;if(!g.boundingSphere)g.computeBoundingSphere();g.boundingSphere=g.boundingSphere.clone();g.boundingSphere.radius+=9.5});chunkG[ci].matrixAutoUpdate=false;world.add(chunkG[ci])}}
+/* building LOD: a chunk is its flat parts (roads, ground, always drawn), its tall parts (the shadow casters) and one
+   plain box per tile (userData.lo) drawn instead of the tall parts when the chunk is far from the camera (chunkCull).
+   Dense cities drew 7-9 million triangles a frame on phones; far boxes are 10 triangles a building. */
+const BLOD=MOBILE?30:70;let _lb=null;
+function chunkLod(list){const flat=[],tall=[];
+  for(const bk of list){const f=new Map(),t=new Map();for(const[k,b]of bk)(b.cast?t:f).set(k,b);if(f.size)flat.push(f);if(t.size)tall.push(t)}
+  const out=new THREE.Group();out.userData.geos=[];
+  if(flat.length){const g=meshesFrom(flat);for(const m of [...g.children])out.add(m);out.userData.geos.push(...g.userData.geos)}
+  if(tall.length){const hi=meshesFrom(tall);hi.matrixAutoUpdate=false;out.add(hi);out.userData.geos.push(...hi.userData.geos);out.userData.hi=hi;
+    const lo=chunkBoxes(tall);if(lo){lo.visible=false;out.add(lo);out.userData.geos.push(lo.geometry);out.userData.lo=lo}}
+  return out}
+function chunkBoxes(tall){/* one box per tile: bounds and average colour of its tall parts */
+  const P=[],Nn=[],C=[];
+  const face=(a,b,c,d,nx,ny,nz,r,g,bl)=>{for(const v of [a,b,c,a,c,d]){P.push(v[0],v[1],v[2]);Nn.push(nx,ny,nz);C.push(r,g,bl)}};
+  for(const bk of tall){let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9,r=0,g=0,bl=0,n=0;
+    for(const b of bk.values()){const p=b.p,c=b.c;for(let k=0;k<p.length;k+=3){const x=p[k],y=p[k+1],z=p[k+2];if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(z<z0)z0=z;if(z>z1)z1=z}
+      for(let k=0;k<c.length;k+=27){r+=c[k];g+=c[k+1];bl+=c[k+2];n++}}
+    if(!(x1>x0)||y1-y0<0.02)continue;n=Math.max(1,n);r=r/n|0;g=g/n|0;bl=bl/n|0;
+    const A=[x0,y0,z0],B=[x1,y0,z0],Cc=[x1,y0,z1],D=[x0,y0,z1],E=[x0,y1,z0],F=[x1,y1,z0],Gg=[x1,y1,z1],H=[x0,y1,z1];
+    const tr=Math.min(255,r+28),tg=Math.min(255,g+28),tb=Math.min(255,bl+30);
+    face(E,H,Gg,F,0,127,0,tr,tg,tb);face(A,E,F,B,0,0,-127,r,g,bl);face(Cc,Gg,H,D,0,0,127,r,g,bl);face(D,H,E,A,-127,0,0,r,g,bl);face(B,F,Gg,Cc,127,0,0,r,g,bl)}
+  if(!P.length)return null;
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P),3));geo.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(Nn),3,true));
+  geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(P.length/3*2),2));geo.setAttribute('color',new THREE.BufferAttribute(new Uint8Array(C),3,true));
+  geo.computeBoundingBox();geo.boundingSphere=geo.boundingBox.getBoundingSphere(new THREE.Sphere());for(const k in geo.attributes)geo.attributes[k].onUpload(meshFreeArr);
+  if(!_lb)_lb=new THREE.MeshLambertMaterial({vertexColors:true});const m=new THREE.Mesh(geo,_lb);m.matrixAutoUpdate=false;m.receiveShadow=true;return m}
 let _cvT=0;const TLOD=38;
 Object.defineProperty(THREE.InstancedBufferAttribute.prototype,'needsUpdate',{configurable:true,set(v){if(v===true){this.version++;const o=this.__im;if(o&&o.count<this.count){this.updateRange.offset=0;this.updateRange.count=Math.max(1,o.count)*this.itemSize}}}});
 let _imT=0;function tagInst(now){if(now-_imT<2000)return;_imT=now;scene.traverse(o=>{if(o.isInstancedMesh){o.instanceMatrix.__im=o;if(o.instanceColor)o.instanceColor.__im=o}})}
 function chunkCull(now){tagInst(now);if(typeof ZCG!=='undefined')zcUpd(now);if(typeof tileGrid!=='undefined')terrGridUpd(false);if(now-_cvT<400)return;_cvT=now;const R=(scene.fog?scene.fog.far:400)+24,R2=R*R,tx=cam.target.x,tz=cam.target.z;{const RL=(R+LF.CS*0.71)**2;for(const cg of LF.cells)cg.visible=(cg.userData.x-tx)**2+(cg.userData.z-tz)**2<RL;const RT=(R+22)**2;const px=camera.position.x,py=camera.position.y,pz=camera.position.z;for(const g of TI.A.values())for(const im of g.children)if(im.userData.cx!==undefined){const ud=im.userData,far=Math.hypot(Math.max(0,Math.hypot(ud.cx-px,ud.cz-pz)-43),py)>TLOD;im.visible=(ud.cx-tx)**2+(ud.cz-tz)**2<RT&&!(far&&ud.lo===null);if(ud.hi){const want=far&&ud.lo?ud.lo:ud.hi;if(im.geometry!==want)im.geometry=want;im.castShadow=!far}}}
-  for(let ci=0;ci<chunkG.length;ci++){const g=chunkG[ci];if(!g)continue;const cx=(ci%NC)*CH+CH/2-HALF,cz=((ci/NC)|0)*CH+CH/2-HALF,d=(cx-tx)**2+(cz-tz)**2;g.visible=d<R2}}
+  const cpx=camera.position.x,cpy=camera.position.y,cpz=camera.position.z,BL=BLOD*drawK;
+  for(let ci=0;ci<chunkG.length;ci++){const g=chunkG[ci];if(!g)continue;const cx=(ci%NC)*CH+CH/2-HALF,cz=((ci/NC)|0)*CH+CH/2-HALF,d=(cx-tx)**2+(cz-tz)**2;g.visible=d<R2;
+    const u=g.userData;if(u.lo&&g.visible){const far=Math.hypot(Math.max(0,Math.hypot(cx-cpx,cz-cpz)-CH*0.71),cpy)>BL;u.hi.visible=!far;u.lo.visible=far}}}
 function flushChunks(max){const t0=performance.now();chunkCull(t0);if(TI.dirty)TI.rebuild();let n=0;for(const ci of dirtyChunks){rebuildChunk(ci);dirtyChunks.delete(ci);if(++n>=max||performance.now()-t0>6)break}}
 
 /* ---------- state ---------- */
@@ -7709,7 +7738,10 @@ let last=performance.now(),acc=0;const perfA={ema:1/60,slow:0,done:0};
 function frame(now){
   if(now-last<1000/GFX.fps-2){requestAnimationFrame(frame);return}
   const dt=Math.min(0.1,(now-last)/1000);last=now;
-  if(!atTitle&&!document.hidden){perfA.ema+=(dt-perfA.ema)*0.05;if(perfA.ema>0.045){perfA.slow+=dt;if(perfA.slow>4&&!perfA.done&&renderer.getPixelRatio()>1){perfA.done=1;renderer.setPixelRatio(1);resize()}}else perfA.slow=0}
+  if(!atTitle&&!document.hidden){perfA.ema+=(dt-perfA.ema)*0.05;if(perfA.ema>0.045){perfA.slow+=dt;if(perfA.slow>4&&!perfA.done&&renderer.getPixelRatio()>1){perfA.done=1;renderer.setPixelRatio(1);resize();perfA.slow=0}
+    /* still slow at pixel ratio 1: draw less of the far city (fog comes closer), up again when there is room */
+    else if(perfA.slow>3&&renderer.getPixelRatio()<=1&&drawK>0.5){drawK=Math.max(0.5,drawK-0.1);perfA.slow=0;fogByCam()}perfA.fast=0}
+   else{perfA.slow=0;if(perfA.ema<1.05/GFX.fps&&drawK<1){perfA.fast=(perfA.fast||0)+dt;if(perfA.fast>10){perfA.fast=0;drawK=Math.min(1,drawK+0.05);fogByCam()}}else perfA.fast=0}}
   if(speed>0){acc+=dt*1000;let n=0;while(acc>=INTERVAL[speed]&&n<6){acc-=INTERVAL[speed];tick();n++}if(n>=6)acc=0}
   const p=dt*60*cam.dist*0.012;
   if(keys.has('w')||keys.has('arrowup'))panBy(0,p*1.5);

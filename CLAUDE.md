@@ -41,12 +41,26 @@ Browsers block `models.bin` when the page is opened as a file (double-click), so
 models and three.js inside: `python3 tools/pc_build.py "out.html"`. Build it from `www/` after every change; never
 edit the PC file by hand.
 
+## Roads and river sit in the land
+
+- Roads stand 0.06 (sidewalks 0.075) above the ground; every logic height (cars, `surfY`) assumes that, so the road is
+  not lowered. Instead a grass verge (`VERGE` colour) slopes from the road's outer edge down to the ground: in
+  `netRoadStrip` for network roads and in the `T.ROAD` case of `buildTile` for tile roads (open sides only).
+- The river water is at `WLV` (-0.18, about 2.7 m down) with a channel mesh (grass edge, earth bank, mud, bed). The flat
+  ground plane is cut away over the channel in `groundMat`'s shader (riverZ table in a float texture), and the outer
+  landscape mesh, which lies just under the whole map, is pushed down to -0.6 there. Boats float at `WLV`; bridge piers
+  reach -0.3.
+
 ## Smooth on slow devices
 
 - Building LOD: each 8 × 8 chunk (`chunkLod`) is flat parts (roads, ground; always drawn), tall parts (shadow casters)
   and a simplified copy of the tall parts (`chunkLo`, `userData.lo`): vertices snapped to a `LODC` grid (0.16 phone,
-  0.1 PC), collapsed triangles dropped, one draw call with `lodMat` (window grid + night lights). `chunkCull` shows the
-  copy when the chunk is farther than `BLOD * drawK` (30 phone / 70 PC). Looks the same as full detail from there.
+  0.06 PC), collapsed triangles dropped, one draw call with `lodMat` (window grid + night lights). `chunkCull` shows the
+  copy when the chunk is farther than `blod()` (phones 30 × `drawK`; PC by graphics setting: Low 70, Normal 140,
+  Ultra never; user saw the swap as buildings "loading from box to shape" while zooming), with a ±10% band so a chunk does not
+  flip back and forth (`chunkFar(ci,cur)`). The copy must match the full model's brightness, or every swap shows as a
+  flicker while zooming (user report 2026-10-20): the window grid only darkens window cells a little, and glass is
+  lifted slightly because the snapping drops the light frames between panes. Looks the same as full detail from there.
   Plain boxes were tried first and rejected by the user: far buildings must keep their shapes, colours and windows.
 - `drawK` (0.5-1): when frames stay slow after the pixel ratio is already 1, `frame()` lowers it by 0.1 (fog and
-  chunk culling come closer, LOD distance shrinks); it creeps back up by 0.05 after 10 s of smooth frames.
+  chunk culling come closer, LOD distance shrinks on phones only); it creeps back up by 0.05 after 10 s of smooth frames.

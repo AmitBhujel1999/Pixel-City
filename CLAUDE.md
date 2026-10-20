@@ -51,6 +51,26 @@ edit the PC file by hand.
   landscape mesh, which lies just under the whole map, is pushed down to -0.6 there. Boats float at `WLV`; bridge piers
   reach -0.3.
 
+## Road types (Cities: Skylines style)
+
+- Each road segment keeps its base type `t` (0 street, 1 dirt, 2 one-way, 3 avenue, 4 boulevard, 5 highway); tiles
+  under it keep `l = t`, so all older rules (zoning, speed table, upkeep, grid code) still see the base type.
+- Variants add a look `sg.w` and options `sg.o` (saved inside `G.net`, old saves have neither): looks 10 highway ramp,
+  11 alley, 12 pedestrian street, 13 one-way avenue, 14 one-way boulevard, 15 one-way highway, 16 avenue 2+1; options
+  `tr` trees, `gr` grass, `bus` bus lanes, `bike` bike lanes, `nb` sound barriers. `NETW` / `NETLN` have entries for
+  the look ids; drawing code gets `v = netLk(sg)` (look, or type). One-way looks are in `NETOWL`, highway looks in
+  `NETHWL`; `netOW(sg)` decides one-way links (`NET.OW`).
+- `NET.lk` maps tile to its segment for segments with a look or options; `NETBUS` / `NETPED` hold bus-lane and
+  pedestrian-street tiles. Bus lanes: residents' routes avoid the kerb slot (`rLaneCost`), buses and cars on a bus-lane
+  tile do not queue behind each other. Pedestrian streets cost 3 in the car route search (6 for agents), speed x0.35.
+- Menu cards come from `ROADP` (road_types block before boot); `setRoadPreset(id)` sets `tool.rt` (base) and
+  `tool.rp`; `netPresetLook(tl,base)` stamps `w`/`o` on new segments (only if the base matches, so code that builds
+  ramps with `tl.rt=2` does not inherit a picked look); the variant's extra cost is added in the `netPlan` wrapper.
+- Segment splits must copy the look: use `netLookOf(sg)` wherever a segment is cut in two.
+- Upgrade / Reverse on network roads work per segment in the `apply` wrapper of road_types.
+- Traffic noise: highways 80 (25 with barriers), boulevards 55, avenues 45, trees -20, grass -10; keep road noise
+  below 90, which caps homes at level 2.
+
 ## Smooth on slow devices
 
 - Building LOD: each 8 × 8 chunk (`chunkLod`) is flat parts (roads, ground; always drawn), tall parts (shadow casters)

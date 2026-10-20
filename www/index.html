@@ -4077,7 +4077,8 @@ function recompute(){
       if(t.t===T.AIRPORT){const ry=airRot(t.l),c=Math.cos(ry),s=Math.sin(ry),[wx,wz]=bigCenter(i);const BG=t.l&8,LX=BG?((t.l&4)?22:13):6,RZ=BG?((t.l&4)?-6.2:-3.4):-1.9;for(let lx=-LX;lx<=LX;lx+=BG?4:1.5){const px=wx+lx*c+RZ*s,pz=wz-lx*s+RZ*c;pollAdd(Math.floor(px+HALF),Math.floor(pz+HALF),4,110)}}}
     else if(t.t===T.LANDFILL)pollAdd(x,z,2,85);if(t.t===T.SEWER&&!t.l)pollAdd(x,z,3,90);
     else if(t.t===T.IND&&t.l>0){const pm=zt(t).poll??1;if(pm>0)pollAdd(x,z,Math.round([0,2,4,5][t.l]*Math.min(1.5,pm)),Math.min(250,[0,70,140,210][t.l]*pm))}
-    if(t.t===T.COM&&t.l>0){const nz=zt(t).noise;if(nz&&nz[t.l])noiseAdd(x,z,1+t.l,nz[t.l])}}
+    if(t.t===T.COM&&t.l>0){const nz=zt(t).noise;if(nz&&nz[t.l])noiseAdd(x,z,1+t.l,nz[t.l])}
+    if(t.t===T.ROAD){const rv=RI(t.l).v;let nv=rv===5?80:rv===4?55:rv===3?45:0;if(nv&&(rv===5||(x+z)%2===0)){const sg=NET.lk&&NET.lk.get(i),o=(sg&&sg.o)||{};if(o.nb)nv=25;if(o.tr)nv-=20;else if(o.gr)nv-=10;if(nv>15)noiseAdd(x,z,rv===5?3:2,nv)}}}
   for(const i of OWNIDX)pollu[i]=pollV[i]>=60?1:0;
   for(const i of OWNIDX){if(tiles[i].t===T.ROAD||!roadNear[i])continue;const x=i%N,z=(i/N)|0;let bd=9;
     for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){const d=Math.abs(dx)+Math.abs(dz);if(d===0||d>2||d>=bd)continue;if(isRoad(x+dx,z+dz)&&tiles[idx(x+dx,z+dz)].l!==5){bd=d;access[i]=idx(x+dx,z+dz)}}}
@@ -5102,10 +5103,12 @@ function updateCars(dt){updateHeli(dt);
     if(tiles[c.a].t!==T.ROAD||tiles[c.b].t!==T.ROAD||tiles[c.c].t!==T.ROAD){endAgent(c,false);cars.splice(k,1);continue}
     let gap=9;
     for(const o of carNb(c)){if(o===c||(o.role==='bus'&&o.wait>0&&c.role!=='bus'))continue;
+      /* on a bus lane buses and cars are in different lanes */
+      if(NETBUS.size&&NETBUS.has(c.b)&&(o.role==='bus')!==(c.role==='bus'))continue;
       if(o.a===c.a&&o.b===c.b&&(o.t>c.t||(o.t===c.t&&o.uid<c.uid)))gap=Math.min(gap,o.t-c.t);
       else if(o.a===c.b&&o.b===c.c)gap=Math.min(gap,1-c.t+o.t);}
     const need=(c.type.L+0.12)*1.6,queued=c.k===1&&c.t<=0&&gap<need,turn=!((c.b%N)-(c.a%N)===(c.c%N)-(c.b%N)&&((c.b/N)|0)-((c.a/N)|0)===((c.c/N)|0)-((c.b/N)|0));
-    const vm=c.vmax*RI(tiles[c.b].l).spd;let target=gap<need?0:gap<need*2?vm*0.4:vm;if(turn&&c.t<0.8)target=Math.min(target,vm*0.6);
+    const vm=c.vmax*RI(tiles[c.b].l).spd*lkSpd(c.b);let target=gap<need?0:gap<need*2?vm*0.4:vm;if(turn&&c.t<0.8)target=Math.min(target,vm*0.6);
     if(c.go!==undefined&&c.go!==c.c&&c.go!==c.b)c.go=undefined;
     if(!c.siren&&c.t<0.8&&tiles[c.c]&&isJunction(c.c)&&roadNeighbors(c.b).length<3){
       const J=c.c,ew=netEWc(c.c,c.b),m=sigMode(J),halt=Math.max(0,(0.72-c.t)*4);
@@ -6535,7 +6538,7 @@ TOOLS.forEach(tl=>{
     $('#sizeMenu').hidden=true;setTool(tool===tl?TOOLS[0]:tl)};toolbar.appendChild(b);
 });
 function refreshLocks(){if(!G)return;for(const tl of TOOLS){const b=$('#tool-'+tl.id);if(b)b.classList.toggle('locked',lvl()<toolLv(tl))}
-  document.querySelectorAll('#roadMenu button').forEach(x=>{if(x.dataset.rb||x.dataset.fp)return;const r=RI(+x.dataset.v),lk=lvl()<r.lv;x.disabled=lk;x.querySelector('.lk').hidden=!lk})}
+  document.querySelectorAll('#roadMenu button').forEach(x=>{if(x.dataset.rb||x.dataset.fp)return;const r=x.dataset.p?RPOf(x.dataset.p):RI(+x.dataset.v),lk=lvl()<r.lv;x.disabled=lk;x.querySelector('.lk').hidden=!lk})}
 function refreshToolCosts(){for(const tl of TOOLS)if(tl.kind==='single'){tl.ct=tl.land?`$${LAND.cost}/tile`:fmt(SVI(tl.t,tl.sz).cost);const b=$('#tool-'+tl.id);if(b)b.querySelector('.ct').textContent=tl.ct}}
 const fmtL=v=>v>=1e6?(v/1e6).toFixed(v>=1e7?0:1)+'M L':v>=1000?Math.round(v/1000)+'k L':Math.round(v)+' L';
 function sizeInfo(t,z){if(z.eff)return z.eff;if(z.mw)return`Makes ${z.mw} MW${z.clean?' · clean':''}`;if(z.lpd)return`Pumps ${fmtL(z.lpd)} a day${z.river?' · next to the river':''}`;
@@ -7892,6 +7895,15 @@ function netHs(g,s){if(!g.H)return 0;const S=g.S;let lo=0,hi=g.n;if(s<=0)return 
 function netPts(sg){const N_=G.net.n,A=N_[sg.a],B=N_[sg.b];if(!A||!B)return null;return[A,sg.c1||A,sg.c2||B,B]}
 /* rebuild the lookup tables from G.net: tile owners, links, nodes; segments whose tiles were cleared are dropped */
 /* a road end left inside another road's width (it missed the join) is joined to that road */
+/* Road looks (segment field w) for the Cities: Skylines style road variants. The base type t keeps the game rules
+   (street, one-way, avenue, boulevard, highway); w changes the cross-section and lanes, o adds trees, grass, bus
+   lanes, bike lanes or sound barriers. 10 highway ramp, 11 alley, 12 pedestrian street, 13 one-way avenue,
+   14 one-way boulevard, 15 one-way highway, 16 avenue with 2 lanes one way and 1 back */
+const NETOWL=new Set([2,10,13,14,15]),NETHWL=new Set([5,10,15]),NETBUS=new Set(),NETPED=new Set();
+const netLk=sg=>sg?(sg.w||sg.t|0):0,netOW=sg=>!!sg&&sg.k==='road'&&NETOWL.has(netLk(sg));
+const netLookOf=sg=>{const r={};if(sg.w)r.w=sg.w;if(sg.o)r.o={...sg.o};return r};
+/* speed on a tile compared with its base type */
+function lkSpd(j){const sg=NET.lk&&NET.lk.get(j);if(!sg||!sg.w)return 1;return sg.w===10?1.45:sg.w===11?0.7:sg.w===12?0.35:1}
 function netHeal(net){if(!net||!net.s.length)return 0;const deg=new Map(),cnt=id=>deg.set(id,(deg.get(id)||0)+1);for(const sg of net.s){cnt(sg.a);cnt(sg.b)}
   const geo=new Map(),geoOf=sg=>{if(!geo.has(sg)){const P=netPts(sg);geo.set(sg,P&&netSample(P,sg.k))}return geo.get(sg)};let fixed=0;
   for(const id of[...deg.keys()]){if(deg.get(id)!==1)continue;const p=net.n[id];if(!p||p[2])continue;const own=net.s.find(q=>q.a===id||q.b===id);if(!own||own.k!=='road'||own.e)continue;
@@ -7900,13 +7912,13 @@ function netHeal(net){if(!net||!net.s.length)return 0;const deg=new Map(),cnt=id
     if(r.s<NETMINJ||r.s>g.L-NETMINJ){tid=r.s<g.L/2?o.a:o.b;if(tid===other)continue}
     else{const q=[g.X[r.k],g.Z[r.k]];if(Object.keys(net.n).some(k=>+k!==id&&Math.hypot(net.n[k][0]-q[0],net.n[k][1]-q[1])<NETMINJ))continue;
       tid=net.id++;net.n[tid]=[q[0],q[1]];const[p1,p2]=bzSplit(netPts(o),r.t);net.s.splice(net.s.indexOf(o),1);
-      net.s.push({id:net.id++,k:o.k,t:o.t,a:o.a,b:tid,c1:p1[1],c2:p1[2]},{id:net.id++,k:o.k,t:o.t,a:tid,b:o.b,c1:p2[1],c2:p2[2]});deg.set(tid,2)}
+      net.s.push({id:net.id++,k:o.k,t:o.t,a:o.a,b:tid,c1:p1[1],c2:p1[2],...netLookOf(o)},{id:net.id++,k:o.k,t:o.t,a:tid,b:o.b,c1:p2[1],c2:p2[2],...netLookOf(o)});deg.set(tid,2)}
     const t=net.n[tid],dx=t[0]-p[0],dz=t[1]-p[1];if(own.a===id){own.a=tid;if(own.c1)own.c1=[own.c1[0]+dx,own.c1[1]+dz]}else{own.b=tid;if(own.c2)own.c2=[own.c2[0]+dx,own.c2[1]+dz]}
     deg.set(tid,(deg.get(tid)||0)+1);delete net.n[id];deg.delete(id);geo.clear();fixed++;
     const ng=netSample(netPts(own),'road');if(ng)for(const j of ng.ext){const tl=tiles[j];if(tl&&!tl.lock&&(tl.t===T.EMPTY||tl.t===T.TREE||(tl.t>=2&&tl.t<=4))){tl.t=T.ROAD;tl.l=own.t;tl.w=0}}}
   return fixed}
 function netRebuild(){if(NET.src!==G&&G){try{netHeal(netG())}catch(e){console.error(e)}}const net=netG();NET.src=G;NET.ver=netVer;const NN=N*N,KM=NETKM();if(!NET.T||NET.T.length!==KM){NET.T=new Int8Array(KM);NET.TR=new Int8Array(KM);NET.TL=new Int8Array(KM)}else{NET.T.fill(0);NET.TR.fill(0);NET.TL.fill(0)}
-  NET.E.clear();NET.EL.clear();NET.OW.clear();NET.seg.clear();NET.geo.clear();NET.node.clear();NET.nodeAt.clear();NET.deg.clear();
+  NET.lk=new Map();NETBUS.clear();NETPED.clear();NET.E.clear();NET.EL.clear();NET.OW.clear();NET.seg.clear();NET.geo.clear();NET.node.clear();NET.nodeAt.clear();NET.deg.clear();
   if(NETV.tiles!==tiles){NETV.tiles=tiles;NETV.alloc=new Map();NETV.next=0;tiles.length=NN}
   NETV.adj=new Map();NETV.link=new Map();NETV.cover=new Set();NETV.tcover=new Set();NETV.dirty=true;const usedV=new Set();if(!net)return;
   const NGT=new Map(),AIRV=new Map(),AIRL=[];
@@ -7926,8 +7938,9 @@ function netRebuild(){if(NET.src!==G&&G){try{netHeal(netG())}catch(e){console.er
         if(!vk.length){if(!aA)g.v0=g.L*0.5;if(!aB)g.v1=g.L*0.5}g.air=[aA,aB]}}
     if(!g.ext.every(j=>netKindOk(sg.k,j)))continue;
     if(!sg.e)netLift(g);keep.push(sg);NET.geo.set(sg.id,g);
+    if(sg.k==='road'&&(sg.w||sg.o)){for(const j of g.ext)NET.lk.set(j,sg);if(sg.o&&sg.o.bus)for(const j of g.ext)NETBUS.add(j);if(sg.w===12)for(const j of g.ext)NETPED.add(j)}
     const TK=sg.k==='rail'?NET.TL:NET.TR;g.ext.forEach((j,k)=>{let L=NET.seg.get(j);if(!L)NET.seg.set(j,L=[]);L.push({g,k});if(NET.T[j]!==2)NET.T[j]=1;if(TK[j]!==2)TK[j]=1});
-    for(let k=0;k+1<g.ext.length;k++){const a=g.ext[k],b=g.ext[k+1];(sg.k==='rail'?NET.EL:NET.E).add(Math.min(a,b)*KM+Math.max(a,b));if(sg.k==='road'&&sg.t===2)NET.OW.add(b*KM+a);
+    for(let k=0;k+1<g.ext.length;k++){const a=g.ext[k],b=g.ext[k+1];(sg.k==='rail'?NET.EL:NET.E).add(Math.min(a,b)*KM+Math.max(a,b));if(netOW(sg))NET.OW.add(b*KM+a);
       if(a>=NN||b>=NN){for(const[x,y]of[[a,b],[b,a]]){let L=NETV.adj.get(x);if(!L)NETV.adj.set(x,L=[]);L.push(y)}}}
     if(g.vk||g.air){const air=g.air||[false,false];AIRL.push({sg,ra:air[0]?-1:g.vk?g.ext[g.vk[0]-1]:-1,rb:air[1]?-1:g.vk?g.ext[g.vk[1]+1]:-1,air})}
     for(const nd of[sg.a,sg.b])NET.deg.set(nd,(NET.deg.get(nd)||0)+1)}
@@ -8037,13 +8050,15 @@ function netPoly(g,pts,y,mt,c,ox,oz){if(pts.length<3)return;const P=[],I=[];for(
 /* road cross-sections (1 unit = 15 m): ae asphalt half width, hw outer half width incl. sidewalks. Streets and one-ways
    15 m, avenues 24 m (4 lanes + median), boulevards 36 m (6 lanes + planted median), highways 24 m (4 lanes + shoulders) */
 const NETW={0:{ae:0.36,sw:true,hw:0.5},1:{ae:0.5,sw:false,hw:0.5},2:{ae:0.36,sw:true,hw:0.5},3:{ae:0.56,sw:true,hw:0.8},4:{ae:0.94,sw:true,hw:1.2},5:{ae:0.74,sw:false,hw:0.8}};
+Object.assign(NETW,{10:{ae:0.4,sw:false,hw:0.5},11:{ae:0.27,sw:false,hw:0.36},12:{ae:0.5,sw:false,hw:0.5},
+  13:{ae:0.56,sw:true,hw:0.8},14:{ae:0.94,sw:true,hw:1.2},15:{ae:0.74,sw:false,hw:0.8},16:{ae:0.56,sw:true,hw:0.8}});
 const netHW=v=>(NETW[v|0]||NETW[0]).hw;
 /* dead-end circle: asphalt radius r, sidewalk ring out to R2, arm sidewalks stop where they meet the ring */
 const netDEr=v=>{const W=NETW[v|0]||NETW[0];return W.sw?Math.max(0.56,W.ae+0.18):Math.max(0.46,W.ae+0.02)},netDER2=v=>{const W=NETW[v|0]||NETW[0];return netDEr(v)+Math.max(0.14,W.hw-W.ae-0.02)},netDEs=v=>{const R2=netDER2(v),h=netHW(v);return Math.max(NETDE,Math.sqrt(Math.max(0,R2*R2-h*h))+0.01)};
 /* arms meeting at a node: every segment end there plus plain grid roads beside the node tile */
 function netArms(nid){const j=NET.node.get(nid),arms=[];if(j===undefined)return arms;const p=G.net.n[nid];
   for(const g of NET.geo.values()){const sg=g.sg;if(sg.a!==nid&&sg.b!==nid)continue;const st=sg.a===nid;
-    arms.push({g,st,t:sg.t,k:sg.k,at:(d,v)=>{const s=st?d:g.L-d,q=cvAt(g,s),ux=st?q[2]:-q[2],uz=st?q[3]:-q[3];return[q[0]-uz*v,q[1]+ux*v]},dir:(()=>{const q=cvAt(g,st?0.3:g.L-0.3),ux=st?q[2]:-q[2],uz=st?q[3]:-q[3];return Math.atan2(uz,ux)})()})}
+    arms.push({g,st,t:netLk(sg),k:sg.k,at:(d,v)=>{const s=st?d:g.L-d,q=cvAt(g,s),ux=st?q[2]:-q[2],uz=st?q[3]:-q[3];return[q[0]-uz*v,q[1]+ux*v]},dir:(()=>{const q=cvAt(g,st?0.3:g.L-0.3),ux=st?q[2]:-q[2],uz=st?q[3]:-q[3];return Math.atan2(uz,ux)})()})}
   const x=j%N,z=(j/N)|0;for(const[dx,dz]of D4){if(!inB(x+dx,z+dz))continue;const q=idx(x+dx,z+dz),t=tiles[q],KA=NET.TL[j]?NET.TL:NET.TR;if(KA[q]||t.t!==tiles[j].t||(t.t===T.ROAD&&rxAt(q)&&NET.TL[q]))continue;
     const ex=x-HALF+0.5+dx*0.5,ez=z-HALF+0.5+dz*0.5,L=Math.hypot(ex-p[0],ez-p[1])||1e-3,ux=(ex-p[0])/L,uz=(ez-p[1])/L;
     arms.push({g:null,t:t.t===T.ROAD?RI(t.l).v:0,k:t.t===T.ROAD?'road':'rail',L,at:(d,v)=>[p[0]+ux*d-uz*v,p[1]+uz*d+ux*v],dir:Math.atan2(uz,ux),ex,ez,ux,uz})}
@@ -8071,22 +8086,39 @@ function netGridArms(nid){const k=nid+':'+NET.ver;if(NETGA.has(k))return NETGA.g
 function netBent(nid){const k=nid+':'+NET.ver;if(NETBENT.has(k))return NETBENT.get(k);const A=netArms(nid);let b=A.length>2;
   if(A.length===2){let d=Math.abs(A[0].dir-A[1].dir);if(d>Math.PI)d=2*Math.PI-d;b=d<Math.PI-0.45||A[0].t!==A[1].t}NETBENT.set(k,b);return b}
 function netRoadStrip(g,geo,sa,sb,ox,oz,v,full,x,z){const St=(vA,yA,vB,yB,w,mt,c,A=sa,B=sb)=>netStrip(g,geo,A,B,ox,oz,vA,yA,vB,yB,w,mt,c);
-  const asph=v===1?'#9a8663':v===5?'#696d73':((x*31+z*17)%5)?'#74787d':'#71757a',LINE='#f1f1ec',Y=0.0608,W=NETW[v]||NETW[0],ae=W.ae;
+  const o=(geo.sg&&geo.sg.o)||{},HW=NETHWL.has(v),OW=NETOWL.has(v);
+  const asph=v===1?'#9a8663':HW?'#696d73':((x*31+z*17)%5)?'#74787d':'#71757a',LINE='#f1f1ec',Y=0.0608,W=NETW[v]||NETW[0],ae=W.ae;
   const dash=(o,w,c,len=0.2,step=0.5)=>{for(let d=Math.floor(sa/step)*step+0.15;d<sb;d+=step){const A=Math.max(sa,d),B=Math.min(sb,d+len);if(B>A)St(o-w/2,Y,o+w/2,Y,'up',null,c,A,B)}};
-  const hw=W.hw||0.5;
-  if(v===1){St(-0.5,0.06,0.5,0.06,'up',roadMat,asph);if(!geo.H&&!(geo.sg&&geo.sg.e))for(const s of[-1,1])St(s*0.5,0.059,s*0.63,0.003,'up',null,'#6b6448');if(full)for(const s of[-1,1])St(s*0.19,0.0605,s*0.13,0.0605,'up',null,'#86734f');return}
+  const hw=W.hw||0.5,flat=!geo.H&&!(geo.sg&&geo.sg.e);
+  /* grass verge sloping from the road's outer edge down to the ground, so the road sits in the land, not on a slab */
+  const verge=top=>{if(flat)for(const s of[-1,1])St(s*hw,top,s*(hw+0.13),0.003,'up',null,VERGE)};
+  if(v===1){St(-0.5,0.06,0.5,0.06,'up',roadMat,asph);if(flat)for(const s of[-1,1])St(s*0.5,0.059,s*0.63,0.003,'up',null,'#6b6448');if(full)for(const s of[-1,1])St(s*0.19,0.0605,s*0.13,0.0605,'up',null,'#86734f');return}
+  if(v===12){/* pedestrian street: pavers from edge to edge, a darker band down the middle */
+    St(-hw,0.066,hw,0.066,'up',paveMat,'#c8beac');if(full)St(-0.1,0.0665,0.1,0.0665,'up',paveMat,'#ad9f88');
+    if(geo.H)for(const s of[-1,1])St(s*hw,0.066,s*hw,-0.02,s,null,'#9a9ea3');verge(0.065);return}
   St(-ae,0.06,ae,0.06,'up',roadMat,asph);
   if(geo.H)for(const s of[-1,1])St(s*hw,0.06,s*hw,-0.02,s,null,'#9a9ea3');
-  if(v===5)for(const s of[-1,1])St(s*ae,0.06,s*hw,0.06,'up',roadMat,'#6c7076');
-  /* grass verge sloping from the road's outer edge down to the ground, so the road sits in the land, not on a slab */
-  if(!geo.H&&!(geo.sg&&geo.sg.e))for(const s of[-1,1])St(s*hw,W.sw?0.074:0.059,s*(hw+0.13),0.003,'up',null,VERGE);
+  if(v===11){/* alley: narrow asphalt between concrete gutters */for(const s of[-1,1])St(s*ae,0.061,s*hw,0.062,'up',null,'#a3a39c');verge(0.061);return}
+  if(HW)for(const s of[-1,1])St(s*ae,0.06,s*hw,0.06,'up',roadMat,'#6c7076');
+  verge(W.sw?0.074:0.059);
   if(!full)return;
   if(W.sw)for(const s of[-1,1]){St(s*ae,0.06,s*ae,0.08,-s,null,'#9da1a7');St(s*ae,0.08,s*(ae+0.02),0.08,'up',null,'#9da1a7');
-    St(s*(ae+0.02),0.075,s*hw,0.075,'up',paveMat,'#b9bdc3');St(s*hw,0.075,s*hw,0,s,null,'#80847f');St(s*(ae-0.03),Y,s*(ae-0.01),Y,'up',null,LINE)}
+    St(s*(ae+0.02),0.075,s*hw,0.075,'up',paveMat,'#b9bdc3');St(s*hw,0.075,s*hw,0,s,null,'#80847f');St(s*(ae-0.03),Y,s*(ae-0.01),Y,'up',null,LINE);
+    /* trees or grass: a planted strip between the kerb and the walk */
+    if(o.tr||o.gr)St(s*(ae+0.03),0.0765,s*(ae+0.11),0.0765,'up',null,'#6b9a46')}
+  /* bus lanes: red kerb lanes; bike lanes: green strips along the kerb */
+  if(o.bus){const ln=NETLN[v]||NETLN[0],out=ln[ln.length-1],bw=Math.min(0.12,ae-out-0.005);for(const s of(OW?[1]:[-1,1]))St(s*(out-0.11),0.0604,s*(out+bw),0.0604,'up',null,'#8e3d35')}
+  if(o.bike)for(const s of[-1,1]){St(s*(ae-0.1),0.0604,s*(ae-0.025),0.0604,'up',null,'#3f8a4c');St(s*(ae-0.115),Y,s*(ae-0.1),Y,'up',null,LINE)}
   if(v===5){for(const s of[-1,1]){St(s*(ae-0.04),Y,s*(ae-0.06),Y,'up',null,LINE);dash(s*0.36,0.025,LINE,0.25,0.6);St(s*hw,0.06,s*hw,0.11,-s,null,'#b7bbc0');St(s*0.06,Y,s*0.08,Y,'up',null,'#e8c33a')}St(-0.03,0.06,0.03,0.11,'up',null,'#c9ccd0')}
-  else if(v===3||v===4){const mw=v===4?0.2:0.05;St(-mw,0.08,mw,0.08,'up',null,v===4?'#5a8f3e':'#c9ccd0');for(const s of[-1,1]){St(s*mw,0.06,s*mw,0.08,s,null,'#c9ccd0');St(s*(mw+0.0075),Y,s*(mw+0.0225),Y,'up',null,LINE);for(const o of(v===4?[0.44,0.68]:[0.29]))dash(s*o,0.03,LINE)}}
+  else if(v===15){for(const s of[-1,1]){St(s*(ae-0.04),Y,s*(ae-0.06),Y,'up',null,LINE);St(s*hw,0.06,s*hw,0.11,-s,null,'#b7bbc0')}for(const d of[-0.37,0,0.37])dash(d,0.025,LINE,0.25,0.6)}
+  else if(v===10){for(const s of[-1,1]){St(s*(ae-0.03),Y,s*(ae-0.05),Y,'up',null,LINE);St(s*hw,0.06,s*hw,0.11,-s,null,'#b7bbc0')}dash(0,0.025,LINE,0.25,0.6)}
+  else if(v===13||v===14){const ln=NETLN[v];for(let q=0;q+1<ln.length;q++)dash((ln[q]+ln[q+1])/2,0.03,LINE,0.18,0.45)}
+  else if(v===16){for(const d of[-0.205,-0.165])St(d-0.008,Y,d+0.008,Y,'up',null,LINE);dash(0.185,0.03,LINE)}
+  else if(v===3||v===4){const green=v===4||o.tr||o.gr,mw=v===4?0.2:green?0.07:0.05;St(-mw,0.08,mw,0.08,'up',null,green?'#5a8f3e':'#c9ccd0');for(const s of[-1,1]){St(s*mw,0.06,s*mw,0.08,s,null,'#c9ccd0');St(s*(mw+0.0075),Y,s*(mw+0.0225),Y,'up',null,LINE);for(const q of(v===4?[0.44,0.68]:[0.29]))dash(s*q,0.03,LINE)}}
   else if(v===2){dash(0,0.03,LINE,0.18,0.45)}
-  else dash(0,0.035,LINE)}
+  else dash(0,0.035,LINE);
+  /* sound barriers: tall panels along both edges of a highway */
+  if(o.nb&&HW)for(const s of[-1,1]){St(s*(hw-0.015),0.06,s*(hw-0.015),0.34,-s,null,'#8d9aa4');St(s*hw,0.34,s*hw,0.06,s,null,'#7f8b95');St(s*(hw-0.015),0.34,s*hw,0.34,'up',null,'#a7b1b9')}}
 function netRailStrip(g,geo,sa,sb,ox,oz){const Y=RB0,St=(vA,yA,vB,yB,w,c)=>netStrip(g,geo,sa,sb,ox,oz,vA,yA,vB,yB,w,null,c);
   St(-0.1,Y+0.018,0.1,Y+0.018,'up',RCOL.ballast);for(const s of[-1,1])St(s*0.1,Y+0.018,s*0.175,geo.H?Y-0.01:0.0,'up',RCOL.ballast);
   for(let s=Math.ceil((sa-0.0275)/0.055)*0.055+0.0275;s<sb;s+=0.055){const q=cvAt(geo,s);box(g,RCOL.sleeper,0.15,0.01,0.022,q[0]-ox,Y+0.016+netHs(geo,s),q[1]-oz,false).rotation.y=Math.atan2(q[2],q[3])}
@@ -8101,13 +8133,13 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
   if(kind==='rail'&&tl.l)return false;const x=i%N,z=(i/N)|0,ox=x-HALF+0.5,oz=z-HALF+0.5,L=M.seg.get(i)||[];
   for(const{g:geo,k}of L){if(geo.kind!==kind)continue;const sa=geo.e0[k]-0.004,sb=geo.e1[k]+0.004;
     if(kind==='rail'){netRailStrip(g,geo,sa,sb,ox,oz);netBridge(g,geo,sa,sb,ox,oz);continue}
-    const v=geo.sg.t|0,cut=[sa,sb];
+    const v=netLk(geo.sg),cut=[sa,sb];
     /* plain look outside the junction areas, asphalt only inside them */
     const dE=n=>(M.deg.get(n)||0)+netGridArms(n)===1&&!netHwEnd(n),dev=netDEs(geo.sg.t),ra=dE(geo.sg.a)?dev:netFil(geo.sg.a)?Math.min(netRJ(geo.sg.a),geo.L*0.5):netRJs(geo.sg.a,geo.sg.id),rb=dE(geo.sg.b)?dev:netFil(geo.sg.b)?Math.min(netRJ(geo.sg.b),geo.L*0.5):netRJs(geo.sg.b,geo.sg.id),j0=netJunc(geo,0)&&sa<ra?Math.min(sb,ra):sa,j1=netJunc(geo,geo.L)&&sb>geo.L-rb?Math.max(j0,geo.L-rb):sb;
     if(j0>sa&&!netFil(geo.sg.a))netRoadStrip(g,geo,sa,j0,ox,oz,v,false,x,z);if(j1>j0)netRoadStrip(g,geo,j0,j1,ox,oz,v,true,x,z);if(sb>j1&&!netFil(geo.sg.b))netRoadStrip(g,geo,j1,sb,ox,oz,v,false,x,z);
     netBridge(g,geo,sa,sb,ox,oz);if(!geo.sg.e){netDecor(g,geo,geo.e0[k],geo.e1[k],ox,oz,v,ra,rb);netSigns(g,geo,geo.e0[k],geo.e1[k],ox,oz,v,ra,rb)}
     /* street lights every 1.5 along the road, alternate sides, not in junctions or on highways/dirt */
-    if(v!==1&&v!==5)for(let s=Math.ceil((cut[0]-0.75)/1.5)*1.5+0.75;s<cut[1];s+=1.5){if(s<ra+0.2||s>geo.L-rb-0.2)continue;const n=Math.round((s-0.75)/1.5),sd=n%2?1:-1,q=cvAt(geo,s),nx=-q[3]*sd,nz=q[2]*sd,h=netHs(geo,s);
+    if(v!==1&&!NETHWL.has(v))for(let s=Math.ceil((cut[0]-0.75)/1.5)*1.5+0.75;s<cut[1];s+=1.5){if(s<ra+0.2||s>geo.L-rb-0.2)continue;const n=Math.round((s-0.75)/1.5),sd=n%2?1:-1,q=cvAt(geo,s),nx=-q[3]*sd,nz=q[2]*sd,h=netHs(geo,s);
       {const lw=netHW(v)-0.05;model(g,'prop_streetlight',null,q[0]+nx*lw-ox,0.075+h,q[1]+nz*lw-oz,Math.atan2(nz,-nx))}
       if(!h){const pm=new THREE.Mesh(FLAT,poolMat);pm.scale.set(1.45,1,1.45);pm.position.set(q[0]+nx*0.15-ox,0.079,q[1]+nz*0.15-oz);pm.castShadow=false;g.add(pm)}}}
   const nid=M.nodeAt.get(i);if(nid===undefined)return true;
@@ -8152,11 +8184,12 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
   return true}
 /* paint and furniture in the style of the big city builders: direction arrows along one-way roads, lane arrows
    before junctions, manhole covers in the lanes and street trees on the sidewalks between the lamps */
-const NETLN={0:[0.17],2:[-0.17,0.17],3:[0.17,0.41],4:[0.32,0.56,0.8],5:[0.22,0.5]};
+const NETLN={0:[0.17],2:[-0.17,0.17],3:[0.17,0.41],4:[0.32,0.56,0.8],5:[0.22,0.5],10:[-0.17,0.17],11:[0.14],12:[0.17],
+  13:[-0.41,-0.14,0.14,0.41],14:[-0.78,-0.47,-0.16,0.16,0.47,0.78],15:[-0.55,-0.19,0.19,0.55],16:[0,0.37]};
 function netArrow(g,P,s0,v,dir,ox,oz){netArrowK(g,(s,o)=>P(s0+dir*s,v+o*dir),new Set(['S']),ox,oz)}
 /* which ways a car can leave the junction from this arm: S straight, N the turn on its own kerb side, F the turn across */
 function netExits(nid,geo,st){const A=netArms(nid),me=A.find(a=>a.g===geo&&a.st===st);if(!me)return null;const tx=-Math.cos(me.dir),tz=-Math.sin(me.dir),nx=-tz,nz=tx,out=new Set();
-  for(const b of A){if(b===me)continue;if(b.g&&b.g.sg.t===2&&!b.st)continue;const wx=Math.cos(b.dir),wz=Math.sin(b.dir),al=wx*tx+wz*tz,cr=wx*nx+wz*nz;
+  for(const b of A){if(b===me)continue;if(b.g&&netOW(b.g.sg)&&!b.st)continue;const wx=Math.cos(b.dir),wz=Math.sin(b.dir),al=wx*tx+wz*tz,cr=wx*nx+wz*nz;
     if(al>0.72)out.add('S');else if(al>-0.9)out.add(cr>0?'N':'F')}return out}
 /* one painted arrow in the shape of the standard pavement marking (MUTCD lane-use arrows, 14'6" long): thin stem,
    swept-back barbed heads, the turn arm curving off the stem. F(s,o) maps the arrow's own frame (s ahead, o toward the
@@ -8172,7 +8205,7 @@ function netArrowPolys(ks){const S=ks.has('S'),turns=[['N',1],['F',-1]].filter((
     const ye=Y0+R,xb=sg*(R+0.25);out.push([[sg*R,ye-hw],[xb,ye-hw],[xb,ye+hw],[sg*R,ye+hw]]);out.push([[sg*(R+2.15),ye],[xb,ye+1.4],[xb,ye-1.4]])}
   return out}
 function netArrowK(g,F,ks,ox,oz){const K=0.037;for(const pts of netArrowPolys(ks))netPoly(g,pts.map(([o,y])=>F(y*K,o*K)),0.0609,null,'#e6e6df',ox,oz)}
-function netTurnArrows(g,geo,nid,st,s,dir,v,ox,oz){const ex=netExits(nid,geo,st);if(!ex||!ex.size)return;const lanes=NETLN[v]||NETLN[0],own=v===2?lanes:lanes.filter(o=>o>0);
+function netTurnArrows(g,geo,nid,st,s,dir,v,ox,oz){const ex=netExits(nid,geo,st);if(!ex||!ex.size)return;const lanes=NETLN[v]||NETLN[0],own=NETOWL.has(v)?lanes:lanes.filter(o=>o>0);
   const F=lane=>(a,o)=>{const q=cvAt(geo,s+dir*a),tx=q[2]*dir,tz=q[3]*dir,off=lane+o;return[q[0]-tz*off,q[1]+tx*off]};
   netTurnSign(g,geo,ex,s+dir*0.22,dir,v,ox,oz);
   if(own.length===1){netArrowK(g,F(own[0]),ex,ox,oz);return}
@@ -8185,19 +8218,22 @@ function netTurnArrows(g,geo,nid,st,s,dir,v,ox,oz){const ex=netExits(nid,geo,st)
 function netTurnSign(g,geo,ex,s,dir,v,ox,oz){if(ex.has('S')&&ex.has('N')&&ex.has('F'))return;const W=NETW[v]||NETW[0];if(!W.sw)return;
   const q=cvAt(geo,s),tx=q[2]*dir,tz=q[3]*dir,lat=W.ae+0.08,px=q[0]-tz*lat-ox,pz=q[1]+tx*lat-oz;netPole(g,px,pz,0.27);
   netPlate(g,'turn:'+['S','N','F'].filter(k=>ex.has(k)).join(''),px,0.3,pz,0.075,0.075,-tx,-tz)}
-function netDecor(g,geo,s0,s1,ox,oz,v,ra,rb){if(v===1||v===5||geo.kind!=='road')return;const L=geo.L,sg=geo.sg,W=NETW[v]||NETW[0],in_=s=>s>=s0&&s<s1,
+function netDecor(g,geo,s0,s1,ox,oz,v,ra,rb){if(v===12&&geo.kind==='road')return netPedDecor(g,geo,s0,s1,ox,oz,ra,rb);if(v===1||v===11||NETHWL.has(v)||geo.kind!=='road')return;const L=geo.L,sg=geo.sg,W=NETW[v]||NETW[0],in_=s=>s>=s0&&s<s1,
   P=(s,o)=>{const q=cvAt(geo,s);return[q[0]-q[3]*o,q[1]+q[2]*o]},flat=s=>!netHs(geo,s),lanes=NETLN[v]||NETLN[0],
   big=n=>(NET.deg.get(n)||0)+netGridArms(n)>=3;
   /* one-way: a pair of arrows every 2 units */
-  if(v===2)for(let s=1.0;s<L;s+=2){if(!in_(s)||s<ra+0.5||s>L-rb-0.5)continue;for(const o of lanes)netArrow(g,P,s-0.12,o,1,ox,oz)}
+  if(NETOWL.has(v))for(let s=1.0;s<L;s+=2){if(!in_(s)||s<ra+0.5||s>L-rb-0.5)continue;for(const o of lanes)netArrow(g,P,s-0.12,o,1,ox,oz)}
   /* lane arrows on the lanes that drive into a junction: straight / turn arrows for the exits that really exist */
   if(big(sg.b)){const s=L-rb-0.55;if(s>ra+0.3&&in_(s))netTurnArrows(g,geo,sg.b,false,s,1,v,ox,oz)}
-  if(big(sg.a)&&v!==2){const s=ra+0.55;if(s<L-rb-0.3&&in_(s))netTurnArrows(g,geo,sg.a,true,s,-1,v,ox,oz)}
+  if(big(sg.a)&&!NETOWL.has(v)){const s=ra+0.55;if(s<L-rb-0.3&&in_(s))netTurnArrows(g,geo,sg.a,true,s,-1,v,ox,oz)}
   /* manhole covers */
   for(let s=0.95,k=0;s<L;s+=1.7,k++){if(!in_(s)||s<ra+0.2||s>L-rb-0.2||!flat(s))continue;const c=P(s,(k%2?1:-1)*lanes[0]*0.6),pts=[];
     for(let a=0;a<8;a++)pts.push([c[0]+Math.cos(a*Math.PI/4)*0.022,c[1]+Math.sin(a*Math.PI/4)*0.022]);netPoly(g,pts,0.0607,null,'#55585d',ox,oz)}
   /* street trees in pits on the sidewalks, halfway between the lamps */
-  if(W.sw)for(let s=1.5,k=0;s<L;s+=1.5,k++){if(!in_(s)||s<ra+0.35||s>L-rb-0.35||!flat(s))continue;const sd=k%2?1:-1,lat=(W.ae+0.02+W.hw)/2,p=P(s,sd*lat),r=mulberry32((Math.round(p[0]*97)^Math.round(p[1]*131))>>>0);
+  const TR=sg.o&&sg.o.tr,ST=TR?0.75:1.5;
+  /* avenue with trees: small trees down the median */
+  if(TR&&v===3)for(let s=0.9;s<L;s+=1.1){if(!in_(s)||s<ra+0.4||s>L-rb-0.4||!flat(s))continue;const p=P(s,0),r=mulberry32((Math.round(p[0]*97)^Math.round(p[1]*131))>>>0);model(g,'tree_round',{leaf:['#4f7a35','#5a8638','#46702f'][(r()*3)|0]},p[0]-ox,0.08,p[1]-oz,r()*6.3,0.18+r()*0.04)}
+  if(W.sw)for(let s=ST,k=0;s<L;s+=ST,k++){if(!in_(s)||s<ra+0.35||s>L-rb-0.35||!flat(s))continue;const sd=k%2?1:-1,lat=TR?W.ae+0.07:(W.ae+0.02+W.hw)/2,p=P(s,sd*lat),r=mulberry32((Math.round(p[0]*97)^Math.round(p[1]*131))>>>0);
     const pit=box(g,'#6f6a60',0.08,0.078,0.08,p[0]-ox,0,p[1]-oz,false);pit.rotation.y=Math.atan2(cvAt(geo,s)[2],cvAt(geo,s)[3]);
     model(g,'tree_round',{leaf:['#4f7a35','#5a8638','#46702f'][(r()*3)|0]},p[0]-ox,0.078,p[1]-oz,r()*6.3,0.26+r()*0.06)}}
 /* street name blades at a junction corner: two green blades on one pole, one for each of the first two streets */
@@ -8205,20 +8241,20 @@ function netStreetName(a){if(!a.g)return null;const e=a.g.ext,j=e[Math.floor(e.l
 function netNameSign(g,A,RJn,ox,oz){if(A.length<3)return;let k=-1;for(let q=0;q<A.length;q++){const a=A[q],b=A[(q+1)%A.length];if(a.g&&b.g&&netStreetName(a)!==netStreetName(b)){k=q;break}}if(k<0)return;
   const a=A[k],b=A[(k+1)%A.length],W=NETW[a.t|0]||NETW[0];if(!W.sw)return;const d=Math.min(a.rj??RJn,a.g.L*0.5),p=a.at(d+0.04,W.ae+0.08);netPole(g,p[0]-ox,p[1]-oz,0.36);
   for(const[e,y]of[[a,0.425],[b,0.395]]){const ux=Math.cos(e.dir),uz=Math.sin(e.dir);netPlate(g,'name:'+netStreetName(e),p[0]-ox+ux*0.07,y,p[1]-oz+uz*0.07,0.16,0.035,-uz,ux)}}
-function netSigns(g,geo,s0,s1,ox,oz,v,ra,rb){if(v===1||v===5||geo.kind!=='road')return;const L=geo.L,W=NETW[v]||NETW[0];if(!W.sw)return;const lat=W.ae+0.08,in_=s=>s>=s0&&s<s1;
+function netSigns(g,geo,s0,s1,ox,oz,v,ra,rb){if(v===1||v===11||v===12||NETHWL.has(v)||geo.kind!=='road')return;const L=geo.L,W=NETW[v]||NETW[0];if(!W.sw)return;const lat=W.ae+0.08,in_=s=>s>=s0&&s<s1;
   const P=(s,o)=>{const q=cvAt(geo,s);return[q[0]-q[3]*o,q[1]+q[2]*o,q[2],q[3]]},jn=n=>(NET.deg.get(n)||0)+netGridArms(n)>=2;
   /* one-way: a sign on both sides just past each end junction, arrow along the traffic */
-  if(v===2)for(const s of[ra+0.25,L-rb-0.25])if(in_(s)&&s>0.2&&s<L-0.2&&(s<L/2?jn(geo.sg.a):jn(geo.sg.b)))for(const sd of[-1,1]){const p=P(s,sd*lat),nx=-p[3]*sd,nz=p[2]*sd;netPole(g,p[0]-ox,p[1]-oz,0.26);
+  if(NETOWL.has(v))for(const s of[ra+0.25,L-rb-0.25])if(in_(s)&&s>0.2&&s<L-0.2&&(s<L/2?jn(geo.sg.a):jn(geo.sg.b)))for(const sd of[-1,1]){const p=P(s,sd*lat),nx=-p[3]*sd,nz=p[2]*sd;netPole(g,p[0]-ox,p[1]-oz,0.26);
       netPlate(g,sd>0?'oneway':'onewayL',p[0]-ox,0.3,p[1]-oz,0.12,0.03,nx,nz)}
   /* sharp bend ahead: yellow warning sign for each direction of travel */
   if(L>1.6){const t0=cvAt(geo,Math.min(L,ra+0.2)),t1=cvAt(geo,Math.max(0,L-rb-0.2)),turn=Math.acos(Math.max(-1,Math.min(1,t0[2]*t1[2]+t0[3]*t1[3])));
     if(turn>0.9&&turn/L>0.25){const side=t1[2]*(-t0[3])+t1[3]*t0[2];
       {const s=ra+0.35;if(in_(s)){const p=P(s,lat);netPole(g,p[0]-ox,p[1]-oz,0.26);netPlate(g,side>0?'curveN':'curveF',p[0]-ox,0.29,p[1]-oz,0.08,0.08,-p[2],-p[3])}}
-      if(v!==2){const s=L-rb-0.35;if(in_(s)){const p=P(s,-lat);netPole(g,p[0]-ox,p[1]-oz,0.26);netPlate(g,side>0?'curveF':'curveN',p[0]-ox,0.29,p[1]-oz,0.08,0.08,p[2],p[3])}}}}
+      if(!NETOWL.has(v)){const s=L-rb-0.35;if(in_(s)){const p=P(s,-lat);netPole(g,p[0]-ox,p[1]-oz,0.26);netPlate(g,side>0?'curveF':'curveN',p[0]-ox,0.29,p[1]-oz,0.08,0.08,p[2],p[3])}}}}
   /* speed limits for traffic leaving each junction, on the kerb side of its lane */
   const lim={0:40,2:40,3:50,4:60}[v];if(!lim||L<ra+rb+2.2)return;
   {const s=ra+0.9;if(in_(s)){const p=P(s,lat);netPole(g,p[0]-ox,p[1]-oz,0.26);netPlate(g,'speed:'+lim,p[0]-ox,0.29,p[1]-oz,0.065,0.065,-p[2],-p[3])}}
-  if(v!==2){const s=L-rb-0.9;if(in_(s)){const p=P(s,-lat);netPole(g,p[0]-ox,p[1]-oz,0.26);netPlate(g,'speed:'+lim,p[0]-ox,0.29,p[1]-oz,0.065,0.065,p[2],p[3])}}}
+  if(!NETOWL.has(v)){const s=L-rb-0.9;if(in_(s)){const p=P(s,-lat);netPole(g,p[0]-ox,p[1]-oz,0.26);netPlate(g,'speed:'+lim,p[0]-ox,0.29,p[1]-oz,0.065,0.065,p[2],p[3])}}}
 /* a bend where just two roads meet (a grid road running on into a free-angle road, a sharp corner, a change of road
    type) is drawn as one smooth curved piece of road with sidewalks, not as a junction patch */
 function netFil(nid){const k=nid+':'+NET.ver;if(NETFIL.has(k))return NETFIL.get(k);const A=netArms(nid);const f=A.length===2&&A.every(a=>a.k==='road')&&netBent(nid);NETFIL.set(k,f);return f}
@@ -8265,7 +8301,7 @@ function netWedge(g,c,w,L,h,x,z,ry){const A=[-w/2,0,0],B=[w/2,0,0],C=[w/2,h,0],D
   const m=new THREE.Mesh(bg,mat(c));m.position.set(x,0,z);m.rotation.y=ry;m.receiveShadow=true;g.add(m);return m}
 function netElevDraw(){NETV.dirty=false;if(NETELG){if(NETELG.parent)NETELG.parent.remove(NETELG);NETELG.traverse(o=>{if(o.geometry)o.geometry.dispose()});NETELG=null}
   if(!G||!G.net)return;const g=new THREE.Group(),gt=new THREE.Group();let any=false;
-  for(const geo of NET.geo.values()){const sg=geo.sg;if(!sg.e||geo.v0===undefined)continue;any=true;const v=sg.t|0,W=NETW[v]||NETW[0],a=geo.v0-0.02,b=geo.v1+0.02;
+  for(const geo of NET.geo.values()){const sg=geo.sg;if(!sg.e||geo.v0===undefined)continue;any=true;const v=netLk(sg),W=NETW[v]||NETW[0],a=geo.v0-0.02,b=geo.v1+0.02;
     /* on hills the deck sits on a smooth line over the ground instead of following every bump */
     const gp=sg.e>0&&typeof netGP==='function'?netGP(geo):null,gd=gp?Object.assign({},geo,{H:geo.H.map((h,k)=>h+gp[k])}):geo;
     if(sg.e>0){const air=geo.air||[false,false],rjA=air[0]?Math.min(geo.L*0.45,netRJ(sg.a)):a,rjB=air[1]?Math.max(rjA,geo.L-Math.min(geo.L*0.45,netRJ(sg.b))):b;
@@ -8542,11 +8578,11 @@ function netBuild(tl,plan){const net=netG(),before=JSON.stringify(net),kind=plan
   if(plan.cost>G.money){toast(`That costs ${fmt(plan.cost)}, but you have ${fmt(G.money)}.`);sfx('err');return false}
   const nid=()=>net.id++,mkNode=p=>{const id=nid();net.n[id]=[p[0],p[1]];return id};const redo=new Set();
   const nodeOf=end=>{if(end.node!==undefined)return end.node;if(end._id!==undefined)return end._id;
-    if(end.seg!==undefined){const sg=net.s.find(q=>q.id===end.seg);const g=NET.geo.get(end.seg);if(sg&&g){const id=mkNode(end.p),r=netNear(g,end.p[0],end.p[1]),P=netPts(sg),[p1,p2]=bzSplit(P,r.t);p1[3]=end.p;p2[0]=end.p;if(end.air)net.n[id][2]=1;const ex=sg.e?{e:sg.e}:{};
+    if(end.seg!==undefined){const sg=net.s.find(q=>q.id===end.seg);const g=NET.geo.get(end.seg);if(sg&&g){const id=mkNode(end.p),r=netNear(g,end.p[0],end.p[1]),P=netPts(sg),[p1,p2]=bzSplit(P,r.t);p1[3]=end.p;p2[0]=end.p;if(end.air)net.n[id][2]=1;const ex={...(sg.e?{e:sg.e}:{}),...netLookOf(sg)};
         net.s.splice(net.s.indexOf(sg),1);net.s.push({id:nid(),k:sg.k,t:sg.t,a:sg.a,b:id,c1:p1[1],c2:p1[2],...ex},{id:nid(),k:sg.k,t:sg.t,a:id,b:sg.b,c1:p2[1],c2:p2[2],...ex});for(const j of g.ext)redo.add(j);end._id=id;return id}}
     if(end.grid!==undefined){NETWAS.add(end.grid)}
     end._id=mkNode(end.p);return end._id};
-  for(const pc of plan.pieces){const a=nodeOf(pc.from),b=nodeOf(pc.to),sg={id:nid(),k:kind,t:plan.type,a,b,c1:pc.P[1],c2:pc.P[2]};if(plan.lvl)sg.e=plan.lvl;net.s.push(sg);for(const j of pc.geo.ext)redo.add(j)}
+  for(const pc of plan.pieces){const a=nodeOf(pc.from),b=nodeOf(pc.to),sg={id:nid(),k:kind,t:plan.type,a,b,c1:pc.P[1],c2:pc.P[2]};if(plan.lvl)sg.e=plan.lvl;if(kind==='road')Object.assign(sg,netPresetLook(tl,plan.type));net.s.push(sg);for(const j of pc.geo.ext)redo.add(j)}
   /* lay the tiles with the normal build code (money, bridges over the river, xp) */
   NB.inner=true;try{if(plan.need.length)apply(tl,plan.need.map(j=>({x:j%N,z:(j/N)|0})))}finally{NB.inner=false}
   if(!plan.need.every(j=>tiles[j].t===KT)){G.net=JSON.parse(before);netVer++;netRebuild();netRedraw(new Set(plan.need));return false}
@@ -8673,7 +8709,7 @@ function netLotsCalc(){const M=netMap(),m=new Map(),cov=new Map(),list=[],hash=n
   const blocked=(x,z,self)=>{const j=netTile(x,z);if(j<0)return true;const t=tiles[j];if(t.lock||isEntry(j)||NETWIDE.has(j))return true;if(t.t===T.RIVER||inRiverBand(j%N,(j/N)|0))return true;
     if((t.t===T.ROAD||t.t===T.RAIL)&&!M.T[j])return true;
     const tx=j%N,tz=(j/N)|0;for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){if(!inB(tx+dx,tz+dz))continue;for(const o of M.seg.get(idx(tx+dx,tz+dz))||[]){const g=o.g,hw=g.kind==='rail'?0.24:netHW(g.sg.t),r=netNear(g,x,z,g.e0[o.k]-0.2,g.e1[o.k]+0.2);if(r.d<hw-0.005)return true}}return false};
-  for(const g of M.geo.values()){const sg=g.sg;if(sg.k!=='road'||sg.t===5||sg.e)continue;
+  for(const g of M.geo.values()){const sg=g.sg;if(sg.k!=='road'||sg.t===5||sg.w===10||sg.e)continue;
     const endGap=nid=>{const d=(M.deg.get(nid)||0)+netGridArms(nid);return d>=2?netRJs(nid,sg.id)+0.45:0.5};const sA=endGap(sg.a),sB=g.L-endGap(sg.b);if(sB-sA<0.6)continue;
     for(const sd of[1,-1]){let acc=LOTW/2,prev=null;
       for(let s=sA;s<=sB;s+=0.02){const q=cvAt(g,s),nx=-q[3]*sd,nz=q[2]*sd,px=q[0]+nx*(netHW(sg.t)+LOTD/2),pz=q[1]+nz*(netHW(sg.t)+LOTD/2);
@@ -8919,7 +8955,7 @@ function zValid(c,H){const j=netTile(c.x,c.z);if(j<0)return false;const t=tiles[
   for(const p of[[c.x,c.z],...C]){const k=netTile(p[0],p[1]);if(k<0)return false;const o=bObj(k,true,true);if(o&&!(tiles[o.a].t>=2&&tiles[o.a].t<=4&&!tiles[o.a].l)&&fpOBB(C,o.C))return false}
   return true}
 function zoneRegen(){if(!G)return;const t0=performance.now(),old=ZN.cells,oldH=ZN.hash,H=new Map(),cells=[],ss=new Map(),M=netMap();ZN.born=0;
-  const segs=[...M.geo.values()].filter(g=>g.sg.k==='road'&&g.sg.t!==5&&!g.sg.e).sort((a,b)=>a.sg.id-b.sg.id);
+  const segs=[...M.geo.values()].filter(g=>g.sg.k==='road'&&g.sg.t!==5&&g.sg.w!==10&&!g.sg.e).sort((a,b)=>a.sg.id-b.sg.id);
   const endGap=(n,sid)=>{const d=(M.deg.get(n)||0)+netGridArms(n);return d>=2?netRJs(n,sid)+0.05:d===1?NETDE+0.15:0.2};
   for(const g of segs){const sg=g.sg,sA=endGap(sg.a,sg.id),sB=g.L-endGap(sg.b,sg.id);if(sB-sA<ZCELL)continue;const ncol=Math.floor((sB-sA)/ZCELL),s0=sA+((sB-sA)-ncol*ZCELL)/2;
     for(const side of[1,-1]){const cols=[];ss.set(sg.id+':'+side,{g,side,s0,cols});
@@ -9213,8 +9249,8 @@ function netLaneAhead(c){if(!c.path||c.siren)return;const tb=tiles[c.b];if(!tb||
     const want=cr/l>0.3?1:cr/l<-0.3?-1:0;if(!want||want===c.lane)return;
     const old=laneOf(c.b,c);c.lane=want;const now=laneOf(c.b,c);c.ld=(c.ld||0)+old-now;return}}
 /* route search for road vehicles: jammed tiles cost more (Dial's buckets, weights 1-3) */
-const NETW8=j=>{const v=jam[j];return v>2?3:v>0.8?2:1};
-{const _bfs=bfs;bfs=function(src,mode,block){if(mode!=='car'||!JAMA.size)return _bfs(src,mode,block);
+const NETW8=j=>{if(NETPED.has(j))return 3;const v=jam[j];return v>2?3:v>0.8?2:1};
+{const _bfs=bfs;bfs=function(src,mode,block){if(mode!=='car'||(!JAMA.size&&!NETPED.size))return _bfs(src,mode,block);
   bfsStamp++;if(block>=0&&block!==src){bfsSeen[block]=bfsStamp;bfsDist[block]=-1}
   const B=[[],[],[],[]];B[0].push(src);bfsSeen[src]=bfsStamp;bfsDist[src]=0;bfsPrev[src]=-1;let d=0,left=1;
   const relax=(i,j)=>{const nd=bfsDist[i]+NETW8(j);if(bfsSeen[j]===bfsStamp&&(bfsDist[j]<0||nd>=bfsDist[j]))return;bfsSeen[j]=bfsStamp;bfsDist[j]=nd;bfsPrev[j]=i;B[nd&3].push(j);left++};
@@ -10244,7 +10280,7 @@ function agPath(src,dst){if(src===dst)return[src];if(src<N*N&&dst<N*N&&comp[src]
   const pop=()=>{const top=H[0],l=H.pop();if(H.length){H[0]=l;let c=0;for(;;){const a=2*c+1,b=a+1;let m=c;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m===c)break;[H[m],H[c]]=[H[c],H[m]];c=m}}return top};
   const s0=src*5+4;best.set(s0,0);push(s0,hx(src));let found=-1,n=0;
   while(H.length&&n<(MOBILE?12000:40000)){const[f,k]=pop();n++;const i=(k/5)|0,din=k%5===4?-1:k%5,g=best.get(k);if(f-hx(i)>g+1e-6)continue;if(i===dst){found=k;break}
-    const step=(j,d)=>{if(!canMove(i,j,'car'))return;const w=(jam[j]>2?3:jam[j]>0.8?2:1)+(d>=0?agTurnCost(din,d,i):0),nk=j*5+(d>=0?d:4),ng=g+w;
+    const step=(j,d)=>{if(!canMove(i,j,'car'))return;const w=(jam[j]>2?3:jam[j]>0.8?2:1)+(NETPED.has(j)?6:0)+(d>=0?agTurnCost(din,d,i):0),nk=j*5+(d>=0?d:4),ng=g+w;
       const o=best.get(nk);if(o!==undefined&&o<=ng)return;best.set(nk,ng);prev.set(nk,k);push(nk,ng+hx(j))};
     const vx=NETV.adj.get(i);if(vx)for(const j of vx)step(j,-1);
     if(i<N*N){const x=i%N,z=(i/N)|0;for(let d=0;d<4;d++){const nx=x+AGD[d][0],nz=z+AGD[d][1];if(nx<0||nz<0||nx>=N||nz>=N)continue;const j=nz*N+nx;if(tiles[j].t!==T.ROAD)continue;step(j,d)}}}
@@ -10310,7 +10346,7 @@ function rSide(P,J,X){if(P>=N*N||J>=N*N||X>=N*N)return 0;const[jx,jz]=wpos(J),[p
 const rOk=(slot,side)=>side===0||(side>0?slot===1:slot===0);
 function rJamUpdate(){const now=performance.now();if(now-RLJt<500)return;RLJt=now;RLJ.clear();
   for(const c of cars){if(c.b===undefined||c.wx===undefined)continue;const k=c.b*3+rSlotOf(c);RLJ.set(k,(RLJ.get(k)||0)+1)}}
-const rLaneCost=(j,s)=>0.45*(RLJ.get(j*3+s)||0);
+const rLaneCost=(j,s)=>0.45*(RLJ.get(j*3+s)||0)+(s===1&&NETBUS.has(j)?3:0);
 /* moving from tile i to j with lane q on i: the lanes allowed on j and what they cost.
    Into a junction the lane is carried; out of one it is free; elsewhere a change costs 0.5 (none at the ends of a lane) */
 function rMoves(i,j,q,side,out){out.length=0;const Lj=rLanes(j),Li=rLanes(i),ij=isJunction(i),jj=isJunction(j);
@@ -10338,7 +10374,7 @@ function rPath(src,dst){if(src===dst)return null;if(src<N*N&&dst<N*N&&comp[src]!
   let found=-1,n=0;
   while(H.length&&n<(MOBILE?15000:60000)){const[f,k]=pop();n++;const i=(k/15)|0,din=((k/3)|0)%5,s=k%3,g=best.get(k);if(f-hx(i)>g+1e-6)continue;if(i===dst){found=k;break}
     const step=(j,d)=>{if(!canMove(i,j,'car'))return;const side=din<4&&d>=0&&isJunction(i)?rSideDir(din,d):0;
-      const base=(jam[j]>2?3:jam[j]>0.8?2:1)+(din<4&&d>=0?agTurnCost(din,d,i):0),dd=d>=0?d:4;rMoves(i,j,s,side,mv);
+      const base=(jam[j]>2?3:jam[j]>0.8?2:1)+(NETPED.has(j)?6:0)+(din<4&&d>=0?agTurnCost(din,d,i):0),dd=d>=0?d:4;rMoves(i,j,s,side,mv);
       for(let m=0;m<mv.length;m+=2){const s2=mv[m],nk=key(j,dd,s2),ng=g+base+mv[m+1]+rLaneCost(j,s2),o=best.get(nk);if(o!==undefined&&o<=ng)continue;best.set(nk,ng);prev.set(nk,k);push(nk,ng+hx(j))}};
     const vx=NETV.adj.get(i);if(vx)for(const j of vx)step(j,-1);
     if(i<N*N){const x=i%N,z=(i/N)|0;for(let d=0;d<4;d++){const nx=x+AGD[d][0],nz=z+AGD[d][1];if(nx<0||nz<0||nx>=N||nz>=N)continue;const j=nz*N+nx;if(tiles[j].t!==T.ROAD)continue;step(j,d)}}}
@@ -10622,7 +10658,7 @@ netGhost=function(plan,pts){if(NB.ghost){scene.remove(NB.ghost);NB.ghost.travers
   const grp=new THREE.Group(),bad=!plan||!!plan.bad;
   const fm=new THREE.MeshBasicMaterial({color:bad?RED:BLUE,transparent:true,opacity:0.42,depthWrite:false,depthTest:false,side:THREE.DoubleSide}),
     em=new THREE.MeshBasicMaterial({color:bad?REDE:EDGE,transparent:true,opacity:0.95,depthWrite:false,depthTest:false,side:THREE.DoubleSide});
-  let w=0.2;if(NB.kind!=='rail'){try{w=netHW(RI((tool&&tool.rt)|0).v)}catch(e){w=0.5}}
+  let w=0.2;if(NB.kind!=='rail'){try{w=netHW(netPresetLook(tool,RI((tool&&tool.rt)|0).v).w||RI((tool&&tool.rt)|0).v)}catch(e){w=0.5}}
   const C=[];if(plan&&plan.pieces&&plan.pieces.length)for(const pc of plan.pieces)sampleCL(pc.P,C);else if(pts)sampleCL(pts,C);
   let shown=false;
   if(C.length>=4){const o=outline(C,w);fill(o,C,0.13,fm,grp);stripLoop(o.poly,0.03,0.14,em,grp,true);
@@ -10640,6 +10676,114 @@ netGhost=function(plan,pts){if(NB.ghost){scene.remove(NB.ghost);NB.ghost.travers
 {const _pv=netPreview;netPreview=function(cx,cy){_pv(cx,cy);const p=NB.plan;if(p&&!p.bad&&NB.start){const d=$('#netTip');if(d&&!d.hidden)d.textContent=`Construction cost: ${fmt(p.cost)} · ${Math.round(p.len*TILE_M)} m${p.cuts.length?` · ${p.cuts.length} junction${p.cuts.length>1?'s':''}`:''}`}}}
 })();
 
+/* ---------- road types like Cities: Skylines (road_types) ----------
+   One menu card per road. A variant is a base type (its game rules) plus a look w and options o stored on each road
+   segment (see NETOWL / netLk): trees, grass, bus lanes, bike lanes, sound barriers, alleys, pedestrian streets,
+   one-way avenues, boulevards and highways, highway ramps and 2+1 avenues. Old saves have neither field. */
+const ROADP=[
+  {id:'dirt',t:1,grp:'Small'},
+  {id:'street',t:0,grp:'Small'},
+  {id:'street_tr',t:0,o:{tr:1},nm:'Street with trees',sub:'2 lanes · trees · quieter homes',cost:14,up:0.6,lv:2},
+  {id:'street_gr',t:0,o:{gr:1},nm:'Street with grass',sub:'2 lanes · grass verges',cost:12,up:0.55,lv:2},
+  {id:'street_bk',t:0,o:{bike:1},nm:'Street with bike lanes',sub:'2 lanes · bike lanes',cost:13,up:0.6,lv:3},
+  {id:'alley',t:0,w:11,nm:'Alley',sub:'Narrow · slow · cheap',cost:7,up:0.3,lv:1},
+  {id:'ped',t:0,w:12,nm:'Pedestrian street',sub:'People on foot; cars only to deliver',cost:16,up:0.7,lv:4},
+  {id:'oneway',t:2},
+  {id:'oneway_tr',t:2,o:{tr:1},nm:'One-way with trees',sub:'2 lanes · one direction · trees',cost:16,up:0.6,lv:2},
+  {id:'oneway_bk',t:2,o:{bike:1},nm:'One-way with bike lanes',sub:'2 lanes · one direction · bike lanes',cost:15,up:0.6,lv:3},
+  {id:'avenue',t:3,grp:'Medium'},
+  {id:'avenue_tr',t:3,o:{tr:1},nm:'Avenue with trees',sub:'4 lanes · tree median',cost:30,up:1.4,lv:3},
+  {id:'avenue_gr',t:3,o:{gr:1},nm:'Avenue with grass',sub:'4 lanes · grass median',cost:28,up:1.3,lv:3},
+  {id:'avenue_bus',t:3,o:{bus:1},nm:'Avenue with bus lanes',sub:'4 lanes · kerb lanes for buses',cost:32,up:1.4,lv:5},
+  {id:'avenue_bk',t:3,o:{bike:1},nm:'Avenue with bike lanes',sub:'4 lanes · bike lanes',cost:30,up:1.4,lv:4},
+  {id:'avenue_ow',t:3,w:13,nm:'One-way avenue',sub:'4 lanes · one direction',cost:26,up:1.2,lv:4},
+  {id:'avenue_21',t:3,w:16,nm:'Avenue 2+1',sub:'2 lanes one way, 1 lane back',cost:24,up:1.1,lv:4},
+  {id:'boulevard',t:4,grp:'Large'},
+  {id:'blvd_bus',t:4,o:{bus:1},nm:'Boulevard with bus lanes',sub:'6 lanes · kerb lanes for buses',cost:46,up:2,lv:8},
+  {id:'blvd_bk',t:4,o:{bike:1},nm:'Boulevard with bike lanes',sub:'6 lanes · bike lanes',cost:44,up:2,lv:8},
+  {id:'blvd_ow',t:4,w:14,nm:'One-way boulevard',sub:'6 lanes · one direction',cost:42,up:1.9,lv:8},
+  {id:'highway',t:5,grp:'Highway'},
+  {id:'hwy_nb',t:5,o:{nb:1},nm:'Highway with sound barriers',sub:'4 lanes · quiet for homes nearby',cost:80,up:3.6,lv:15},
+  {id:'hwy_ow',t:5,w:15,nm:'One-way highway',sub:'4 lanes · one direction',cost:55,up:2.8,lv:15},
+  {id:'ramp',t:2,w:10,nm:'Highway ramp',sub:'2 lanes · one direction · fast',cost:30,up:1.5,lv:10}];
+function RPOf(id){const p=ROADP.find(q=>q.id===id);if(!p)return null;const b=RI(p.t);return{nm:b.nm,sub:b.sub,cost:b.cost,up:b.up,lv:b.lv,...p}}
+const rpBase=v=>(ROADP.find(p=>p.t===v&&!p.w&&!p.o)||ROADP[1]).id;
+/* look of the picked road, when it matches the base type being built */
+function netPresetLook(tl,base){const p=tl&&tl.rp&&RPOf(tl.rp);if(!p||p.t!==base)return{};const r={};if(p.w)r.w=p.w;if(p.o)r.o={...p.o};return r}
+/* menu picture: the road seen from above */
+function roadSvg(p){const v=p.w||p.t,W=NETW[v]||NETW[0],o=p.o||{},k=Math.min(28,22/W.hw),Y=q=>(35+q*k).toFixed(1);
+  let s='<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#6f8f4c"/>';
+  const band=(a,b,c)=>{s+=`<rect x="0" y="${Y(Math.min(a,b))}" width="120" height="${(Math.abs(b-a)*k).toFixed(1)}" fill="${c}"/>`};
+  const tree=(x,q)=>{s+=`<circle cx="${x}" cy="${Y(q)}" r="4.2" fill="#3e7a35"/><circle cx="${x-1}" cy="${(+Y(q)-1).toFixed(1)}" r="2.2" fill="#5a9a46"/>`};
+  if(v===12){band(-W.hw,W.hw,'#cfc4b0');band(-0.1,0.1,'#b3a58d');for(let x=12;x<120;x+=30){tree(x,-0.36);tree(x+15,0.36)}
+    s+='<circle cx="40" cy="35" r="2.6" fill="#e0574a"/><circle cx="78" cy="31" r="2.6" fill="#3a6fd8"/></svg>';return s}
+  if(W.sw)band(-W.hw,W.hw,'#c4c8cd');else if(v!==11)band(-W.hw,W.hw,'#7f848a');else band(-W.hw,W.hw,'#a3a39c');
+  band(-W.ae,W.ae,NETHWL.has(v)?'#5d6269':'#4f555c');
+  if(o.tr||o.gr)for(const sd of[-1,1])band(sd*(W.ae+0.03),sd*(W.ae+0.11),'#5d8a3c');
+  if(o.bus){const ln=NETLN[v]||NETLN[0],out=ln[ln.length-1];for(const sd of(NETOWL.has(v)?[1]:[-1,1]))band(sd*(out-0.11),sd*Math.min(W.ae,out+0.12),'#b0463c')}
+  if(o.bike)for(const sd of[-1,1])band(sd*(W.ae-0.1),sd*(W.ae-0.025),'#4caf5f');
+  if(v===4||(v===3&&(o.tr||o.gr)))band(v===4?-0.2:-0.08,v===4?0.2:0.08,'#5d8a3c');else if(v===3)band(-0.05,0.05,'#c9ccd0');
+  const ln=NETLN[v]||NETLN[0],L=(v===16?[-0.37,0,0.37]:NETOWL.has(v)?ln:[...ln.map(q=>-q),...ln]).slice().sort((a,b)=>a-b);
+  for(let q=0;q+1<L.length;q++){const m=(L[q]+L[q+1])/2;if((v===3||v===4)&&Math.abs(m)<0.21)continue;
+    const solid=v===16&&m<0;s+=`<line x1="0" x2="120" y1="${Y(m)}" y2="${Y(m)}" stroke="#fff" stroke-width="1.3"${solid?'':' stroke-dasharray="7 6"'}/>`}
+  if(o.tr){for(let x=10;x<120;x+=24){if(v===3)tree(x+6,0);else{tree(x,-(W.ae+0.07));tree(x+12,W.ae+0.07)}}}
+  if(o.nb)for(const sd of[-1,1])band(sd*(W.hw-0.05),sd*W.hw,'#9aa7b1');
+  const arrow=(x,q,dir)=>{const y=+Y(q);s+=dir>0?`<path d="M${x-9} ${y-1.6}h10v-3l7 4.6-7 4.6v-3h-10z" fill="#fff" opacity=".92"/>`:`<path d="M${x+9} ${y-1.6}h-10v-3l-7 4.6 7 4.6v-3h10z" fill="#fff" opacity=".92"/>`};
+  if(NETOWL.has(v))for(const q of L)arrow(60,q,1);
+  if(v===16){arrow(44,0,1);arrow(44,0.37,1);arrow(76,-0.37,-1)}
+  return s+'</svg>'}
+function setRoadPreset(id){const p=RPOf(id)||RPOf('street'),tl=TOOLS.find(t=>t.id==='road');tl.rt=p.t;tl.rp=p.id;tl.nm=p.nm;tl.ct='$'+p.cost;
+  const b=$('#tool-road');if(b){b.querySelector('.nm').textContent=p.nm;b.querySelector('.ct').textContent=tl.ct;b.title=p.nm+' (1)'}
+  document.querySelectorAll('#roadMenu button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.p===p.id))}
+setRoadType=function(v){setRoadPreset(rpBase(v))};
+{const m=$('#roadMenu');for(const b of[...m.querySelectorAll('button')])if(!b.dataset.rb&&!b.dataset.fp)b.remove();
+  let h='',grp='';for(const q of ROADP){const p=RPOf(q.id);if(q.grp&&q.grp!==grp){grp=q.grp;h+=`<div class="rpGrp">${grp}</div>`}
+    h+=`<button data-v="${p.t}" data-p="${p.id}" aria-pressed="${p.id==='street'}">${!p.w&&!p.o?ICO3.road(p.t):roadSvg(p)}<b>${p.nm}</b><span>${p.sub}</span><span class="cost">$${p.cost} a tile · $${p.up}/mo</span><span class="lk" hidden>${LOCKSVG}Unlocks at level ${p.lv}</span></button>`}
+  h+='<div class="rpGrp">Junctions and paths</div>';
+  m.insertAdjacentHTML('afterbegin',h);
+  m.querySelectorAll('button[data-p]').forEach(x=>x.onclick=()=>{setRoadPreset(x.dataset.p);setTool(TOOLS.find(t=>t.id==='road'));toggleRoadMenu(false);sfx('ui')});
+  const st=document.createElement('style');st.textContent='#roadMenu>.rpGrp{flex:none;align-self:stretch;display:flex;align-items:center;writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 1px}';document.head.appendChild(st);
+  TOOLS.find(t=>t.id==='road').rp='street'}
+/* the picked variant's extra cost per tile (the base type's cost is charged by the normal build code) */
+{const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const pl=_np(tl,A,B,C1,C2);
+  if(pl&&!pl.bad&&pl.kind==='road'&&pl.need&&tl&&tl.rp){const p=RPOf(tl.rp);if(p&&p.t===pl.type){pl.extra=Math.max(-RI(p.t).cost,p.cost-RI(p.t).cost)*pl.need.length;pl.cost=(pl.cost||0)+pl.extra}}return pl}}
+{const _nb=netBuild;netBuild=function(tl,plan){const ok=_nb(tl,plan);if(ok&&plan.extra){G.money-=plan.extra;hud()}return ok}}
+/* Upgrade and Reverse on network roads change whole segments: upgrade gives them the picked road (type and look),
+   reverse turns one-way roads and 2+1 avenues round */
+{const _ap3=apply;apply=function(tl,list){
+  if(tl.id==='road'&&(CV.mode==='up'||CV.mode==='rev')&&list&&list.length&&G&&G.net&&G.net.s.length){
+    const js=[...new Set(list.map(q=>idx(q.x,q.z)))],segs=new Set();
+    for(const j of js)for(const e of NET.seg.get(j)||[])if(e.g.kind==='road')segs.add(e.g.sg);
+    if(segs.size){const rest=js.filter(j=>!(NET.seg.get(j)||[]).some(e=>e.g.kind==='road')).map(j=>({x:j%N,z:(j/N)|0})),redo=new Set();let n=0,cost=0;
+      if(CV.mode==='up'){const p=RPOf(tl.rp)||RPOf(rpBase(tl.rt||0)),key=q=>q.t+':'+(q.w||0)+':'+JSON.stringify(q.o||{}),want=key(p),todo=[];
+        if(lvl()<p.lv){toast(`${p.nm} unlocks at level ${p.lv}.`);sfx('err');return}
+        for(const sg of segs){if(key(sg)===want)continue;const g=NET.geo.get(sg.id);if(!g)continue;todo.push([sg,g]);cost+=p.cost*Math.max(1,g.ext.length-1)}
+        if(!todo.length){if(rest.length)return _ap3(tl,rest);toast(`These roads are already ${p.nm.toLowerCase()}.`);sfx('err');return}
+        if(cost>G.money){toast(`That costs ${fmt(cost)}, but you have ${fmt(G.money)}.`);sfx('err');return}
+        for(const[sg,g]of todo){sg.t=p.t;delete sg.w;delete sg.o;Object.assign(sg,netPresetLook({rp:p.id},p.t));
+          for(const j of g.ext.slice(1,-1)){const t=tiles[j];if(t&&t.t===T.ROAD)t.l=p.t}for(const j of g.ext)redo.add(j);n++}}
+      else{for(const sg of segs){if(!netOW(sg)&&sg.w!==16)continue;[sg.a,sg.b]=[sg.b,sg.a];[sg.c1,sg.c2]=[sg.c2,sg.c1];const g=NET.geo.get(sg.id);if(g)for(const j of g.ext)redo.add(j);n++;cost+=5*(g?g.ext.length:1)}
+        if(!n){if(rest.length)return _ap3(tl,rest);toast('Reverse turns one-way roads and 2+1 avenues round. Drag over one.');sfx('err');return}
+        cost=Math.min(cost,G.money)}
+      G.money-=cost;netVer++;netRebuild();netWideClear();netRedraw(redo);netLotsUpdate();recompute();S=stats();hud();sfx('build');
+      toast(CV.mode==='up'?`Changed ${n} road${n>1?'s':''} for ${fmt(cost)}.`:`Turned ${n} road${n>1?'s':''} round for ${fmt(cost)}.`);
+      if(rest.length)return _ap3(tl,rest);return}}
+  return _ap3(tl,list)}}
+/* lanes of the new looks; bikes ride in the bike lane */
+function netFwd(i,c,sg){const g=NET.geo.get(sg.id);if(!g)return true;let k=g.ext.indexOf(c.b);if(k<0)k=g.ext.indexOf(i);if(k<0)return true;return g.ext[k+1]===c.c||g.ext[k-1]===c.a}
+{const _lo3=laneOf;laneOf=function(i,c){const sg=c&&NET.lk&&NET.lk.get(i);if(!sg||!tiles[i]||tiles[i].t!==T.ROAD)return _lo3(i,c);
+  const w=sg.w,ld=c.ld||0;let L;
+  if(c.type&&c.type.id==='bike'&&sg.o&&sg.o.bike)L=(NETW[w||sg.t]||NETW[0]).ae-0.06;
+  else if(w===11)L=0.14;
+  else if(w===16)L=netFwd(i,c,sg)?(c.big||c.lane>0?0.37:0):0.37;
+  else if(w===13||w===14||w===15){const ln=NETLN[w],n=ln.length;L=c.big||c.lane>0?ln[n-1-(c.big?0:(c.uid&1))]:c.mid?ln[1]:ln[0]}
+  else return _lo3(i,c);
+  return L+ld}}
+/* pedestrian street furniture: trees in planters and benches, alternating sides */
+function netPedDecor(g,geo,s0,s1,ox,oz,ra,rb){const L=geo.L,in_=s=>s>=s0&&s<s1,P=(s,o)=>{const q=cvAt(geo,s);return[q[0]-q[3]*o,q[1]+q[2]*o,q[2],q[3]]};
+  for(let s=0.8,k=0;s<L;s+=1.2,k++){if(!in_(s)||s<ra+0.3||s>L-rb-0.3||netHs(geo,s))continue;const sd=k%2?1:-1,p=P(s,sd*0.34),r=mulberry32((Math.round(p[0]*97)^Math.round(p[1]*131))>>>0);
+    box(g,'#8b7f6c',0.11,0.09,0.11,p[0]-ox,0.066,p[1]-oz,false);model(g,'tree_round',{leaf:['#4f7a35','#5a8638','#46702f'][(r()*3)|0]},p[0]-ox,0.156,p[1]-oz,r()*6.3,0.2+r()*0.05);
+    const b=P(s+0.5,-sd*0.36);if(in_(s+0.5)&&s+0.5<L-rb-0.3)box(g,'#7a5a3a',0.12,0.03,0.035,b[0]-ox,0.066,b[1]-oz,false).rotation.y=Math.atan2(b[2],b[3])}}
 /* ---------- boot ---------- */
 /* ---------- cloud saves (net_cloud.js) ----------
    Every city on this device is backed up to Firestore under a sync code (players/<code>/cities/<id>, the save

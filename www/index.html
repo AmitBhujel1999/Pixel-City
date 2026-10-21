@@ -1191,8 +1191,60 @@ const RIVW=(()=>{let go=null;try{go=JSON.parse(store('pc-go')||'null')}catch(e){
   if(go&&go.sc&&!go.id)return RIVW_NEW;let id=go&&go.id;
   if(!id){try{const a=JSON.parse(store('pc-cities')||'[]'),last=store('pc-last');const l=Array.isArray(a)?a.slice().sort((p,q)=>(q.t||0)-(p.t||0)):[];id=(l.find(c=>c.id===last)||l[0]||{}).id}catch(e){}}
   return rwOf(id)})();
-function inRiverBand0(x,z){if(!SC.river)return seaW(x-HALF+0.5,z-HALF+0.5)>0;return Math.abs((z-HALF+0.5)-riverZ(x-HALF+0.5))<RIVW+0.2}
+function inRiverBand0(x,z){if(!SC.river)return seaW(x-HALF+0.5,z-HALF+0.5)>0;return Math.abs((z-HALF+0.5)-riverZ(x-HALF+0.5))<RIVW+0.2||(TRIB&&trE(x-HALF+0.5,z-HALF+0.5)<0.2)}
 function inRiverBand(x,z){const b=inRiverBand0(x,z);return wovGet()[z*N+x]?!b:b}
+/* ---------- branch rivers (patch_trib.py) ----------
+   New river cities (G.trib = 1) get three side rivers and a creek. Each starts as a waterfall off a cliff in the
+   mountains outside the map, runs down its own valley into the map and joins the main river. The page decides at load
+   (like RIVW) whether the city has them, so old saves keep exactly the map they were built on.
+   TRP: the course as points every 0.5 tiles {x,z,hw,s,dx,dz,t}; TRE: per tile corner of the map plus a 128-tile margin,
+   distance to the nearest river edge (distance to the centre line minus half width); TRI: which point that was. */
+const TRIB=(()=>{if(!SC.river)return 0;let go=null;try{go=JSON.parse(store('pc-go')||'null')}catch(e){}
+  if(go&&go.sc&&!go.id)return 1;let id=go&&go.id;
+  if(!id){try{const a=JSON.parse(store('pc-cities')||'[]'),last=store('pc-last');const l=Array.isArray(a)?a.slice().sort((p,q)=>(q.t||0)-(p.t||0)):[];id=(l.find(c=>c.id===last)||l[0]||{}).id}catch(e){}}
+  return trOf(id)})();
+function trOf(id){if(!id)return 1;try{const o=JSON.parse(store('pc-city-'+id)||'null');if(o&&o.G)return o.G.trib?1:0}catch(e){}return 1}
+/* courses: source (outside the map, where the waterfall is), bends, end (on the main river or on another branch) */
+const TRDEF=[
+  {p:[[60,-HALF-30],[70,-HALF+110],[38,-150],[96,-62]],to:120,w:[1.2,2.3]},
+  {p:[[-40,HALF+32],[-28,HALF-100],[12,170],[-18,92]],to:30,w:[1.2,2.4]},
+  {p:[[252,-HALF-26],[272,-HALF+100],[228,-160],[286,-70]],to:300,w:[1.1,2.1]},
+  {p:[[132,HALF+28],[122,HALF-110],[72,186],[30,168]],join:1,w:[0.8,1.4]}];
+const TRP=[],TRSRC=[];let TRE=null,TRI=null;const TRM=128,TRW=N+2*TRM+1;
+function tribBuild(){if(!TRIB)return;
+  const cr=(a,b,c,d,t)=>{const t2=t*t,t3=t2*t;return 0.5*(2*b+(c-a)*t+(2*a-5*b+4*c-d)*t2+(3*b-a-3*c+d)*t3)};
+  TRDEF.forEach((T,ti)=>{const P=T.p.slice();if(T.join===undefined)P.push([T.to,riverZ(T.to)]);else{const q=TRP.filter(p=>p.t===T.join),m=q[Math.floor(q.length*0.45)];P.push([m.x,m.z])}
+    const E=[P[0],...P,P[P.length-1]],pts=[];
+    for(let i=1;i<E.length-2;i++)for(let k=0;k<40;k++){const t=k/40;pts.push([cr(E[i-1][0],E[i][0],E[i+1][0],E[i+2][0],t),cr(E[i-1][1],E[i][1],E[i+1][1],E[i+2][1],t)])}
+    pts.push(P[P.length-1]);
+    /* resample every 0.5 tiles, with a gentle meander on top */
+    let s=0,L=0;const len=[0];for(let i=1;i<pts.length;i++){L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);len.push(L)}
+    let j=0,first=TRP.length;for(s=0;s<=L;s+=0.5){while(j<len.length-2&&len[j+1]<s)j++;const f=(s-len[j])/Math.max(1e-6,len[j+1]-len[j]),a=pts[j],b=pts[j+1];
+      let x=a[0]+(b[0]-a[0])*f,z=a[1]+(b[1]-a[1])*f;const dx=(b[0]-a[0]),dz=(b[1]-a[1]),dl=Math.hypot(dx,dz)||1;
+      const wob=Math.sin(s*0.09+ti*2)*2.2*sstep(0,40,s)*sstep(0,30,L-s);x+=-dz/dl*wob;z+=dx/dl*wob;
+      TRP.push({x,z,hw:T.w[0]+(T.w[1]-T.w[0])*sstep(0,L,s),s,dx:dx/dl,dz:dz/dl,t:ti})}
+    TRSRC.push(first)});
+  TRE=new Float32Array(TRW*TRW).fill(99);TRI=new Uint16Array(TRW*TRW);
+  const stamp=(i,R)=>{const p=TRP[i],cx=p.x+HALF+TRM,cz=p.z+HALF+TRM;
+    for(let z=Math.max(0,Math.floor(cz-R));z<=Math.min(TRW-1,Math.ceil(cz+R));z++)for(let x=Math.max(0,Math.floor(cx-R));x<=Math.min(TRW-1,Math.ceil(cx+R));x++){
+      const e=Math.hypot(x-cx,z-cz)-p.hw,k=z*TRW+x;if(e<TRE[k]){TRE[k]=e;TRI[k]=i}}};
+  for(let i=0;i<TRP.length;i+=4)stamp(i,46);for(let i=0;i<TRP.length;i++)stamp(i,TRP[i].hw+6)}
+tribBuild();
+/* distance from a world point to the nearest side-river edge (negative inside), 99 when far or none */
+function trE(x,z){if(!TRE)return 99;const gx=Math.round(x+HALF+TRM),gz=Math.round(z+HALF+TRM);if(gx<0||gz<0||gx>=TRW||gz>=TRW)return 99;return TRE[gz*TRW+gx]}
+function trPt(x,z){const gx=Math.round(x+HALF+TRM),gz=Math.round(z+HALF+TRM);return TRP[TRI[gz*TRW+gx]]}
+/* the river edge distance used to keep hills out of the valleys: main river or a side river */
+function rivEdge(x,z){return Math.min(Math.abs(z-riverZ(x))-RIVW,trE(x,z))}
+/* side river bed at a world point (WNONE-style 99 when none) */
+function trBed(x,z){const e=trE(x,z);if(e>=1)return 99;return -0.30*(1-sstep(-1,1,e))}
+/* outside the map: carve the valleys, stop them in a cliff at the source (the waterfall), keep the cliff modest */
+function trLand(x,z,h){if(!TRE)return h;const e=trE(x,z);if(e>=40)return h;const p=trPt(x,z),src=TRP[TRSRC[p.t]];
+  const ux=x-src.x,uz=z-src.z,up=p.s<1&&ux*src.dx+uz*src.dz<0;
+  const ds=Math.hypot(ux,uz);if(ds<26){const cap=5+Math.max(0,ds-8)*1.2;if(h>cap)h=cap+(h-cap)*sstep(8,26,ds)}
+  if(up)return h;
+  /* a valley floor a little wider than the stream (the scenery mesh is coarse), then its sides */
+  const f=e-2.5,k=sstep(0,30,f);if(f<0)return -0.3;if(f<3)return -0.3+(h*k+0.3)*sstep(0,3,f);return h*(0.15+0.85*k)}
+{const _th=terrainH;terrainH=function(x,z){const h=_th(x,z);return TRIB&&Math.max(Math.abs(x),Math.abs(z))>HALF-6?trLand(x,z,h):h}}
 /* sea scenarios: seaW(x,z) > 0 means water, in world units from the shore */
 const coastZ=x=>AREA*0.25+Math.sin(x*0.07)*3+Math.sin(x*0.027+1)*2.6;
 function seaW(x,z){x-=XS;const HALF=AREA/2;
@@ -1223,7 +1275,7 @@ function terrRaw(x,z,ox,oz){const A=SC.cold?7:SC.sand?3:SC.sea?3.5:5;
   let h=A*sstep(0.3,0.78,n)*(0.75+0.5*m);
   if(farHills())return farLand(x,z,ox,oz);
   h*=sstep(1,30,Math.min(HALF-Math.abs(x),HALF-Math.abs(z)));
-  if(SC.river)h*=sstep(1.5,34,Math.abs(z-riverZ(x))-RIVW-0.2);
+  if(SC.river)h*=sstep(1.5,34,rivEdge(x,z)-0.2);
   if(SC.sea)h*=sstep(1.5,30,-seaW(x,z));
   return h}
 /* far-side hills (G.hills=2). A new city is built before G.hills is set, so no value yet with hills on means this kind */
@@ -1249,7 +1301,7 @@ function farRamp(x,z,ox,oz){const e=Math.min(HALF-Math.abs(x),HALF-Math.abs(z));
    height is the same for every city and the scenery outside can start at exactly that height */
 function farLand(x,z,ox,oz){const e=Math.min(HALF-Math.abs(x),HALF-Math.abs(z)),k=sstep(30,80,e),qx=ox*k,qz=oz*k;
   let h=farRaw(x,z,qx,qz)+farRamp(x,z,qx,qz);
-  if(SC.river)h*=sstep(3,43,Math.abs(z-riverZ(x))-RIVW);
+  if(SC.river)h*=sstep(3,43,rivEdge(x,z));
   if(SC.sea)h*=sstep(1.5,30,-seaW(x,z));
   return h*farHillK(x,z)}
 /* is the city on this page a far-hills one? (the scenery is built at page load, before the city) */
@@ -1283,7 +1335,7 @@ function farBlur(n){const R=4,t=new Float32Array(TB.length);for(let pass=0;pass<
       for(let z=0;z<=N;z++){TB[z*TN+x]=acc/(2*R+1);acc+=t[Math.min(N,z+R+1)*TN+x]-t[Math.max(0,z-R)*TN+x]}}}}
 function farSmooth(){const o=TB.slice();farBlur(2);
   for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const wx=x-HALF,wz=z-HALF,i=z*TN+x;let k=1;
-    if(SC.river)k*=sstep(3,43,Math.abs(wz-riverZ(wx))-RIVW);if(SC.sea)k*=sstep(1.5,30,-seaW(wx,wz));TB[i]*=k}
+    if(SC.river)k*=sstep(3,43,rivEdge(wx,wz));if(SC.sea)k*=sstep(1.5,30,-seaW(wx,wz));TB[i]*=k}
   for(let r=0;r<2;r++){
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const i=z*TN+x;let h=TB[i];if(x>0)h=Math.min(h,TB[i-1]+FARSL);if(z>0)h=Math.min(h,TB[i-TN]+FARSL);TB[i]=h}
     for(let z=N;z>=0;z--)for(let x=N;x>=0;x--){const i=z*TN+x;let h=TB[i];if(x<N)h=Math.min(h,TB[i+1]+FARSL);if(z<N)h=Math.min(h,TB[i+TN]+FARSL);TB[i]=h}}
@@ -1456,7 +1508,7 @@ let FOREST=null;
   for(let k=0;k<P.count;k++){const x=P.getX(k),z=P.getZ(k),h=terrainH(x,z),d=edgeDist(x,z);P.setY(k,h);
     /* under the map the river channel is cut out of the ground plane: keep this backdrop well below it there */
     if(SC.river&&Math.abs(x)<HALF+0.5&&Math.abs(z)<HALF&&Math.abs(z-riverZ(x))<RIVW+3.5)P.setY(k,-0.6);
-    if(Math.abs(x)<HALF-0.5&&Math.abs(z)<HALF-0.5)P.setY(k,-0.8);
+    if(Math.abs(x)<HALF-5&&Math.abs(z)<HALF-5)P.setY(k,-0.8);
     const n=vnoise(x*0.3,z*0.3);
     if(SC.sand){if(h<-0.1)c.set('#c9b07a');else if(h>7+n*3)c.set('#b0714a').lerp(c2.set('#c4895a'),n);else if(h>2.5)c.set('#cf9f6a').lerp(c2.set('#d9ae78'),n);else c.set('#e2c794').lerp(c2.set('#d6b882'),n*0.8)}
     else if(h<-0.1)c.set(SC.sea?'#e3d29c':'#b9b08a');
@@ -1658,6 +1710,45 @@ const WMAT=new THREE.ShaderMaterial({uniforms:WU,fog:true,transparent:true,depth
     }`});
 /* the river outside the map (inside, the water grid draws it) */
 if(SC.river)for(const[a,b]of[[-HALF-128,-HALF],[HALF,HALF+128]]){const rw=new THREE.Mesh(riverGeo(a,b),WMAT);rw.renderOrder=1;rw.frustumCulled=false;scene.add(rw)}
+/* side rivers outside the map: the stream from the plunge pool to the map edge, the waterfall and its spray */
+const TRFALL=[];
+if(TRIB){
+  for(let t=0;t<TRDEF.length;t++){const a=TRSRC[t];let b=a;while(b+1<TRP.length&&TRP[b+1].t===t&&(Math.abs(TRP[b+1].x)>HALF||Math.abs(TRP[b+1].z)>HALF))b++;
+    if(b-a<4)continue;const P=[],AD=[],AF=[],AM=[],I=[];let n=0;
+    for(let i=a;i<=Math.min(TRP.length-1,b+2);i++){const p=TRP[i],nx=-p.dz,nz=p.dx,fast=2.6-2*sstep(0,14,p.s);
+      for(const s of[-1,0,1]){P.push(p.x+nx*p.hw*s,-0.15,p.z+nz*p.hw*s);AD.push(s?-0.004:0.16);AF.push(p.dx*fast,p.dz*fast);AM.push(0)}
+      if(n){const q=(n-1)*3;for(const o of[0,1])I.push(q+o,q+o+1,q+o+3,q+o+3,q+o+1,q+o+4)}n++}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('aD',new THREE.Float32BufferAttribute(AD,1));
+    g.setAttribute('aF',new THREE.Float32BufferAttribute(AF,2));g.setAttribute('aM',new THREE.Float32BufferAttribute(AM,1));g.setIndex(I);
+    const m=new THREE.Mesh(g,WMAT);m.renderOrder=1;m.frustumCulled=false;scene.add(m)}
+  const FU={time:riverU.time,light:riverU.light};
+  const fallMat=new THREE.ShaderMaterial({uniforms:FU,transparent:true,depthWrite:false,side:THREE.DoubleSide,
+    vertexShader:`varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:`uniform float time;uniform vec3 light;varying vec2 vU;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      void main(){float t=time*1.6;
+        float s1=n(vec2(vU.x*22.0,vU.y*5.0-t*3.0)),s2=n(vec2(vU.x*47.0+3.0,vU.y*9.0-t*4.3)),st=s1*0.6+s2*0.4;
+        vec3 c=mix(vec3(0.55,0.72,0.78),vec3(0.97,0.99,1.0),smoothstep(0.35,0.8,st)+vU.y*0.35);
+        float edge=smoothstep(0.0,0.12,vU.x)*smoothstep(1.0,0.88,vU.x);
+        float a=(0.55+0.45*smoothstep(0.3,0.75,st))*edge*smoothstep(0.0,0.05,vU.y);
+        gl_FragColor=vec4(c*light,a);}`});
+  const soft=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(0.5,'rgba(255,255,255,.45)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();
+  for(let t=0;t<TRDEF.length;t++){const src=TRP[TRSRC[t]];if(Math.abs(src.x)<HALF&&Math.abs(src.z)<HALF)continue;
+    /* the lip: the uncut mountain height just upstream of the source */
+    const top=Math.max(1.5,terrainH(src.x-src.dx*1.5,src.z-src.dz*1.5)),hw=src.hw*1.1,R=14,C=6,P=[],U=[],I=[];
+    for(let r=0;r<=R;r++){const v=r/R,o=-1.2+2.6*Math.pow(v,1.7),y=top*(1-v)+(-0.25)*v+Math.sin(v*3.14)*0.15;
+      for(let c=0;c<=C;c++){const u=c/C,s=(u*2-1)*hw*(1+v*0.35);P.push(src.x+src.dx*o-src.dz*s,y,src.z+src.dz*o+src.dx*s);U.push(u,v)}
+      if(r)for(let c=0;c<C;c++){const a=(r-1)*(C+1)+c,b=a+C+1;I.push(a,b,a+1,a+1,b,b+1)}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);
+    const m=new THREE.Mesh(g,fallMat);m.renderOrder=2;m.frustumCulled=false;scene.add(m);
+    /* spray: soft puffs rising from the plunge pool */
+    const K=36,pos=new Float32Array(K*3),seed=new Float32Array(K*3),pg=new THREE.BufferGeometry();for(let k=0;k<K;k++){seed[k*3]=Math.random();seed[k*3+1]=Math.random()*2-1;seed[k*3+2]=Math.random()*2-1}
+    pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const pm=new THREE.PointsMaterial({map:soft,size:2.2,transparent:true,depthWrite:false,opacity:0.5,color:'#eef4f6'}),pt=new THREE.Points(pg,pm);pt.frustumCulled=false;scene.add(pt);
+    TRFALL.push({src,top,pos,seed,pg,K,bx:src.x+src.dx*1.6,bz:src.z+src.dz*1.6})}}
+function tribTick(dt){for(const f of TRFALL){const T=performance.now()/1000;for(let k=0;k<f.K;k++){const ph=(f.seed[k*3]+T*0.35)%1;
+    f.pos[k*3]=f.bx+f.seed[k*3+1]*(0.6+ph*2.2);f.pos[k*3+1]=-0.2+ph*Math.min(4,f.top*0.6);f.pos[k*3+2]=f.bz+f.seed[k*3+2]*(0.6+ph*2.2)}f.pg.attributes.position.needsUpdate=true}}
 /* realistic sea (patch_water.py): shore-distance texture + wave normals, depth colour, Fresnel sky, surf and swash */
 const SEAU={uT:{value:0},dMap:{value:null},dE:{value:1}};
 function seaDistTex(){if(SEAU.dMap.value)return;const n=1024,E=HALF+120,d=new Uint8Array(n*n*4);
@@ -3614,7 +3705,8 @@ function watAlloc(){const L=TN*TN;WAT={L,B:new Float32Array(L),B0:null,G:new Flo
 function watBase(){if(WAT.B0)return;const B0=new Float32Array(WAT.L).fill(WNONE);
   if(SC.river){for(let x=0;x<=N;x++){const wx=x-HALF,rz=riverZ(wx),dz=(riverZ(wx+0.05)-riverZ(wx-0.05))/0.1,c=1/Math.hypot(1,dz),zr=Math.ceil((RIVW+1)/c)+1;
       for(let z=Math.max(0,Math.floor(rz+HALF-zr));z<=Math.min(N,Math.ceil(rz+HALF+zr));z++){const d=Math.abs(z-HALF-rz)*c;if(d>=RIVW+1)continue;
-        const b=-0.38*(1-sstep(RIVW-1,RIVW+1,d));if(b<-0.002)B0[z*TN+x]=b}}}
+        const b=-0.38*(1-sstep(RIVW-1,RIVW+1,d));if(b<-0.002)B0[z*TN+x]=b}}
+    if(TRIB)for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const b=trBed(x-HALF,z-HALF);if(b<-0.002&&b<B0[z*TN+x])B0[z*TN+x]=b}}
   else if(SC.sea){const S=4,n=N/S+1,cw=new Float32Array(n*n);
     for(let j=0;j<n;j++)for(let i=0;i<n;i++)cw[j*n+i]=seaW(i*S-HALF,j*S-HALF);
     for(let j=0;j<n-1;j++)for(let i=0;i<n-1;i++){const a=cw[j*n+i],b=cw[j*n+i+1],c=cw[(j+1)*n+i],d=cw[(j+1)*n+i+1],hi=Math.max(a,b,c,d),lo=Math.min(a,b,c,d);
@@ -3639,7 +3731,7 @@ function watInit(){if(!WAT||WAT.L!==TN*TN)watAlloc();const W=WAT;W.ready=false;w
     const tryJ=j=>{if(D[j]>0)return;const lv=wLev(j%TN);if(G2[j]<lv-1e-4){D[j]=lv-G2[j];q[qn++]=j}};
     if(x<N)tryJ(k+1);if(x>0)tryJ(k-1);if(k<L-TN)tryJ(k+TN);if(k>=TN)tryJ(k-TN)}
   for(let k=0;k<L;k++){const x=k%TN,z=(k/TN)|0;if(x&&z&&x<N&&z<N)continue;
-    W.FX[k]=SC.river?(D[k]>0?(x===0?2:x===N?1:3):x===0?4:3):(D[k]>0&&WSEA?1:3)}
+    W.FX[k]=SC.river?(D[k]>0?(x===N?1:2):x===0?4:3):(D[k]>0&&WSEA?1:3)}
   /* the open sea is too big to rise or fall: its deep water keeps the sea level */
   if(SC.sea)for(let k=0;k<L;k++)if(!W.FX[k]&&D[k]>0.3)W.FX[k]=1;
   W.Q=WC*(WDROP/N)/(1-WDAMP);
@@ -3755,7 +3847,7 @@ function watSync(){const W=WAT;if(!W.tdirty.size)return;const D=W.D,G2=W.G,o=wov
 function watLevelAt(wx,wz){const x=Math.round(wx+HALF),z=Math.round(wz+HALF);if(x<0||z<0||x>N||z>N)return null;const k=z*TN+x;return WAT.D[k]>0.02?WAT.G[k]+WAT.D[k]:null}
 function watDug(i){if(!WAT||!WAT.ready)return false;const x=i%N,z=(i/N)|0,k=z*TN+x;for(const q of[k,k+1,k+TN,k+TN+1])if(TC[q]-WAT.G[q]>0.03)return true;return false}
 /* ---- the Land tool's water modes ---- */
-function watProt(x,z){if(x<2||z<2||x>N-2||z>N-2)return true;
+function watProt(x,z){if(x<6||z<6||x>N-6||z>N-6)return true;
   for(const[dx,dz]of[[0,0],[-1,0],[0,-1],[-1,-1]]){const i=(z+dz)*N+x+dx,t=tiles[i];if(!OWN.has(areaOf(i))||t.lock||isEntry(i))return true;
     if(!(t.t===T.EMPTY||t.t===T.TREE||t.t===T.RIVER))return true}return false}
 function watBrush(cx,cz,dt){const W=WAT;if(!W||!W.ready)return;W.calm=0;if(!TF.wstroke){TF.wstroke=new Map();TF.wcost=0}
@@ -5539,7 +5631,7 @@ function growOldStadiums(){for(const i of OWNIDX){const t=tiles[i];if(t.t!==T.ST
   for(let oz=-2;oz<=0&&spot<0;oz++)for(let ox=-2;ox<=0&&spot<0;ox++){let fit=true;for(let dz=0;dz<3&&fit;dz++)for(let dx=0;dx<3;dx++){const X=x+ox+dx,Z=z+oz+dz;if(!inB(X,Z)){fit=false;break}const j=idx(X,Z);if(j===i)continue;const q=tiles[j];if(isEntry(j)||!(q.t===T.EMPTY||q.t===T.TREE)){fit=false;break}}if(fit)spot=idx(x+ox,z+oz)}
   if(spot<0){t.t=T.PARK;t.l=2;G.money+=25000;continue}
   const sx=spot%N,sz=(spot/N)|0;for(let dz=0;dz<3;dz++)for(let dx=0;dx<3;dx++){const q=tiles[idx(sx+dx,sz+dz)];q.t=T.PART;q.l=0}const a=tiles[spot];a.t=T.STADIUM;a.l=0;a.done5=1;if(spot!==i)a.seed=t.seed}}
-function save(){if(!curId||!G||atTitle&&!curId)return;if(!G.rw)G.rw=RIVW;store('pc-city-'+curId,serialize());if(!atTitle&&camOk(cam.target.x,cam.target.z))store('pc-cam-'+curId,JSON.stringify({x:+cam.target.x.toFixed(2),z:+cam.target.z.toFixed(2),d:+cam.dist.toFixed(1),p:+cam.phi.toFixed(3),th:+cam.theta.toFixed(3)}));const a=cityIndex();let e=a.find(c=>c.id===curId);if(!e){e={id:curId};a.push(e)}
+function save(){if(!curId||!G||atTitle&&!curId)return;if(!G.rw)G.rw=RIVW;if(G.trib===undefined)G.trib=TRIB;store('pc-city-'+curId,serialize());if(!atTitle&&camOk(cam.target.x,cam.target.z))store('pc-cam-'+curId,JSON.stringify({x:+cam.target.x.toFixed(2),z:+cam.target.z.toFixed(2),d:+cam.dist.toFixed(1),p:+cam.phi.toFixed(3),th:+cam.theta.toFixed(3)}));const a=cityIndex();let e=a.find(c=>c.id===curId);if(!e){e={id:curId};a.push(e)}
   Object.assign(e,{name:G.name,pop:S.pop,money:G.money,day:G.day,lvl:G.lvl||1,prize:G.prize||0,t:Date.now()});saveIndex(a)}
 
 /* ---------- HUD ---------- */
@@ -7974,9 +8066,9 @@ function showTitle(){if(curId&&G)save();camBefore={d:cam.dist,p:cam.phi,th:cam.t
   for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel','#tranPanel','#budPanel'])$(m).hidden=true;ov.user=null;applyOverlay();cam.dist=95;cam.phi=0.9;{const f=G?cityFocus():{x:0,z:6};cam.target.set(f.x,0,f.z)}zoomGoal=null;updateCamera();renderCities();
   $('#newName').value='';homePanel(null);syncHome();}
 function hideTitle(){atTitle=false;$('#app').classList.remove('at-title');$('#title').hidden=true;setSpeed(1);if(!store('pm-help-seen'))$('#help').hidden=false}
-function openCity(id){if(scOf(id)!==SC.id||(SC.river&&rwOf(id)!==RIVW)||hillsOf(id)!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({id}));location.reload();return}if(curId===id&&G){if(!camBefore||!camOk(camBefore.x,camBefore.z))camHome(id);else{cam.dist=camBefore.d;cam.phi=camBefore.p;cam.theta=camBefore.th;cam.target.set(camBefore.x,0,camBefore.z);updateCamera()}hideTitle();return}if(curId&&G)save();const str=store('pc-city-'+id);if(!str||!load(str)){toast('That city could not be opened.');return}
+function openCity(id){if(scOf(id)!==SC.id||(SC.river&&rwOf(id)!==RIVW)||(SC.river&&trOf(id)!==TRIB)||hillsOf(id)!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({id}));location.reload();return}if(curId===id&&G){if(!camBefore||!camOk(camBefore.x,camBefore.z))camHome(id);else{cam.dist=camBefore.d;cam.phi=camBefore.p;cam.theta=camBefore.th;cam.target.set(camBefore.x,0,camBefore.z);updateCamera()}hideTitle();return}if(curId&&G)save();const str=store('pc-city-'+id);if(!str||!load(str)){toast('That city could not be opened.');return}
   curId=id;store('pc-last',id);camHome(id);save();hideTitle();sfx('level')}
-function foundCity(name,sc,tut){if((sc&&sc!==SC.id)||(SCN[sc||SC.id].river&&RIVW!==RIVW_NEW)||!!window.__newHills!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({sc:sc||SC.id,name,tut:!!tut,hills:!!window.__newHills}));location.reload();return}if(curId&&G)save();curId='c'+Date.now().toString(36)+((Math.random()*1e4)|0);newCity(name||SC.town);G.hills=TERRAIN_ON?2:0;G.tut=tut?0:-1;store('pc-last',curId);save();hideTitle();sfx('level')}
+function foundCity(name,sc,tut){if((sc&&sc!==SC.id)||(SCN[sc||SC.id].river&&(RIVW!==RIVW_NEW||!TRIB))||!!window.__newHills!==TERRAIN_ON){if(curId&&G)save();store('pc-go',JSON.stringify({sc:sc||SC.id,name,tut:!!tut,hills:!!window.__newHills}));location.reload();return}if(curId&&G)save();curId='c'+Date.now().toString(36)+((Math.random()*1e4)|0);newCity(name||SC.town);G.hills=TERRAIN_ON?2:0;G.tut=tut?0:-1;store('pc-last',curId);save();hideTitle();sfx('level')}
 let pickSc='classic';
 const SCLIST=['classic','bay'];
 function drawScPick(){const box=$('#scPick');box.innerHTML=SCLIST.map(k=>`<button type="button" class="scb" data-sc="${k}" aria-pressed="${k===pickSc}"><b>${SCN[k].nm}</b><small>${fmt(SCN[k].money)} to start</small></button>`).join('');
@@ -8113,6 +8205,7 @@ function frame(now){
   if(ov.mode==='traffic'){ovT-=dt;if(ovT<=0){ovT=0.5;drawOverlay()}}
   riverU.time.value+=dt*(speed?0.8+0.25*speed:0.35)*(SC.cold?0.02:1);
   if(WAT&&WAT.ready)pcGuard('water',()=>watTick(dt,speed));
+  if(TRFALL.length)tribTick(dt);
   {const flow=dt*(speed?0.35+0.15*speed:0.2);waterTex.offset.x-=flow;waterTex2.offset.x-=flow*0.5;waterTex.offset.y=Math.sin(now*0.0006)*0.04;waterTex2.offset.y=waterTex.offset.y*0.5}
   updateBoats(dt*(speed?1+0.5*(speed-1):0.4));SCX.tick(dt*(speed?1+0.3*(speed-1):0.35),performance.now()/1000);updateFun(speed?Math.min(0.1,dt):0);
   updateClouds(dt*(speed?1:0.3));updatePlanes(dt*(speed?1:0.5),now);updateAirport(Math.min(0.1,dt)*(speed?Math.min(2,CARSPEED[speed]):0),now);updateCars(sdt);updateTrains(sdt);updatePeds(sdt);updateSmoke(sdt);streetLabels(dt);updateSelection(dt,now);

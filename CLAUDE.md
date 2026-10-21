@@ -72,6 +72,16 @@ edit the PC file by hand.
   (1 s) turns land under water into `T.RIVER` and drained edited water back into land; buildings standing in water
   give a "Water is spilling onto the land" notice. Tiles with a dug dip that is dry take no buildings (`watDug`).
 
+## Branch rivers and waterfalls
+
+- New river cities save `G.trib = 1`; the page decides at load like `RIVW` (`TRIB`, `trOf(id)`; `openCity` /
+  `foundCity` reload when it differs), so old saves keep their map. `TRDEF` holds the courses (three side rivers and a
+  creek joining one of them); `tribBuild` resamples them into `TRP` and stamps `TRE` (distance to the nearest side
+  river edge, map + 128-tile margin) and `TRI`. `trE` feeds `inRiverBand0`, the water bed (`trBed` in `watBase`), the
+  hill blending (`rivEdge`) and the scenery outside (`trLand`: valley floor, then a cliff at the source).
+- Water enters at every map-edge corner that has water except the east end of the main river (`FX` 2).
+- Outside the map: stream ribbons (WMAT), a waterfall mesh per source (`fallMat`) and spray points (`tribTick`).
+
 ## Road types (Cities: Skylines style)
 
 - Each road segment keeps its base type `t` (0 street, 1 dirt, 2 one-way, 3 avenue, 4 boulevard, 5 highway); tiles

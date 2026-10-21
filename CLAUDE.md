@@ -95,6 +95,16 @@ edit the PC file by hand.
   are simulated. River corners in a sea map carry `aM = -1` so the water shader leaves out swell and surf there.
 - Outside the map: stream ribbons (WMAT), a waterfall mesh per source (`fallMat`) and spray points (`tribTick`).
 
+## Bridges
+
+- `netLift` raises road decks by crossing length (0.1 up to 0.42, `g.wl` wet length, `g.lift`), ramps up to 4 tiles but
+  never past the segment ends (junctions stay on the ground). Rail keeps 0.16.
+- Superstructures (`brInfo` per geo: water span s0..s1 at full lift, style `sg.o.br` or auto by length: beam < 3.5,
+  arch < 7, cable-stayed < 14, suspension; curved spans fall back to beam) are one merged vertex-coloured mesh `BRG`,
+  rebuilt in a `netRebuild` wrapper (`brBuild`, `beam(a,c,w,h,colour)` boxes). Arch >= 5 tiles per arch is a tied arch
+  over the road, shorter ones sit under the deck. `netBridge` leaves out its plain piers inside non-beam spans.
+- Road tool Bridge row (`BRSTY`, `NB.br`), stamped on new segments as `sg.o.br` (copied on splits with the look).
+
 ## Road types (Cities: Skylines style)
 
 - Each road segment keeps its base type `t` (0 street, 1 dirt, 2 one-way, 3 avenue, 4 boulevard, 5 highway); tiles

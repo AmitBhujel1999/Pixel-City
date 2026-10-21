@@ -8360,7 +8360,12 @@ function netLift(g){const n=g.n,W=new Uint8Array(n+1);let any=false;
   for(let k=0;k<=n;k++){const tx=Math.floor(g.X[k]+HALF),tz=Math.floor(g.Z[k]+HALF);if(!inB(tx,tz))continue;const t=tiles[tx+tz*N];if(t.t===T.RIVER||t.w||inRiverBand(tx,tz)){W[k]=1;any=true}}
   g.wet=any;if(!any){g.H=null;return}const D=new Float64Array(n+1).fill(1e9);
   for(let k=0;k<=n;k++)D[k]=W[k]?0:k?D[k-1]+(g.S[k]-g.S[k-1]):1e9;for(let k=n-1;k>=0;k--)D[k]=Math.min(D[k],D[k+1]+(g.S[k+1]-g.S[k]));
-  const lift=g.kind==='rail'?0.16:0.1;g.H=new Float64Array(n+1);for(let k=0;k<=n;k++){const u=Math.max(0,Math.min(1,D[k]/0.9));g.H[k]=lift*(1-u*u*(3-2*u))}}
+  let lift=g.kind==='rail'?0.16:0.1,ramp=0.9;
+  /* roads: a long crossing stands higher (clearance for boats, room for arches), with longer ramps; never lifting the
+     segment's ends, so junctions stay on the ground */
+  if(g.kind!=='rail'){let wl=0;for(let k=1;k<=n;k++)if(W[k]&&W[k-1])wl+=g.S[k]-g.S[k-1];
+    const want=Math.min(0.42,0.1+Math.max(0,wl-3)*0.028);ramp=Math.max(0.9,Math.min(0.9*want/0.1,D[0]-0.15,D[n]-0.15));lift=Math.min(want,0.1*ramp/0.9);g.wl=wl}
+  g.lift=lift;g.H=new Float64Array(n+1);for(let k=0;k<=n;k++){const u=Math.max(0,Math.min(1,D[k]/ramp));g.H[k]=lift*(1-u*u*(3-2*u))}}
 function netHs(g,s){if(!g.H)return 0;const S=g.S;let lo=0,hi=g.n;if(s<=0)return g.H[0];if(s>=g.L)return g.H[g.n];while(hi-lo>1){const m=(lo+hi)>>1;if(S[m]<=s)lo=m;else hi=m}
   const f=(s-S[lo])/Math.max(1e-9,S[hi]-S[lo]);return g.H[lo]+(g.H[hi]-g.H[lo])*f}
 function netPts(sg){const N_=G.net.n,A=N_[sg.a],B=N_[sg.b];if(!A||!B)return null;return[A,sg.c1||A,sg.c2||B,B]}
@@ -8598,7 +8603,8 @@ function netRailStrip(g,geo,sa,sb,ox,oz){const Y=RB0,St=(vA,yA,vB,yB,w,c)=>netSt
 function netBridge(g,geo,sa,sb,ox,oz,noPier){if(!geo.H)return;const hw=geo.kind==='rail'?0.2:netHW(geo.sg?geo.sg.t:0),base=geo.kind==='rail'?RB0:0.06;let a=-1;
   for(let s=sa;s<=sb+1e-6;s+=0.05){const lifted=netHs(geo,s)>0.02;if(lifted&&a<0)a=s;if((!lifted||s+0.05>sb)&&a>=0){const b=lifted?Math.min(sb,s+0.05):s;
       netStrip(g,geo,a,b,ox,oz,-hw,base-0.045,hw,base-0.045,'down',null,'#8f9398');for(const v of[-1,1]){netStrip(g,geo,a,b,ox,oz,v*hw,base+(geo.kind==='rail'?0.0:0.0),v*hw,base-0.045,v,null,'#a3a7ac');netStrip(g,geo,a,b,ox,oz,v*(hw-0.015),base+0.05,v*hw,base+0.05,'up',null,'#c9ccd0');netStrip(g,geo,a,b,ox,oz,v*hw,base+0.05,v*hw,base,v,null,'#c9ccd0')}a=-1}}
-  if(!noPier)for(let s=Math.ceil((sa-0.6)/1.2)*1.2+0.6;s<sb;s+=1.2){const h=netHs(geo,s);if(h<0.06)continue;const q=cvAt(geo,s);
+  const bi=geo.kind==='rail'?null:brInfo(geo);
+  if(!noPier)for(let s=Math.ceil((sa-0.6)/1.2)*1.2+0.6;s<sb;s+=1.2){const h=netHs(geo,s);if(h<0.06)continue;if(bi&&bi.st!=='beam'&&s>bi.s0-0.3&&s<bi.s1+0.3)continue;const q=cvAt(geo,s);
     box(g,'#a7a298',hw*1.6,base+h-0.04+0.3,0.08,q[0]-ox,-0.3,q[1]-oz).rotation.y=Math.atan2(q[2],q[3])}}
 function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=netMap();if(!(kind==='rail'?M.TL[i]:M.TR[i]))return false;const tl=tiles[i];
   if(kind==='rail'&&tl.l)return false;const x=i%N,z=(i/N)|0,ox=x-HALF+0.5,oz=z-HALF+0.5,L=M.seg.get(i)||[];
@@ -9053,7 +9059,7 @@ function netBuild(tl,plan){const net=netG(),before=JSON.stringify(net),kind=plan
         net.s.splice(net.s.indexOf(sg),1);net.s.push({id:nid(),k:sg.k,t:sg.t,a:sg.a,b:id,c1:p1[1],c2:p1[2],...ex},{id:nid(),k:sg.k,t:sg.t,a:id,b:sg.b,c1:p2[1],c2:p2[2],...ex});for(const j of g.ext)redo.add(j);end._id=id;return id}}
     if(end.grid!==undefined){NETWAS.add(end.grid)}
     end._id=mkNode(end.p);return end._id};
-  for(const pc of plan.pieces){const a=nodeOf(pc.from),b=nodeOf(pc.to),sg={id:nid(),k:kind,t:plan.type,a,b,c1:pc.P[1],c2:pc.P[2]};if(plan.lvl)sg.e=plan.lvl;if(kind==='road')Object.assign(sg,netPresetLook(tl,plan.type));net.s.push(sg);for(const j of pc.geo.ext)redo.add(j)}
+  for(const pc of plan.pieces){const a=nodeOf(pc.from),b=nodeOf(pc.to),sg={id:nid(),k:kind,t:plan.type,a,b,c1:pc.P[1],c2:pc.P[2]};if(plan.lvl)sg.e=plan.lvl;if(kind==='road'){Object.assign(sg,netPresetLook(tl,plan.type));if(NB.br&&NB.br!=='auto')sg.o=Object.assign({},sg.o||{},{br:NB.br})}net.s.push(sg);for(const j of pc.geo.ext)redo.add(j)}
   /* lay the tiles with the normal build code (money, bridges over the river, xp) */
   NB.inner=true;try{if(plan.need.length)apply(tl,plan.need.map(j=>({x:j%N,z:(j/N)|0})))}finally{NB.inner=false}
   if(!plan.need.every(j=>tiles[j].t===KT)){G.net=JSON.parse(before);netVer++;netRebuild();netRedraw(new Set(plan.need));return false}
@@ -9154,9 +9160,11 @@ cvBar=function(){let d=$('#cvBar');const rail=tool&&tool.id==='rail';
       <button data-snap="grid" title="Snap to tile centres" aria-label="Snap to tile centres" aria-pressed="${NB.grid}" style="width:36px;height:36px;padding:4px"><svg viewBox="0 0 40 40" width="24" height="24"><path d="M6 14H34M6 26H34M14 6V34M26 6V34" stroke="currentColor" stroke-width="3" fill="none"/></svg></button>
       ${NB.start?'<button data-stop="1" style="height:36px;padding:0 10px">Stop</button>':''}</span>
     ${rail||CV.mode==='up'||CV.mode==='rev'?'':'<span style="color:var(--muted)">Level</span><span style="display:flex;gap:4px">'+[[0,'Ground','M4 28 H36'],[1,'Elevated','M4 30 L12 18 H28 L36 30 M14 18 V34 M26 18 V34'],[-1,'Tunnel','M4 32 V22 A16 14 0 0 1 36 22 V32 M10 32 V24 A10 9 0 0 1 30 24 V32']].map(([k,n,p])=>'<button data-lvl="'+k+'" title="'+n+'" aria-label="'+n+'" aria-pressed="'+((NB.lvl||0)===k)+'" style="width:36px;height:36px;padding:4px">'+ico(p)+'</button>').join('')+'</span>'}
+    ${rail||CV.mode==='rev'||(NB.lvl||0)!==0?'':'<span style="color:var(--muted)">Bridge</span><span style="display:flex;flex-wrap:wrap;gap:4px">'+BRSTY.map(([k,n])=>'<button data-br="'+k+'" aria-pressed="'+((NB.br||'auto')===k)+'" style="height:30px;padding:0 8px;font-size:12px">'+n+'</button>').join('')+'</span>'}
     <span style="grid-column:1/-1;color:var(--muted);max-width:270px">${NETNM[CV.mode]}${rail?' track: tracks join wherever they meet':NB.lvl>0?' elevated road: passes over what is below':NB.lvl<0?' tunnel: passes under everything':': roads join wherever they meet'}</span>`;
   d.querySelectorAll('[data-cv]').forEach(b=>b.onclick=()=>{CV.mode=b.dataset.cv;netEnd();cvBar();sfx('ui');toast(NETTIP[CV.mode])});
   d.querySelectorAll('[data-snap]').forEach(b=>b.onclick=()=>{const k=b.dataset.snap;NB[k]=!NB[k];cvBar();sfx('ui')});
+  d.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>{NB.br=b.dataset.br;cvBar();sfx('ui');toast(BRTIP[NB.br])});
   d.querySelectorAll('[data-lvl]').forEach(b=>b.onclick=()=>{NB.lvl=+b.dataset.lvl;netEnd();cvBar();sfx('ui');toast(NB.lvl>0?'Elevated road: tap where the ramp starts and where it ends. It can pass over roads, track and the river.':NB.lvl<0?'Tunnel: tap where it goes in and where it comes out. It can pass under anything.':'Ground: roads join wherever they meet.')});
   const sb=d.querySelector('[data-stop]');if(sb)sb.onclick=()=>{netEnd();cvBar()}};
 {const _ne=netEnd;netEnd=function(){const had=!!NB.start;_ne();if(had&&typeof cvBar==='function')cvBar()}}
@@ -10623,6 +10631,87 @@ function netTerrGrade(){if(!TERRAIN_ON||!G||!G.net||!G.net.s.length)return;const
 {const _trl=terrRoadLevel;terrRoadLevel=function(){_trl();try{netTerrGrade()}catch(e){console.warn(e)}}}
 /* roads changed: re-grade the ground */
 {const _rb=netRebuild;netRebuild=function(){_rb();if(TERRAIN_ON&&typeof terrDirty!=='undefined')terrDirty=true}}
+/* ---------- realistic bridges (patch_bridges.py) ----------
+   A road segment over water gets a superstructure over its water span (the part where the deck is at full height):
+   beam (piers only), arch (concrete deck arches), truss (steel through truss), cable-stayed (pylons with fans of stays)
+   or suspension (two towers, main cables, hangers). The style is sg.o.br (picked in the road tool's Bridge row) or, for
+   'auto', chosen by the span. Curved spans fall back to beam. All bridges are one merged mesh group BRG, rebuilt with
+   the network. */
+const BRSTY=[['auto','Auto'],['beam','Beam'],['arch','Arch'],['truss','Truss'],['cable','Cable-stayed'],['susp','Suspension']];
+const BRTIP={auto:'Bridges pick their own look by length: beam, arch, cable-stayed, then suspension.',beam:'Beam bridge: a deck on concrete piers.',
+  arch:'Arch bridge: white steel arches over the road, or stone-coloured arches under short decks.',truss:'Truss bridge: a steel frame over the road.',cable:'Cable-stayed bridge: tall pylons hold the deck with fans of cables.',
+  susp:'Suspension bridge: the deck hangs from two big cables between towers.'};
+function brInfo(g){if(g._bri!==undefined)return g._bri;g._bri=null;if(!g.H||g.kind==='rail'||(g.sg&&g.sg.e))return null;
+  const lift=g.lift||0.1;let best=null,a=-1;
+  for(let k=0;k<=g.n;k++){const on=g.H[k]>=lift-1e-4;if(on&&a<0)a=k;if((!on||k===g.n)&&a>=0){const b=on?k:k-1;if(!best||g.S[b]-g.S[a]>best[1]-best[0])best=[g.S[a],g.S[b]];a=-1}}
+  if(!best||best[1]-best[0]<0.6)return null;
+  const s0=best[0],s1=best[1],L=s1-s0,A=cvAt(g,s0),B=cvAt(g,s1),dx=B[0]-A[0],dz=B[1]-A[1],cl=Math.hypot(dx,dz)||1;let dev=0;
+  for(let s=s0;s<=s1;s+=0.2){const q=cvAt(g,s);dev=Math.max(dev,Math.abs((q[0]-A[0])*dz-(q[1]-A[1])*dx)/cl)}
+  let st=(g.sg&&g.sg.o&&g.sg.o.br)||'auto';if(st==='auto')st=L<3.5?'beam':L<7?'arch':L<14?'cable':'susp';if(dev>0.2&&st!=='beam')st='beam';
+  return g._bri={s0,s1,L,st,lift}}
+var BRG=null;
+function brBuild(){if(BRG){scene.remove(BRG);BRG.traverse(o=>{if(o.geometry)o.geometry.dispose()})}BRG=null;if(!G||!G.net||!G.net.s.length)return;
+  const P=[],C=[],col=new THREE.Color();let nb=0;
+  const tri=(a,b,c,cl)=>{P.push(...a,...b,...c);for(let i=0;i<3;i++)C.push(cl.r,cl.g,cl.b)};
+  /* a straight member from a to c with a w x h box section */
+  const beam=(a,c,w,h,hex)=>{const cl=col.set(hex).clone(),d=[c[0]-a[0],c[1]-a[1],c[2]-a[2]],l=Math.hypot(...d);if(l<1e-5)return;d[0]/=l;d[1]/=l;d[2]/=l;
+    let up=Math.abs(d[1])>0.95?[1,0,0]:[0,1,0];const sd=[d[1]*up[2]-d[2]*up[1],d[2]*up[0]-d[0]*up[2],d[0]*up[1]-d[1]*up[0]],sl=Math.hypot(...sd);sd[0]/=sl;sd[1]/=sl;sd[2]/=sl;
+    const u=[sd[1]*d[2]-sd[2]*d[1],sd[2]*d[0]-sd[0]*d[2],sd[0]*d[1]-sd[1]*d[0]];
+    const V=(p,i,j)=>[p[0]+sd[0]*i*w/2+u[0]*j*h/2,p[1]+sd[1]*i*w/2+u[1]*j*h/2,p[2]+sd[2]*i*w/2+u[2]*j*h/2];
+    const a1=V(a,-1,-1),a2=V(a,1,-1),a3=V(a,1,1),a4=V(a,-1,1),c1=V(c,-1,-1),c2=V(c,1,-1),c3=V(c,1,1),c4=V(c,-1,1);
+    const q=(p1,p2,p3,p4)=>{tri(p1,p2,p3,cl);tri(p1,p3,p4,cl)};
+    q(a1,c1,c2,a2);q(a2,c2,c3,a3);q(a3,c3,c4,a4);q(a4,c4,c1,a1);q(a1,a2,a3,a4);q(c4,c3,c2,c1)};
+  const WBED=-0.55,WTOP=typeof SEAL!=='undefined'&&SC.sea?SEAL:WLV;
+  for(const g of netMap().geo.values()){if(g.kind!=='road')continue;const bi=brInfo(g);if(!bi||bi.st==='beam')continue;nb++;
+    const hw=netHW(g.sg.t),{s0,s1,L,st}=bi;
+    const at=(s,v,dy=0)=>{const q=cvAt(g,s);return[q[0]-q[3]*v,0.06+netHs(g,s)+dy,q[1]+q[2]*v]};
+    const deckB=s=>0.06+netHs(g,s)-0.05;
+    const pier=(s,w)=>{for(const v of[-1,1])beam([...at(s,v*hw*0.6)].map((c,i)=>i===1?WBED:c),at(s,v*hw*0.6,-0.05),w,w,'#bdb7aa');beam(at(s,-hw*0.75,-0.06),at(s,hw*0.75,-0.06),0.07,0.05,'#b3ad9f')};
+    if(st==='arch'){const n=Math.max(1,Math.ceil(L/10)),seg=L/n;
+      for(let a=0;a<n;a++){const sa=s0+a*seg,sb=sa+seg;
+        /* 5 tiles and more: a tied arch over the road (white steel ribs leaning in, hangers, wind bracing) */
+        if(seg>=5){const Ht=Math.min(1.5,0.35+seg*0.13),c='#e6e4de';const rib=(t,v)=>{const s=sa+t*seg,h=Ht*(1-(2*t-1)**2);return at(s,v*((hw+0.05)-0.12*h/Ht),h)};
+          for(const v of[-1,1]){let prev=null;for(let k=0;k<=24;k++){const p=rib(k/24,v);if(prev)beam(prev,p,0.07,0.08,c);prev=p}
+            for(let s=sa+0.3;s<sb-0.2;s+=0.3){const t=(s-sa)/seg,p=rib(t,v);if(p[1]-at(s,0)[1]<0.06)continue;beam(at(s,v*(hw+0.04),0.01),p,0.012,0.012,'#8d9196')}
+            beam(at(sa,v*(hw+0.05),-0.06),at(sb,v*(hw+0.05),-0.06),0.06,0.07,'#d8d6cf')}
+          for(let k=3;k<=21;k+=3){const t=k/24;if(Ht*(1-(2*t-1)**2)<0.4)continue;beam(rib(t,-1),rib(t,1),0.035,0.035,c)}
+          if(a>0)pier(sa,0.12);continue}
+        for(const v of[-1,1]){const vo=v*hw*0.72;let prev=null;
+          for(let k=0;k<=20;k++){const t=k/20,s=sa+t*seg,yt=deckB(s)-0.03,y=WTOP+(yt-WTOP)*(1-(2*t-1)**2),p=at(s,vo);p[1]=y;if(prev)beam(prev,p,0.07,0.07,'#d3ccbe');prev=p}
+          for(let s=sa+0.3;s<sb-0.15;s+=0.32){const t=(s-sa)/seg,yt=deckB(s)-0.03,y=WTOP+(yt-WTOP)*(1-(2*t-1)**2);if(yt-y<0.04)continue;const p=at(s,vo);beam([p[0],y,p[2]],[p[0],yt+0.02,p[2]],0.035,0.035,'#cdc6b8')}}
+        for(let k=2;k<=18;k+=4){const t=k/20,s=sa+t*seg,yt=deckB(s)-0.03,y=WTOP+(yt-WTOP)*(1-(2*t-1)**2);const A2=at(s,-hw*0.72),B2=at(s,hw*0.72);A2[1]=B2[1]=y;beam(A2,B2,0.03,0.03,'#c6bfb1')}
+        if(a>0)pier(sa,0.12)}}
+    else if(st==='truss'){const n=Math.max(1,Math.ceil(L/5.5)),seg=L/n,ht=0.32;
+      for(let a=0;a<n;a++){const sa=s0+a*seg,sb=sa+seg,np=Math.max(3,Math.round(seg/0.32)),pl=seg/np,c='#4d6878';
+        for(const v of[-1,1]){const vo=v*(hw+0.03);
+          for(let k=0;k<np;k++){const x0=sa+k*pl,x1=x0+pl;beam(at(x0,vo),at(x1,vo),0.035,0.035,c);
+            if(k===0)beam(at(x0,vo),at(x1,vo,ht),0.04,0.04,c);
+            else if(k===np-1)beam(at(x0,vo,ht),at(x1,vo),0.04,0.04,c);
+            else{beam(at(x0,vo,ht),at(x1,vo,ht),0.04,0.04,c);beam(k%2?at(x0,vo):at(x0,vo,ht),k%2?at(x1,vo,ht):at(x1,vo),0.025,0.025,c)}
+            if(k>0)beam(at(x0,vo),at(x0,vo,ht),0.025,0.025,c)}}
+        for(let k=1;k<np;k++){const x=sa+k*pl;beam(at(x,-(hw+0.03),ht),at(x,hw+0.03,ht),0.025,0.025,c)}
+        for(const x of[sa+pl,sb-pl])beam(at(x,-(hw+0.03),ht-0.06),at(x,hw+0.03,ht-0.06),0.03,0.05,c);
+        if(a>0)pier(sa,0.13)}
+      pier(s0,0.13);pier(s1,0.13)}
+    else if(st==='cable'){const tw=L<10?[s0+L/2]:[s0+L*0.27,s1-L*0.27],reach=L<10?L/2-0.15:L*0.27-0.1,Ht=Math.min(3.2,0.45+reach*0.32),c='#e9e8e3',cc='#dfe2e5';
+      for(const ts of tw){for(const v of[-1,1]){const base=at(ts,v*(hw+0.09));base[1]=WBED;const top=at(ts,v*(hw*0.35+0.05),Ht);beam(base,top,0.11,0.13,c)}
+        beam(at(ts,-(hw+0.12),-0.07),at(ts,hw+0.12,-0.07),0.09,0.07,c);beam(at(ts,-(hw*0.45+0.05),Ht*0.78),at(ts,hw*0.45+0.05,Ht*0.78),0.07,0.08,c);
+        const nc=Math.max(3,Math.floor(reach/0.45));
+        for(const dir of[-1,1])for(let k=1;k<=nc;k++){const ds=ts+dir*k*reach/nc,hy=Ht*(0.55+0.42*k/nc);
+          for(const v of[-1,1]){const off=v*((hw+0.09)+((hw*0.35+0.05)-(hw+0.09))*(hy-WBED+deckB(ts))/(Ht-WBED+deckB(ts)));beam(at(ts,off,hy),at(ds,v*(hw+0.015),0.02),0.012,0.012,cc)}}}}
+    else if(st==='susp'){const t0=s0+L*0.2,t1=s1-L*0.2,ms=t1-t0,Ht=Math.min(3.6,0.5+ms*0.13),c='#b8473a',cc='#a33f33',sag=Ht*0.82,vo=hw+0.06;
+      for(const ts of[t0,t1]){for(const v of[-1,1]){const base=at(ts,v*vo);base[1]=WBED;beam(base,at(ts,v*vo,Ht),0.12,0.14,c)}
+        for(const y of[-0.07,Ht*0.45,Ht*0.97])beam(at(ts,-vo,y),at(ts,vo,y),0.08,0.08,c)}
+      const cab=s=>s<t0?Ht*(s-s0)/(t0-s0):s>t1?Ht*(s1-s)/(s1-t1):Ht-sag*(1-((2*(s-t0)/ms-1)**2));
+      for(const v of[-1,1]){let prev=null;for(let k=0;k<=60;k++){const s=s0+L*k/60,p=at(s,v*vo,Math.max(0.03,cab(s))+0.02);if(prev)beam(prev,p,0.03,0.03,cc);prev=p}
+        for(let s=s0+0.2;s<s1-0.1;s+=0.2){if(Math.abs(s-t0)<0.1||Math.abs(s-t1)<0.1)continue;const y=cab(s);if(y<0.06)continue;beam(at(s,v*vo,0.02),at(s,v*vo,y+0.02),0.008,0.008,'#5b5f63')}}
+      for(const s of[s0,s1])for(const v of[-1,1]){const p=at(s,v*vo,-0.02);beam([p[0],p[1]-0.1,p[2]],[p[0],p[1]+0.06,p[2]],0.14,0.14,'#9c978c')}}}
+  if(!P.length)return;
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(C,3));geo.computeVertexNormals();
+  const m=new THREE.Mesh(geo,BRG_MAT||(BRG_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.75,metalness:0.15,flatShading:true})));
+  m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;BRG=new THREE.Group();BRG.add(m);BRG.matrixAutoUpdate=false;scene.add(BRG)}
+var BRG_MAT=null;
+{const _rbB=netRebuild;netRebuild=function(){_rbB();try{brBuild()}catch(e){console.error(e)}}}
 
 /* ---------- citizens as agents (net_agents.js) ----------
    Every resident is a person with a name, an age, a home, and a job, school or college (or is retired / too young).

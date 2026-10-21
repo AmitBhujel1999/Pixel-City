@@ -1693,7 +1693,8 @@ const WMAT=new THREE.ShaderMaterial({uniforms:WU,fog:true,transparent:true,depth
       float fz=fn.z,shore=1.0-smoothstep(0.0,0.035,dd);
       float foam=shore*smoothstep(0.3,0.75,fz*0.8+0.35*sin(t*1.6+p.x*2.1+p.y*1.4));
       foam+=smoothstep(1.35,2.5,sp)*smoothstep(0.5,0.85,fz)*0.85;
-      if(sea>0.5){float band=sin(dd*48.0-t*2.0+r1.z*3.0);foam+=smoothstep(0.72,0.98,band)*(1.0-smoothstep(0.03,0.17,dd))*0.9;}
+      if(sea>0.5){/* swell rolls in from the open sea: the phase grows with depth, so crests move toward the shore, bunch up and break there */
+        float sh=sqrt(dd),band=sin(sh*62.0+t*2.2+r1.z*2.0),brk=1.0-smoothstep(0.02,0.2,dd);foam+=smoothstep(0.86-0.3*brk,0.99,band)*brk*(0.5+0.6*brk);}
       foam=clamp(foam*fade+shore*0.15*(1.0-fade),0.0,1.0)*(1.0-ice)*(1.0-vM*0.85);
       col=mix(col,vec3(0.93,0.95,0.95),foam*0.85);alpha=max(alpha,foam*0.9);
       col=mix(col,vec3(0.82,0.9,0.95)+(fz-0.5)*0.06,ice*0.9);alpha=mix(alpha,0.97,ice);

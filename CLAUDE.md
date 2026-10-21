@@ -80,6 +80,9 @@ edit the PC file by hand.
   river edge, map + 128-tile margin) and `TRI`. `trE` feeds `inRiverBand0`, the water bed (`trBed` in `watBase`), the
   hill blending (`rivEdge`) and the scenery outside (`trLand`: valley floor, then a cliff at the source).
 - Water enters at every map-edge corner that has water except the east end of the main river (`FX` 2).
+- Mountain bay (`TRSC`) has its own `TRDEF`: two rivers from the northern mountains and a creek, ending out in the sea
+  (`end`), widening into estuaries. With rivers, every non-river sea corner is fixed level (`FX` 1) and only the rivers
+  are simulated. River corners in a sea map carry `aM = -1` so the water shader leaves out swell and surf there.
 - Outside the map: stream ribbons (WMAT), a waterfall mesh per source (`fallMat`) and spray points (`tribTick`).
 
 ## Road types (Cities: Skylines style)

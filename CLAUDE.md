@@ -46,10 +46,31 @@ edit the PC file by hand.
 - Roads stand 0.06 (sidewalks 0.075) above the ground; every logic height (cars, `surfY`) assumes that, so the road is
   not lowered. Instead a grass verge (`VERGE` colour) slopes from the road's outer edge down to the ground: in
   `netRoadStrip` for network roads and in the `T.ROAD` case of `buildTile` for tile roads (open sides only).
-- The river water is at `WLV` (-0.18, about 2.7 m down) with a channel mesh (grass edge, earth bank, mud, bed). The flat
-  ground plane is cut away over the channel in `groundMat`'s shader (riverZ table in a float texture), and the outer
-  landscape mesh, which lies just under the whole map, is pushed down to -0.6 there. Boats float at `WLV`; bridge piers
-  reach -0.3.
+- Boats float on the water grid level (`watLevelAt`), hidden where the river is blocked; bridge piers reach -0.3.
+
+## Water: one simulated grid for river, sea, lakes and dug channels
+
+- Per tile corner (`TN` x `TN`, in `WAT`): `B` dug bed height (absolute, `WNONE` = natural ground; only ever below
+  `TC`), `G = min(B, TC)`, `D` water depth. Buildings, roads and bridges keep using `TC`, so nothing on them moves;
+  only the ground mesh (`terrGround` lowers its vertices by `G - TC`) and the water use the bed. The drawn river and
+  sea (`watBase`, from `riverZ` / `seaW`) are the starting bed; edits are saved as `G.wb`, tiles that turned water/land
+  as `G.wt` (read by `inRiverBand`, which is the drawn band XOR `G.wt`; `inRiverBand0` is the drawn band only).
+- `watStep` is a virtual-pipes shallow-water model (dt = 1): river comes in at the west edge (`FX` 2, inflow `WAT.Q`),
+  leaves at the east edge (`FX` 1, fixed level `wLev(x)`, which falls `WDROP` across the map); the sea's deep water
+  and edge are fixed level; other edges drain (`FX` 3). Water on land (`G > -0.005`) flows without momentum (no
+  damping term, slower) and soaks away (`WSOAK`), so a dammed river spills over the land as a growing flood instead of
+  a thin sheet over the whole valley. Only moving corners are in the active list `AL`; `watPrune` drops still ones and
+  the sim sleeps when nothing changes (zero cost). The river's steady flow is solved directly at load (`watSteady`).
+- Measure sim speed in node, not through the test harness: the harness's `eval` hook makes the game code ~9x slower
+  (about 12 ns per active corner per step in real Chrome).
+- Water is drawn per 40 x 40 chunk (`watChunk`) with `WMAT` (depth `aD`, current `aF`, land flood flag `aM`): flow-
+  mapped ripples, depth colour, Fresnel sky, sun glitter, shore / fast-water / surf foam, muddy flood water over land.
+  The outside river ribbons use the same material. Ground shader (`groundWater`): sand where the land dips toward
+  the water, darker wet bed, caustics under water.
+- Land tool water modes `dig` / `fill` / `beach` (`watBrush`; also in flat cities, where hills modes stay hidden):
+  only empty land, trees and water; filling under water pushes the water out over the rim (a small wave). `watSync`
+  (1 s) turns land under water into `T.RIVER` and drained edited water back into land; buildings standing in water
+  give a "Water is spilling onto the land" notice. Tiles with a dug dip that is dry take no buildings (`watDug`).
 
 ## Road types (Cities: Skylines style)
 

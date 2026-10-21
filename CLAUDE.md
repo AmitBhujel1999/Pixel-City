@@ -72,6 +72,16 @@ edit the PC file by hand.
   (1 s) turns land under water into `T.RIVER` and drained edited water back into land; buildings standing in water
   give a "Water is spilling onto the land" notice. Tiles with a dug dip that is dry take no buildings (`watDug`).
 
+- Water over land (patch_waterflow): land water keeps its current (`WLDAMP`), only thin sheets (< 0.02) soak away
+  fast, so streams and lakes stay. Muddy colour only on thin sheets (`mud` in WMAT). Fast water on free land wears its
+  bed down (`watErode` in `watPrune`, rate `WERO`, at most `WERMAX` below the land, never on the drawn river), so its
+  path becomes a river channel that is saved in `G.wb`.
+- Water sources: Land tool mode `spring` (`watSpring`; brush size picks the flow `WSQ`, max `WSMAX` 12, tap again to
+  remove for half the price). `WSRC` [{k corner, q flow per step}], `WSF` flags, stone ring markers in `WSG`; saved as
+  `G.ws` "corner:flow*1e5;..." with `G.wsN`. Water is not saved, so `wsLoad` runs the sim ~300 ms at load.
+- Freezing: corners whose depth changed < 2e-7 for 48 steps freeze (`FZ`, skip the step, keep their pipes); a change
+  > 5e-6 wakes the four neighbours, `wAct` wakes the corner. After load every river corner starts frozen.
+
 ## Branch rivers and waterfalls
 
 - New river cities save `G.trib = 1`; the page decides at load like `RIVW` (`TRIB`, `trOf(id)`; `openCity` /

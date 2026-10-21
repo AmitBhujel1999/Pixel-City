@@ -1645,7 +1645,7 @@ const riverMat=new THREE.ShaderMaterial({uniforms:riverU,fog:true,transparent:tr
    ripple normal map are pushed along the current half a cycle apart and cross-faded (no endless stretching), wind
    ripples on top, sea swell on the sea. Colour by depth (the bed shows through the shallows), sky reflection by
    Fresnel, sun glitter, foam at the shore, in fast water and as surf on the sea. */
-const WNONE=99,WEPS=0.004,WMIN=-0.46,SEAL=-0.13,WREF=SC.river?WLV:SEAL,WDROP=SC.river?0.06:0,WC=0.25,WDAMP=0.998,WCH=40,WSOAK=4e-6,WSPS=1200,WCOST=150;
+const WNONE=99,WEPS=0.004,WMIN=-0.46,SEAL=-0.13,WREF=SC.river?WLV:SEAL,WDROP=SC.river?0.06:0,WC=0.25,WDAMP=0.998,WCH=40,WSOAK=4e-6,WSPS=1200,WCOST=150,WLDAMP=0.99,WERO=8e-4,WERMAX=0.14;var WSRC=[],WSF=null;
 function wNormTex(){const S=256,H=new Float32Array(S*S),F=new Float32Array(S*S),r=mulberry32(91),W=[],W2=[];
   for(let k=0;k<28;k++){const a=r()*6.2832,f=3+Math.floor(r()*r()*26);W.push([Math.round(Math.cos(a)*f),Math.round(Math.sin(a)*f),r()*6.2832,Math.pow(f,-1.25)])}
   for(let k=0;k<14;k++){const a=r()*6.2832,f=10+Math.floor(r()*30);W2.push([Math.round(Math.cos(a)*f),Math.round(Math.sin(a)*f),r()*6.2832])}
@@ -1694,14 +1694,14 @@ const WMAT=new THREE.ShaderMaterial({uniforms:WU,fog:true,transparent:true,depth
       vec3 col=mix(shalC,deepC,absb)*(0.72+0.38*max(dot(N,L),0.0));
       float alpha=1.0-exp(-dd*9.0);
       /* flood water over land: muddy, so it shows even when shallow */
-      col=mix(col,vec3(0.36,0.33,0.24)*(0.8+0.3*max(dot(N,L),0.0)),vM*0.55);alpha=max(alpha,vM*smoothstep(0.0,0.006,dd)*0.72);
+      float mud=vM*(1.0-smoothstep(0.01,0.05,dd));col=mix(col,vec3(0.36,0.33,0.24)*(0.8+0.3*max(dot(N,L),0.0)),mud*0.55);alpha=max(alpha,vM*smoothstep(0.0,0.006,dd)*mix(0.82,0.72,mud));
       /* foam: shore line, fast or squeezed water, surf on the sea */
       float fz=fn.z,shore=1.0-smoothstep(0.0,0.035,dd);
       float foam=shore*smoothstep(0.3,0.75,fz*0.8+0.35*sin(t*1.6+p.x*2.1+p.y*1.4));
       foam+=smoothstep(1.35,2.5,sp)*smoothstep(0.5,0.85,fz)*0.85;
       if(sea>0.5){/* swell rolls in from the open sea: the phase grows with depth, so crests move toward the shore, bunch up and break there */
         float sh=sqrt(dd),band=sin(sh*62.0+t*2.2+r1.z*2.0),brk=1.0-smoothstep(0.02,0.2,dd);foam+=smoothstep(0.86-0.3*brk,0.99,band)*brk*(0.5+0.6*brk);}
-      foam=clamp(foam*fade+shore*0.15*(1.0-fade),0.0,1.0)*(1.0-ice)*(1.0-vM*0.85);
+      foam=clamp(foam*fade+shore*0.15*(1.0-fade),0.0,1.0)*(1.0-ice)*(1.0-mud*0.85);
       col=mix(col,vec3(0.93,0.95,0.95),foam*0.85);alpha=max(alpha,foam*0.9);
       col=mix(col,vec3(0.82,0.9,0.95)+(fz-0.5)*0.06,ice*0.9);alpha=mix(alpha,0.97,ice);
       col*=light;
@@ -3706,7 +3706,7 @@ function wovGet(){if(WOVG!==G||!WOV){WOVG=G;WOV=new Uint8Array(N*N);
   if(G&&G.wt&&G.wtN===N)for(const r of G.wt.split(';')){const p=r.split('*'),s=+p[0],c=p.length>1?+p[1]:1;for(let i=s;i<s+c&&i<N*N;i++)WOV[i]=1}}return WOV}
 function wSetTileWater(i,on){const o=wovGet();o[i]=(inRiverBand0(i%N,(i/N)|0)!==on)?1:0}
 function watAlloc(){const L=TN*TN;WAT={L,B:new Float32Array(L),B0:null,G:new Float32Array(L),D:new Float32Array(L),DL:new Float32Array(L),
-  FR:new Float32Array(L),FL:new Float32Array(L),FD:new Float32Array(L),FU:new Float32Array(L),A:new Uint8Array(L),WT:new Uint8Array(L),FX:new Uint8Array(L),E:new Uint8Array(L),
+  FR:new Float32Array(L),FL:new Float32Array(L),FD:new Float32Array(L),FU:new Float32Array(L),A:new Uint8Array(L),FZ:new Uint8Array(L),CT:new Uint8Array(L),WT:new Uint8Array(L),FX:new Uint8Array(L),E:new Uint8Array(L),
   AL:new Int32Array(8192),n:0,AW:new Uint8Array(AGRID*AGRID),dirty:new Set(),tdirty:new Set(),meshes:new Map(),step:0,acc:0,mt:0,st:0,Q:0,calm:0,sleep:false,net:0,fT:-1e9,ready:false}}
 /* the drawn river / sea as a bed (cached per page: the scenario never changes without a reload) */
 function watBase(){if(WAT.B0)return;const B0=new Float32Array(WAT.L).fill(WNONE);
@@ -3720,14 +3720,14 @@ function watBase(){if(WAT.B0)return;const B0=new Float32Array(WAT.L).fill(WNONE)
       for(let z=j*S;z<=j*S+S;z++)for(let x=i*S;x<=i*S+S;x++){const w=lo>4.4+12?99:seaW(x-HALF,z-HALF);if(w<=-1.2)continue;B0[z*TN+x]=Math.max(-0.62,-(w+1.2)*0.11)}}}
   if(TRIB)for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const b=trBed(x-HALF,z-HALF);if(b<-0.002&&b<B0[z*TN+x])B0[z*TN+x]=b}
   WAT.B0=B0}
-function wAct(k){const W=WAT;if(W.A[k])return;W.A[k]=1;if(W.n>=W.AL.length){const a=new Int32Array(W.AL.length*2);a.set(W.AL);W.AL=a}W.AL[W.n++]=k;W.sleep=false}
+function wAct(k){const W=WAT;if(W.FZ[k]){W.FZ[k]=0;W.CT[k]=0;W.sleep=false}if(W.A[k])return;W.A[k]=1;if(W.n>=W.AL.length){const a=new Int32Array(W.AL.length*2);a.set(W.AL);W.AL=a}W.AL[W.n++]=k;W.sleep=false}
 const wNW=()=>Math.ceil(N/WCH);
 function watCD(x,z){const W=WAT,nw=wNW(),cx=Math.min(nw-1,(x/WCH)|0),cz=Math.min(nw-1,(z/WCH)|0);W.dirty.add(cz*nw+cx);
   const ex=x%WCH===0&&cx>0&&x<N,ez=z%WCH===0&&cz>0&&z<N;if(ex)W.dirty.add(cz*nw+cx-1);if(ez)W.dirty.add((cz-1)*nw+cx);if(ex&&ez)W.dirty.add((cz-1)*nw+cx-1)}
 function watTD(x,z){for(const[dx,dz]of[[0,0],[-1,0],[0,-1],[-1,-1]]){const tx=x+dx,tz=z+dz;if(tx>=0&&tz>=0&&tx<N&&tz<N)WAT.tdirty.add(tz*N+tx)}}
 function watInit(){if(!WAT||WAT.L!==TN*TN)watAlloc();const W=WAT;W.ready=false;watBase();
   for(const m of W.meshes.values()){WGR.remove(m);m.geometry.dispose()}W.meshes.clear();W.dirty.clear();W.tdirty.clear();
-  W.B.set(W.B0);W.E.fill(0);W.D.fill(0);W.FR.fill(0);W.FL.fill(0);W.FD.fill(0);W.FU.fill(0);W.A.fill(0);W.n=0;W.FX.fill(0);W.AW.fill(0);W.step=0;W.acc=0;W.calm=0;W.sleep=false;
+  W.B.set(W.B0);W.E.fill(0);W.D.fill(0);W.FR.fill(0);W.FL.fill(0);W.FD.fill(0);W.FU.fill(0);W.A.fill(0);W.FZ.fill(0);W.CT.fill(0);W.n=0;W.FX.fill(0);W.AW.fill(0);W.step=0;W.acc=0;W.calm=0;W.sleep=false;
   if(G&&G.wb&&G.wbN===N)for(const r of G.wb.split(';')){const p=r.split(':');let k=+p[0];for(const v of p[1].split(',')){if(k<W.L){W.B[k]=v==='n'?WNONE:(+v)/1000;W.E[k]=1}k++}}
   const B=W.B,G2=W.G,D=W.D,B0=W.B0,L=W.L;
   for(let k=0;k<L;k++){const b=B[k],t=TC[k];G2[k]=b<t?b:t;if(b<WNONE)W.AW[Math.min(AGRID-1,(((k/TN)|0)/AREA)|0)*AGRID+Math.min(AGRID-1,((k%TN)/AREA)|0)]=1}
@@ -3770,37 +3770,42 @@ function watSteady(){const W=WAT,D=W.D,G2=W.G,FX=W.FX,AL=W.AL,n=W.n,g=WC/(1-WDAM
       if(j===k+1)W.FR[k]=f;else if(j===k-1)W.FL[k]=f;else if(j===k+TN)W.FD[k]=f;else W.FU[k]=f}}
   W.sleep=true}
 /* one step of the pipe model (dt = 1) */
-function watStep(){const W=WAT,D=W.D,G2=W.G,FR=W.FR,FL=W.FL,FD=W.FD,FU=W.FU,A=W.A,AL=W.AL,n0=W.n,L=W.L,LT=L-TN;
-  for(let a=0;a<n0;a++){const k=AL[a],d=D[k];
+function watStep(){const W=WAT,D=W.D,G2=W.G,FR=W.FR,FL=W.FL,FD=W.FD,FU=W.FU,A=W.A,AL=W.AL,n0=W.n,L=W.L,LT=L-TN,FZ=W.FZ,CT=W.CT;
+  for(let a=0;a<n0;a++){const k=AL[a];if(FZ[k])continue;const d=D[k];
     if(d<=0||(d<0.0015&&G2[k]>-0.005)){FR[k]=FL[k]=FD[k]=FU[k]=0;continue}
-    const x=k%TN,h=G2[k]+d,lnd=G2[k]>-0.005,C=lnd?0.2:d<0.078?WC*(d+0.002)/0.08:WC,K=lnd?0.0:WDAMP;let r=0,l=0,dn=0,u=0,j,hj;
+    const x=k%TN,h=G2[k]+d,lnd=G2[k]>-0.005,C=d<0.078?WC*(d+0.002)/0.08:WC,K=lnd?WLDAMP:WDAMP;let r=0,l=0,dn=0,u=0,j,hj;
     if(x<N){j=k+1;hj=G2[j]+D[j];r=FR[k]*K+C*(h-hj);if(r<0)r=0;if(!A[j]&&(r>0||(D[j]>0&&hj>h+1e-5)))wAct(j)}
     if(x>0){j=k-1;hj=G2[j]+D[j];l=FL[k]*K+C*(h-hj);if(l<0)l=0;if(!A[j]&&(l>0||(D[j]>0&&hj>h+1e-5)))wAct(j)}
     if(k<LT){j=k+TN;hj=G2[j]+D[j];dn=FD[k]*K+C*(h-hj);if(dn<0)dn=0;if(!A[j]&&(dn>0||(D[j]>0&&hj>h+1e-5)))wAct(j)}
     if(k>=TN){j=k-TN;hj=G2[j]+D[j];u=FU[k]*K+C*(h-hj);if(u<0)u=0;if(!A[j]&&(u>0||(D[j]>0&&hj>h+1e-5)))wAct(j)}
     const s=r+l+dn+u;if(s>d){const f=d/s;r*=f;l*=f;dn*=f;u*=f}
     FR[k]=r;FL[k]=l;FD[k]=dn;FU[k]=u}
-  const AL2=W.AL,n=W.n,Q=W.Q,FX=W.FX,meas=W.step%24===23;let net=0;
-  for(let a=0;a<n;a++){const k=AL2[a],x=k%TN;let inn=0;
+  const AL2=W.AL,n=W.n,Q=W.Q,FX=W.FX,meas=W.step%24===23;let net=0,live=0;
+  for(let a=0;a<n;a++){const k=AL2[a];if(FZ[k])continue;live++;const x=k%TN;let inn=0;
     if(x>0)inn+=FR[k-1];if(x<N)inn+=FL[k+1];if(k>=TN)inn+=FD[k-TN];if(k<LT)inn+=FU[k+TN];
     const d0=D[k];let d=d0+inn-FR[k]-FL[k]-FD[k]-FU[k];const fx=FX[k];
     if(fx){if(fx===1){const lv=wLev(x)-G2[k];d=lv>0?lv:0}else if(fx===2)d+=Q;else if(fx===3)d*=0.9}
-    else{if(d>0&&G2[k]>-0.005)d-=WSOAK;if(meas){const c=d>d0?d-d0:d0-d;if(c>net)net=c}}
-    D[k]=d>1e-6?d:0}
-  if(meas)W.net=net;W.step++}
+    else{if(d>0&&G2[k]>-0.005)d-=d<0.02?WSOAK:WSOAK*0.12;if(meas){const c=d>d0?d-d0:d0-d;if(c>net)net=c}}
+    D[k]=d>1e-6?d:0;const cc=D[k]>d0?D[k]-d0:d0-D[k];
+    if(cc<2e-7){if(CT[k]<255&&++CT[k]>=48)FZ[k]=1}
+    else{CT[k]=0;if(cc>5e-6){if(x<N&&FZ[k+1]){FZ[k+1]=0;CT[k+1]=0}if(x>0&&FZ[k-1]){FZ[k-1]=0;CT[k-1]=0}if(k<LT&&FZ[k+TN]){FZ[k+TN]=0;CT[k+TN]=0}if(k>=TN&&FZ[k-TN]){FZ[k-TN]=0;CT[k-TN]=0}}}}
+  for(let i=0;i<WSRC.length;i++){const q=WSRC[i];if(FZ[q.k])continue;D[q.k]+=q.q;if(!A[q.k])wAct(q.k)}
+  W.live=live;if(meas)W.net=net;W.step++}
 /* drop corners where nothing moves; note what changed for the meshes and the tiles */
 function watPrune(){const W=WAT,D=W.D,DL=W.DL,A=W.A,AL=W.AL,G2=W.G,FR=W.FR,FL=W.FL,FD=W.FD,FU=W.FU,FX=W.FX,L=W.L;let m=0;
   for(let a=0;a<W.n;a++){const k=AL[a],d=D[k],dl=DL[k],x=k%TN,z=(k/TN)|0;
     {const wn=d>(G2[k]>-0.005?0.0025:WEPS)?1:0;if(wn!==W.WT[k]){W.WT[k]=wn;watTD(x,z)}}
     if(d-dl>0.003||dl-d>0.003)watCD(x,z);
-    let keep=FX[k]===2;
+    if(W.FZ[k]){AL[m++]=k;continue}
+    if(G2[k]>-WERMAX+TC[k]-0.002&&WAT.B0[k]>=WNONE&&!FX[k])watErode(k,x,z);
+    let keep=FX[k]===2||(WSF&&WSF[k]===1);
     if(!keep){const out=FR[k]+FL[k]+FD[k]+FU[k];let inn=0;if(x>0)inn+=FR[k-1];if(x<N)inn+=FL[k+1];if(k>=TN)inn+=FD[k-TN];if(k<L-TN)inn+=FU[k+TN];
       if(out>1e-7||inn>1e-7)keep=true;
       else if(d>0&&!(d<0.0015&&G2[k]>-0.005)){const h=G2[k]+d;const chk=j=>{const hj=G2[j]+D[j];return hj<h-1e-5||(D[j]>0&&hj>h+1e-5)};
         keep=(x<N&&chk(k+1))||(x>0&&chk(k-1))||(k<L-TN&&chk(k+TN))||(k>=TN&&chk(k-TN))}}
     if(keep)AL[m++]=k;else{A[k]=0;FR[k]=FL[k]=FD[k]=FU[k]=0;if(d-dl>0.0003||dl-d>0.0003)watCD(x,z)}}
   W.n=m;
-  if(W.net<2e-7){if(++W.calm>=3)W.sleep=true}else W.calm=0}
+  if(W.live===0||W.net<(WSRC.length?2e-8:2e-7)){if(++W.calm>=3)W.sleep=true}else W.calm=0}
 /* water surface mesh of one 40 x 40 chunk: a quad on every tile with water at a corner, the surface carried on over the
    dry corners so the shore line is where the water plane meets the ground; deep still 4 x 4 blocks are one quad */
 function watChunk(ci){const W=WAT,nw=wNW(),cx=ci%nw,cz=(ci/nw)|0,x0=cx*WCH,z0=cz*WCH,x1=Math.min(N,x0+WCH),z1=Math.min(N,z0+WCH);
@@ -3909,6 +3914,55 @@ function waterSave(){if(!G||!WAT||!WAT.ready)return;const W=WAT,out=[];let k=0;
 {const _le=landEnd;landEnd=function(){const on=!!TF.drag;_le();if(on||TF.wstroke)watEnd()}}
 {const _lu=landUndo;landUndo=function(){const u=TF.undo[TF.undo.length-1];if(u&&u.wm){TF.undo.pop();watUndo(u);return}_lu()}}
 {const _lb=landBrush;landBrush=function(cx,cz,dt){if(WMODES.has(TF.mode))return watBrush(cx,cz,dt);_lb(cx,cz,dt)}}
+/* ---------- water over land like Cities: Skylines (patch_waterflow.py) ----------
+   Water on land keeps its current and runs downhill; only thin sheets soak away fast, so a stream or a lake stays.
+   Where it runs fast over free land (empty, trees, water) it wears the ground down, up to WERMAX below the land, so its
+   path turns into a river channel that stays (saved with the dug bed in G.wb). Water sources (Land tool) pour water in
+   at one corner; saved as G.ws "corner:flow;...". */
+function watErode(k,x,z){const W=WAT,f=W.FR[k]+W.FL[k]+W.FD[k]+W.FU[k];if(f<0.002||W.D[k]<0.004||watProt(x,z))return;
+  const fl=Math.max(WMIN,TC[k]-WERMAX),nh=Math.max(fl,W.G[k]-WERO*(f-0.002)*24);if(nh>=W.G[k]-1e-6)return;
+  W.B[k]=nh;W.G[k]=nh;W.E[k]=1;watCD(x,z);watTD(x,z);(W.wq||(W.wq=[])).push(k);
+  const b=W.ebox||(W.ebox={x0:x,z0:z,x1:x,z1:z});if(x<b.x0)b.x0=x;if(x>b.x1)b.x1=x;if(z<b.z0)b.z0=z;if(z>b.z1)b.z1=z;
+  W.AW[Math.min(AGRID-1,(z/AREA)|0)*AGRID+Math.min(AGRID-1,(x/AREA)|0)]=1}
+{const _wp=watPrune;watPrune=function(){_wp();const W=WAT;if(W.wq&&W.wq.length){for(const k of W.wq){const x=k%TN;wAct(k);if(x<N)wAct(k+1);if(x>0)wAct(k-1);if(k<W.L-TN)wAct(k+TN);if(k>=TN)wAct(k-TN)}W.wq.length=0}}}
+{const _wt=watTick;watTick=function(dt,speed){_wt(dt,speed);const W=WAT;W.et=(W.et||0)-dt;
+  if(W.ebox&&W.et<=0){W.et=1.5;const b=W.ebox;W.ebox=null;watGroundBox(b.x0,b.z0,b.x1,b.z1,true)}}}
+const WSG=new THREE.Group();scene.add(WSG);
+const WSRM=new THREE.MeshStandardMaterial({color:'#8d8a82',roughness:0.95,flatShading:true});
+const WSQ={2:0.003,4:0.008,7:0.018,11:0.035},WSMAX=12;
+function wsCost(q){return Math.round(1000+q*100000)}
+function wsDraw(){for(const c of[...WSG.children]){WSG.remove(c);c.geometry.dispose()}
+  for(const q of WSRC){const x=q.k%TN,z=(q.k/TN)|0,y=WAT.G[q.k]-TC[q.k],g=new THREE.Group(),n=7+Math.round(q.q*200),r=0.12+q.q*3;
+    for(let i=0;i<n;i++){const a=i/n*6.2832,m=new THREE.Mesh(new THREE.DodecahedronGeometry(0.035+0.02*((i*7)%3)/2),WSRM);
+      m.position.set(Math.cos(a)*r,0.01,Math.sin(a)*r);m.rotation.set(i,i*2,0);m.castShadow=true;g.add(m)}
+    g.position.set(x-HALF,y,z-HALF);WSG.add(g)}}
+function wsFlags(){WSF=new Uint8Array(WAT.L);for(const q of WSRC)WSF[q.k]=1}
+function wsSave(){if(!G)return;if(WSRC.length){G.ws=WSRC.map(q=>q.k+':'+Math.round(q.q*1e5)).join(';');G.wsN=N}else{delete G.ws;delete G.wsN}}
+function wsLoad(){WSRC=[];if(G&&G.ws&&G.wsN===N)for(const r of G.ws.split(';')){const[a,b]=r.split(':');const k=+a;if(k>=0&&k<WAT.L)WSRC.push({k,q:(+b)/1e5})}
+  wsFlags();wsDraw();if(!WSRC.length)return;for(const q of WSRC)wAct(q.k);
+  /* water is not saved: let the streams run for a moment so they are there when the city opens */
+  const t0=performance.now();while(performance.now()-t0<(MOBILE?150:300)){for(let s=0;s<24;s++)watStep();watPrune()}
+  for(const ci of WAT.dirty)watChunk(ci);WAT.dirty.clear();if(WAT.ebox){const b=WAT.ebox;WAT.ebox=null;watGroundBox(b.x0,b.z0,b.x1,b.z1,true)}WAT.sleep=false}
+function wsAt(x,z){let best=null,bd=1.6;for(const q of WSRC){const d=Math.hypot(q.k%TN-x,((q.k/TN)|0)-z);if(d<bd){bd=d;best=q}}return best}
+function watSpring(cx,cz){const W=WAT;if(!W||!W.ready)return;const x=Math.round(cx+HALF),z=Math.round(cz+HALF),old=wsAt(x,z);
+  if(old){WSRC.splice(WSRC.indexOf(old),1);const back=Math.round(wsCost(old.q)/2);G.money+=back;TF.undo.push({wsr:old,c:-back});
+    toast('Water source removed. '+fmt(back)+' back.')}
+  else{if(watProt(x,z))return toast('Put a water source on empty land, trees or water you own.');
+    if(WSRC.length>=WSMAX)return toast('Your city can have up to '+WSMAX+' water sources.');
+    const q={k:z*TN+x,q:WSQ[TF.r]||0.008},c=wsCost(q.q);if(G.money<c)return toast('A water source costs '+fmt(c)+'.');
+    G.money-=c;WSRC.push(q);TF.undo.push({wsa:q,c});wAct(q.k);
+    toast('Water source placed. The water runs downhill and finds its own way.')}
+  if(TF.undo.length>30)TF.undo.shift();W.calm=0;W.sleep=false;wsFlags();wsDraw();hud();sfx('ui');landBar()}
+LANDNM.spring='Water source';WMODES.add('spring');
+LANDTIP.spring='Tap to place a water source (tap one again to remove it). It pours water out: the water runs downhill, fills dips into lakes and wears its own river into the land. Brush size sets how much water.';
+{const _lm=landModes;landModes=function(){const m=_lm();return m.includes('spring')?m:[...m,'spring']}}
+{const _lb2=landBrush;landBrush=function(cx,cz,dt){if(TF.mode==='spring'){if(TF.drag&&!TF.drag.sp){TF.drag.sp=1;watSpring(cx,cz)}return}_lb2(cx,cz,dt)}}
+{const _lu2=landUndo;landUndo=function(){const u=TF.undo[TF.undo.length-1];
+  if(u&&(u.wsa||u.wsr)){TF.undo.pop();if(u.wsa){const i=WSRC.indexOf(u.wsa);if(i>=0)WSRC.splice(i,1)}else WSRC.push(u.wsr);
+    G.money+=u.c;if(u.wsr)wAct(u.wsr.k);WAT.sleep=false;wsFlags();wsDraw();hud();landBar();sfx('ui');return}_lu2()}}
+{const _wi=watInit;watInit=function(){_wi();const W=WAT;for(let a=0;a<W.n;a++)W.FZ[W.AL[a]]=1;wsLoad()}}
+{const _ws=waterSave;waterSave=function(){_ws();if(WAT&&WAT.ready)wsSave()}}
+{const _wc=landCostShow;landCostShow=function(){_wc();const e=$('#landCost');if(e&&TF.mode==='spring'&&!TF.cost)e.textContent='Water source: '+fmt(wsCost(WSQ[TF.r]||0.008))+' ('+WSRC.length+' of '+WSMAX+')'}}
 /* dug land that is not under water (a beach, a dry pit) takes no buildings: they would float over the dip */
 {const _cfW=costFor;costFor=function(tl,i){const c=_cfW(tl,i);if(c===null)return c;const t=tiles[i];
   if(t&&t.t!==T.RIVER&&tl.id!=='doze'&&tl.id!=='land'&&watDug(i))return null;return c}}

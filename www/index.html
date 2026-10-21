@@ -1539,7 +1539,7 @@ let FOREST=null;
   for(let a=0;a<60000&&(np<TN||nr<TN);a++){
     const x=(rnd()-0.5)*S0*0.9,z=(rnd()-0.5)*S0*0.9,d=edgeDist(x,z);if(d<1.3||d>150)continue;
     const h=terrainH(x,z);if(h<0.06||h>(SC.forest?14:9.5))continue;
-    if(isField(x,z,d,h))continue;if(x<-HALF+1&&Math.abs(z-hwZ(x))<2.6)continue;
+    if(isField(x,z,d,h))continue;if(x<-HALF+1&&Math.abs(z-hwZ(x))<2.6)continue;if(SC.sea&&h<0.35&&seaW(x,z)>-5)continue;
     const dens=fbm(x*0.06+11,z*0.06+5);if(dens<0.5-Math.min(0.12,h*0.03)-(SC.cold?0.08:0)-(SC.forest?0.14:0)&&rnd()>0.04)continue;if(SC.sand&&rnd()>0.06)continue;
     const s=(0.6+rnd()*0.8)*(1+d*0.012),usePine=SC.sand||SC.cold||h>2.5||rnd()<0.45;
     o.rotation.set(0,rnd()*6.3,0);
@@ -2497,6 +2497,7 @@ const TI={dirty:true,M:null,mats:{},A:new Map(),da:new Set(),
     const L=[[],[],[],[],[]],_m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3(),c=new THREE.Color();
     for(const i of OWNIDX){const tl=tiles[i];if(tl.t!==T.TREE)continue;const r=mulberry32(tl.seed+tl.l*977+tl.t*131),x=i%N,z=(i/N)|0,wx=x-HALF+0.5,wz=z-HALF+0.5,n=SC.forest&&fbm(x*0.035+17,z*0.035+4)*0.65+fbm(x*0.11+3,z*0.11+29)*0.35>0.56?4+((r()*2)|0):1+((r()*3)|0);
       for(let k=0;k<n;k++){const px=(r()-0.5)*(n>3?0.9:0.6),pz=(r()-0.5)*(n>3?0.9:0.6),sc=(0.9+r()*0.6)*(n>3?1.25:1),ry=r()*6.3;let kind=TI.pick(r,i);
+        {const bg=beachG(wx+px,wz+pz);if(bg<-0.003){if(bg<-0.035||SC.cold||!SC.sea||r()<0.5)continue;kind=3}}
         const cols=this.kinds[kind][1];L[kind].push(wx+px,wz+pz,ry,sc*this.kinds[kind][2],cols[(r()*cols.length)|0])}}
     const need=Math.max(...L.map(a=>a.length/5));if(!this.M||need>this.cap)this.init(Math.ceil(Math.max(256,need)*1.3));
     L.forEach((a,kind)=>{const n=a.length/5;for(const im of this.M[kind].ims){for(let j=0;j<n;j++){_p.set(a[j*5],0.03,a[j*5+1]);_q.setFromEuler(_e.set(0,a[j*5+2],0));_s.setScalar(a[j*5+3]);_m.compose(_p,_q,_s);im.setMatrixAt(j,_m);
@@ -2511,6 +2512,7 @@ TI.rebuild=function(){this.dirty=false;const all=!this.da.size,areas=all?[...OWN
   for(const a of areas){if(!OWN.has(a))continue;const L=[[],[],[],[],[]];
     areaTiles(a,i=>{const tl=tiles[i];if(tl.t!==T.TREE)return;const r=mulberry32(tl.seed+tl.l*977+tl.t*131),x=i%N,z=(i/N)|0,wx=x-HALF+0.5,wz=z-HALF+0.5,n=SC.forest&&fbm(x*0.035+17,z*0.035+4)*0.65+fbm(x*0.11+3,z*0.11+29)*0.35>0.56?4+((r()*2)|0):1+((r()*3)|0);
       for(let k=0;k<n;k++){const px=(r()-0.5)*(n>3?0.9:0.6),pz=(r()-0.5)*(n>3?0.9:0.6),sc=(0.9+r()*0.6)*(n>3?1.25:1),ry=r()*6.3;let kind=TI.pick(r,i);
+        {const bg=beachG(wx+px,wz+pz);if(bg<-0.003){if(bg<-0.035||SC.cold||!SC.sea||r()<0.5)continue;kind=3}}
         const cols=this.kinds[kind][1];L[kind].push(wx+px,wz+pz,ry,sc*this.kinds[kind][2],cols[(r()*cols.length)|0])}});
     const g=new THREE.Group();this.A.set(a,g);scene.add(g);const TC=60,cells=new Map();
     L.forEach((all,kind)=>{for(let j=0;j<all.length;j+=5){const key=Math.floor((all[j]+HALF)/TC)+','+Math.floor((all[j+1]+HALF)/TC);let e=cells.get(key);if(!e){e=[[],[],[],[],[]];cells.set(key,e)}e[kind].push(all[j],all[j+1],all[j+2],all[j+3],all[j+4])}});
@@ -3490,7 +3492,7 @@ const LF={g:null,cells:[],CS:80,
     const cellGeo=(geo,x,z)=>{const q=new THREE.BufferGeometry();for(const k in geo.attributes)q.setAttribute(k,geo.attributes[k]);if(geo.index)q.setIndex(geo.index);
       q.boundingSphere=new THREE.Sphere(new THREE.Vector3(x,2,z),CS*0.72+4);return q};
     for(let a=0;a<AGRID*AGRID;a++){if(OWN.has(a))continue;const ax=(a%AGRID)*AREA,az=((a/AGRID)|0)*AREA,CL=[];
-      areaTiles(a,(i,x,z)=>{if(((x+z)&(AGRID===3?3:1))||inRiverBand(x,z)||!landTree(x,z))return;const ci=((x-ax)/CS|0)+((z-az)/CS|0)*K;const L=CL[ci]||(CL[ci]=[]);
+      areaTiles(a,(i,x,z)=>{if(((x+z)&(AGRID===3?3:1))||inRiverBand(x,z)||!landTree(x,z)||beachG(x-HALF+0.5,z-HALF+0.5)<-0.003)return;const ci=((x-ax)/CS|0)+((z-az)/CS|0)*K;const L=CL[ci]||(CL[ci]=[]);
         L.push(x-HALF+0.5+(hash2(x,z)-0.5)*0.5,z-HALF+0.5+(hash2(z,x)-0.5)*0.5,hash2(x+3,z)*6.3,0.75+hash2(x,z+3)*0.6)});
       for(let ci=0;ci<CL.length;ci++){const L=CL[ci];if(!L)continue;const n=L.length/4,cx=ax+(ci%K)*CS+CS/2-HALF,cz=az+((ci/K)|0)*CS+CS/2-HALF;
         const cg=new THREE.Group();cg.userData.x=cx;cg.userData.z=cz;cg.matrixAutoUpdate=false;g.add(cg);this.cells.push(cg);
@@ -3972,7 +3974,7 @@ LANDTIP.spring='Tap to place a water source (tap one again to remove it). It pou
 {const _lu2=landUndo;landUndo=function(){const u=TF.undo[TF.undo.length-1];
   if(u&&(u.wsa||u.wsr)){TF.undo.pop();if(u.wsa){const i=WSRC.indexOf(u.wsa);if(i>=0)WSRC.splice(i,1)}else WSRC.push(u.wsr);
     G.money+=u.c;if(u.wsr)wAct(u.wsr.k);WAT.sleep=false;wsFlags();wsDraw();hud();landBar();sfx('ui');return}_lu2()}}
-{const _wi=watInit;watInit=function(){_wi();const W=WAT;for(let a=0;a<W.n;a++)W.FZ[W.AL[a]]=1;wsLoad()}}
+{const _wi=watInit;watInit=function(){_wi();if(typeof TI!=='undefined'){TI.da.clear();TI.dirty=true}const W=WAT;for(let a=0;a<W.n;a++)W.FZ[W.AL[a]]=1;wsLoad()}}
 {const _ws=waterSave;waterSave=function(){_ws();if(WAT&&WAT.ready)wsSave()}}
 {const _wc=landCostShow;landCostShow=function(){_wc();const e=$('#landCost');if(e&&TF.mode==='spring'&&!TF.cost)e.textContent='Water source: '+fmt(wsCost(WSQ[TF.r]||0.008))+' ('+WSRC.length+' of '+WSMAX+')'}}
 /* dug land that is not under water (a beach, a dry pit) takes no buildings: they would float over the dip. Only ground
@@ -5654,6 +5656,12 @@ const areaOf=i=>(((i/N)|0)/AREA|0)*AGRID+((i%N)/AREA|0);
 function areaTiles(a,fn){const ax=(a%AGRID)*AREA,az=((a/AGRID)|0)*AREA;for(let z=az;z<az+AREA;z++)for(let x=ax;x<ax+AREA;x++)fn(z*N+x,x,z)}
 function freshTiles(){tiles=new Array(N*N).fill(LOCK);for(const a of OWN)areaTiles(a,i=>{tiles[i]={t:0,l:0,w:0,seed:(Math.random()*1e9)|0,g:null}});areaBounds()}
 /* trees and river of a piece of land, the same for the scenery and for land you buy */
+/* ground height at a point under the water's edge: < -0.003 is beach sand (the ground shader's sand line), < -0.035
+   wet sand. Uses the water bed once it exists, before that the drawn river / sea bed (as watBase) */
+function beachG(wx,wz){if(typeof WAT!=='undefined'&&WAT&&WAT.ready){const x=wx+HALF,z=wz+HALF;if(x<0||z<0||x>=N||z>=N)return 0;
+    const fx=Math.floor(x),fz=Math.floor(z),u=x-fx,v=z-fz,k=fz*TN+fx,G2=WAT.G;return(G2[k]*(1-u)+G2[k+1]*u)*(1-v)+(G2[k+TN]*(1-u)+G2[k+TN+1]*u)*v}
+  if(SC.river){const d=Math.abs(wz-riverZ(wx));return d<RIVW+1?-0.38*(1-sstep(RIVW-1,RIVW+1,d)):0}
+  if(SC.sea){const w=seaW(wx,wz);return w>-1.2?-(w+1.2)*0.11:0}return 0}
 function landTree(x,z){const f=Math.sin(x*0.31)+Math.cos(z*0.27)+Math.sin((x+z)*0.17),h=hash2(x*1.31+7,z*0.73+3),h2=hash2(x*0.57+11,z*1.91+5);
   if(SC.forest){/* natural woods: large irregular forests from layered noise, open meadows between */const n=fbm(x*0.035+17,z*0.035+4)*0.65+fbm(x*0.11+3,z*0.11+29)*0.35;if(n>0.56)return h<0.97;return(n>0.47&&h<0.85)||(n>0.42&&h<0.3)||h2<0.012}
   return SC.sand?h<0.008:SC.cold?(f>1.05&&h<0.7)||h2<0.03:(f>1.3&&h<0.75)||h2<0.025}

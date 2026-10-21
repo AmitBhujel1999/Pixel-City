@@ -1796,7 +1796,16 @@ vec2 wavG(vec2 p,float t,float px){vec2 g=vec2(0.0);vec2 d;float k,ph;
 {float fr=0.03+0.97*pow(1.0-clamp(dot(normal,normalize(vViewPosition)),0.0,1.0),5.0);totalEmissiveRadiance+=fogColor*fr*0.6*gWA*(1.0-gFoam);}
 #endif`)};
   m.customProgramCacheKey=()=>'sea'+(inMap?1:0);m.needsUpdate=true}
-if(SC.sea){const lk=window.__seaLake;if(lk)seaShader(lk.material,false,lk)}
+if(SC.sea){const lk=window.__seaLake;if(lk)seaShader(lk.material,false,lk);
+  /* the sea outside the map uses the same water look as inside (WMAT), so there is no seam at the map edge: depth comes
+     from the shore-distance texture with the same formula as the water bed (watBase), the map itself is cut out */
+  if(lk&&WSEA){const S0=lk.geometry.parameters.width,g=new THREE.PlaneGeometry(S0,S0,8,8).rotateX(-Math.PI/2),n=g.attributes.position.count;
+    g.setAttribute('aD',new THREE.Float32BufferAttribute(new Float32Array(n).fill(0.5),1));g.setAttribute('aF',new THREE.Float32BufferAttribute(new Float32Array(n*2),2));
+    g.setAttribute('aM',new THREE.Float32BufferAttribute(new Float32Array(n),1));
+    const fs=WMAT.fragmentShader.replace('uniform sampler2D nTex;','uniform sampler2D nTex;uniform sampler2D dMap;uniform float dE;uniform float edge;')
+      .replace('float d=vD;','float d=vD;if(max(abs(vW.x),abs(vW.z))<edge-0.02)discard;{float ww=texture2D(dMap,(vW.xz+dE)/(2.0*dE)).r*32.0-4.0;d='+SEAL.toFixed(3)+'+min(0.62,(ww+1.2)*0.11);}');
+    const mo=new THREE.ShaderMaterial({uniforms:Object.assign({},WU,{dMap:SEAU.dMap,dE:SEAU.dE}),vertexShader:WMAT.vertexShader,fragmentShader:fs,fog:true,transparent:true,depthWrite:false});
+    const m=new THREE.Mesh(g,mo);m.position.y=SEAL;m.renderOrder=1;m.frustumCulled=false;scene.add(m);lk.visible=false;window.__seaOut=m}}
 /* the highway out of the map, through the valley */
 const hwTex=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.fillStyle='#3e434a';x.fillRect(0,0,128,64);
   const X=u=>(u+0.5)*128;x.fillStyle='#c9ccd0';x.fillRect(X(-0.025),0,0.05*128,64);x.fillStyle='#e9ebe6';for(const u of[-0.43,0.43])x.fillRect(X(u)-1.5,0,3,64);

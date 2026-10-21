@@ -1645,7 +1645,7 @@ const riverMat=new THREE.ShaderMaterial({uniforms:riverU,fog:true,transparent:tr
    ripple normal map are pushed along the current half a cycle apart and cross-faded (no endless stretching), wind
    ripples on top, sea swell on the sea. Colour by depth (the bed shows through the shallows), sky reflection by
    Fresnel, sun glitter, foam at the shore, in fast water and as surf on the sea. */
-const WNONE=99,WEPS=0.004,WMIN=-0.46,SEAL=-0.13,WREF=SC.river?WLV:SEAL,WDROP=SC.river?0.06:0,WC=0.25,WDAMP=0.998,WCH=40,WSOAK=4e-6,WSPS=1200,WCOST=150,WLDAMP=0.99,WERO=8e-4,WERMAX=0.14;var WSRC=[],WSF=null;
+const WNONE=99,WEPS=0.004,WMIN=-0.46,SEAL=-0.13,WREF=SC.river?WLV:SEAL,WDROP=SC.river?0.06:0,WC=0.25,WDAMP=0.998,WCH=40,WSOAK=4e-6,WSPS=1200,WCOST=150,WLDAMP=0.99,WFSL=0.3,WERO=8e-4,WERMAX=0.14;var WSRC=[],WSF=null;
 function wNormTex(){const S=256,H=new Float32Array(S*S),F=new Float32Array(S*S),r=mulberry32(91),W=[],W2=[];
   for(let k=0;k<28;k++){const a=r()*6.2832,f=3+Math.floor(r()*r()*26);W.push([Math.round(Math.cos(a)*f),Math.round(Math.sin(a)*f),r()*6.2832,Math.pow(f,-1.25)])}
   for(let k=0;k<14;k++){const a=r()*6.2832,f=10+Math.floor(r()*30);W2.push([Math.round(Math.cos(a)*f),Math.round(Math.sin(a)*f),r()*6.2832])}
@@ -3866,13 +3866,16 @@ function watProt(x,z){if(x<6||z<6||x>N-6||z>N-6)return true;
   for(const[dx,dz]of[[0,0],[-1,0],[0,-1],[-1,-1]]){const i=(z+dz)*N+x+dx,t=tiles[i];if(!OWN.has(areaOf(i))||t.lock||isEntry(i))return true;
     if(!(t.t===T.EMPTY||t.t===T.TREE||t.t===T.RIVER))return true}return false}
 function watBrush(cx,cz,dt){const W=WAT;if(!W||!W.ready)return;W.calm=0;if(!TF.wstroke){TF.wstroke=new Map();TF.wcost=0}
-  const R=TF.r,px=cx+HALF,pz=cz+HALF,m=TF.mode,rate=0.7,B=W.B,G2=W.G,D=W.D;
-  const x0=Math.max(0,Math.floor(px-R)),z0=Math.max(0,Math.floor(pz-R)),x1=Math.min(N,Math.ceil(px+R)),z1=Math.min(N,Math.ceil(pz+R));
+  const R=TF.r,px=cx+HALF,pz=cz+HALF,m=TF.mode,rate=0.7,B=W.B,G2=W.G,D=W.D,RL=m==='fill'?R*0.45+3.4:R;
+  const x0=Math.max(0,Math.floor(px-RL)),z0=Math.max(0,Math.floor(pz-RL)),x1=Math.min(N,Math.ceil(px+RL)),z1=Math.min(N,Math.ceil(pz+RL));
   let spent=0,poor=false,spill=0;const done=new Set();
-  for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){const dd=Math.hypot(x-px,z-pz);if(dd>R)continue;const wt=(1-(dd/R)**2)**2;if(wt<0.01||watProt(x,z))continue;
+  for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){const dd=Math.hypot(x-px,z-pz);if(dd>RL)continue;const wt=dd<R?(1-(dd/R)**2)**2:0;if((wt<0.01&&m!=='fill')||watProt(x,z))continue;
     const k=z*TN+x,tc=TC[k],cur=G2[k];let nh;
     if(m==='dig')nh=Math.max(WMIN,cur-wt*rate*dt);
-    else if(m==='fill')nh=Math.min(tc,cur+wt*rate*dt);
+    /* fill: a flat top at land height inside the brush core, then a bank that starts gently (so the sand line does not
+       hug tile corners) and steepens to about WFSL per tile down to the bed; the new shore follows the brush path
+       smoothly (no tile steps). It only ever raises the ground */
+    else if(m==='fill'){const u=Math.max(0,dd-R*0.45),tg=tc-WFSL*u*u/(u+1.5);nh=tg>cur?Math.min(tg,cur+Math.max(wt,0.35)*rate*dt*1.6):cur}
     else{const tg=Math.min(tc,wLev(x)+0.045);nh=cur+(tg-cur)*Math.min(1,wt*dt*5)}
     if(Math.abs(nh-cur)<1e-5)continue;const c=Math.abs(nh-cur)*WCOST;if(G.money<spent+c){poor=true;continue}spent+=c;
     if(!TF.wstroke.has(k))TF.wstroke.set(k,B[k]);B[k]=nh>=tc-1e-4?WNONE:nh;G2[k]=Math.min(B[k],tc);W.E[k]=1;done.add(k);

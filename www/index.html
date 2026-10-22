@@ -4863,7 +4863,7 @@ const VT=Object.fromEntries(VTYPES.map(t=>[t.id,t]));
 function pickType(ids){const c=VTYPES.filter(t=>ids.includes(t.id));let q=Math.random()*c.reduce((s,t)=>s+t.weight,0);for(const t of c){q-=t.weight;if(q<=0)return t}return c[0]}
 const P0=new THREE.Vector3(),P1=new THREE.Vector3(),P2=new THREE.Vector3(),_q=new THREE.Quaternion(),_s=new THREE.Vector3(1,1,1),_p=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0),_m=new THREE.Matrix4();
 const LANE=[0.17,0.1,0.14,0.26,0.3,0.3];
-function laneOf(i,c){const t=tiles[i];if(!t||t.t!==T.ROAD)return 0.17;const v=RI(t.l).v;if(v===2)return 0.17*(c.lane||1);if(v===5)return c.big||c.lane>0?0.33:0.13;if(v===4)return c.big||c.lane>0?0.26:0.14;if(v===3)return c.big||c.lane>0?0.31:0.15;return LANE[v]}
+function laneOf(i,c){const t=tiles[i];if(!t||t.t!==T.ROAD)return 0.17;const v=RI(t.l).v;if(v===2)return 0.17*(c.lane||1);if(v===5)return typeof netOn==='function'&&netOn(i)?(c.big||c.lane>0?0.55:0.29):(c.big||c.lane>0?0.33:0.13);if(v===4)return c.big||c.lane>0?0.26:0.14;if(v===3)return c.big||c.lane>0?0.31:0.15;return LANE[v]}
 /* a straight tile of a divided road (avenue, boulevard, highway) has a median: no U-turns on it */
 function medianTile(i){const t=tiles[i];if(!t||t.t!==T.ROAD||![3,4,5].includes(RI(t.l).v))return false;const x=i%N,z=(i/N)|0;
   return(isRoad(x+1,z)&&isRoad(x-1,z)&&!isRoad(x,z+1)&&!isRoad(x,z-1))||(isRoad(x,z+1)&&isRoad(x,z-1)&&!isRoad(x+1,z)&&!isRoad(x-1,z))}
@@ -8578,6 +8578,16 @@ function netRoadStrip(g,geo,sa,sb,ox,oz,v,full,x,z){const St=(vA,yA,vB,yB,w,mt,c
   if(v===12){/* pedestrian street: pavers from edge to edge, a darker band down the middle */
     St(-hw,0.066,hw,0.066,'up',paveMat,'#c8beac');if(full)St(-0.1,0.0665,0.1,0.0665,'up',paveMat,'#ad9f88');
     if(geo.H)for(const s of[-1,1])St(s*hw,0.066,s*hw,-0.02,s,null,'#9a9ea3');verge(0.065);return}
+  if(v===5&&full&&!geo.H){/* split highway (Cities: Skylines look): two carriageways, grass median with gravel edges, gravel shoulders,
+      solid edge lines and long lane dashes; lanes at NETLN[5] */
+    const MW=0.13,EI=0.16,EO=0.68,SH=0.71,AS=((x*31+z*17)%5)?'#5d6166':'#5a5e63';
+    St(-0.095,0.0625,0.095,0.0625,'up',roadMat,'#7f9c55');
+    for(let d=Math.floor(sa/0.17)*0.17;d<sb;d+=0.17){const h=Math.abs(Math.sin(d*12.9898+3.7)*43758.5453)%1,o=(h-0.5)*0.12,A=Math.max(sa,d),B=Math.min(sb,d+0.05+h*0.07);if(B>A)St(o-0.012-h*0.02,0.0628,o+0.012+h*0.02,0.0628,'up',roadMat,h>0.5?'#6a874a':'#8aa560',A,B)}
+    for(const s of[-1,1]){St(s*0.095,0.0618,s*MW,0.0612,'up',roadMat,'#c4b799');St(s*MW,0.06,s*SH,0.06,'up',roadMat,AS);St(s*SH,0.0598,s*hw,0.0592,'up',roadMat,'#c9bc9e');
+      St(s*(EI-0.009),Y,s*(EI+0.009),Y,'up',null,LINE);St(s*(EO-0.009),Y,s*(EO+0.009),Y,'up',null,LINE);dash(s*0.42,0.02,LINE,0.32,0.8)}
+    verge(0.0592);
+    if(o.nb)for(const s of[-1,1]){St(s*(hw-0.015),0.06,s*(hw-0.015),0.34,-s,null,'#8d9aa4');St(s*hw,0.34,s*hw,0.06,s,null,'#7f8b95');St(s*(hw-0.015),0.34,s*hw,0.34,'up',null,'#a7b1b9')}
+    return}
   St(-ae,0.06,ae,0.06,'up',roadMat,asph);
   if(geo.H)for(const s of[-1,1])St(s*hw,0.06,s*hw,-0.02,s,null,'#9a9ea3');
   if(v===11){/* alley: narrow asphalt between concrete gutters */for(const s of[-1,1])St(s*ae,0.061,s*hw,0.062,'up',null,'#a3a39c');verge(0.061);return}
@@ -8624,7 +8634,8 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
     /* street lights every 1.5 along the road, alternate sides, not in junctions or on highways/dirt */
     if(v!==1&&!NETHWL.has(v))for(let s=Math.ceil((cut[0]-0.75)/1.5)*1.5+0.75;s<cut[1];s+=1.5){if(s<ra+0.2||s>geo.L-rb-0.2)continue;const n=Math.round((s-0.75)/1.5),sd=n%2?1:-1,q=cvAt(geo,s),nx=-q[3]*sd,nz=q[2]*sd,h=netHs(geo,s);
       {const lw=netHW(v)-0.05;model(g,'prop_streetlight',null,q[0]+nx*lw-ox,0.075+h,q[1]+nz*lw-oz,Math.atan2(nz,-nx))}
-      if(!h){const pm=new THREE.Mesh(FLAT,poolMat);pm.scale.set(1.45,1,1.45);pm.position.set(q[0]+nx*0.15-ox,0.079,q[1]+nz*0.15-oz);pm.castShadow=false;g.add(pm)}}}
+      if(!h){const pm=new THREE.Mesh(FLAT,poolMat);pm.scale.set(1.45,1,1.45);pm.position.set(q[0]+nx*0.15-ox,0.079,q[1]+nz*0.15-oz);pm.castShadow=false;g.add(pm)}}
+    if(v===5&&!geo.sg.e)netHwyDecor(g,geo,cut,ox,oz,ra,rb)}
   const nid=M.nodeAt.get(i);if(nid===undefined)return true;
   const A=netArms(nid),p=G.net.n[nid];for(const a of A)a.rj=netRJa(nid,a);
   /* grid roads that join this node: a stub of road from the node to the tile edge */
@@ -8667,7 +8678,7 @@ function netDraw(g,i,kind){if(!G||!G.net||!G.net.s.length)return false;const M=n
   return true}
 /* paint and furniture in the style of the big city builders: direction arrows along one-way roads, lane arrows
    before junctions, manhole covers in the lanes and street trees on the sidewalks between the lamps */
-const NETLN={0:[0.17],2:[-0.17,0.17],3:[0.17,0.41],4:[0.32,0.56,0.8],5:[0.22,0.5],10:[-0.17,0.17],11:[0.14],12:[0.17],
+const NETLN={0:[0.17],2:[-0.17,0.17],3:[0.17,0.41],4:[0.32,0.56,0.8],5:[0.29,0.55],10:[-0.17,0.17],11:[0.14],12:[0.17],
   13:[-0.41,-0.14,0.14,0.41],14:[-0.78,-0.47,-0.16,0.16,0.47,0.78],15:[-0.55,-0.19,0.19,0.55],16:[0,0.37]};
 function netArrow(g,P,s0,v,dir,ox,oz){netArrowK(g,(s,o)=>P(s0+dir*s,v+o*dir),new Set(['S']),ox,oz)}
 /* which ways a car can leave the junction from this arm: S straight, N the turn on its own kerb side, F the turn across */
@@ -8701,6 +8712,20 @@ function netTurnArrows(g,geo,nid,st,s,dir,v,ox,oz){const ex=netExits(nid,geo,st)
 function netTurnSign(g,geo,ex,s,dir,v,ox,oz){if(ex.has('S')&&ex.has('N')&&ex.has('F'))return;const W=NETW[v]||NETW[0];if(!W.sw)return;
   const q=cvAt(geo,s),tx=q[2]*dir,tz=q[3]*dir,lat=W.ae+0.08,px=q[0]-tz*lat-ox,pz=q[1]+tx*lat-oz;netPole(g,px,pz,0.27);
   netPlate(g,'turn:'+['S','N','F'].filter(k=>ex.has(k)).join(''),px,0.3,pz,0.075,0.075,-tx,-tz)}
+/* split highway extras: tall lamps on both shoulders with light pools on the road at night, and the highway's name
+   painted on each carriageway every 7 units (one shared text atlas, so all names are one material) */
+const HWYNAME=(()=>{const c=document.createElement('canvas');c.width=1024;c.height=1024;const x=c.getContext('2d');x.fillStyle='#fff';x.font='bold 46px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';
+  ST_N.forEach((n,k)=>x.fillText(n+' Highway',512,32+64*k));const t=new THREE.CanvasTexture(c);t.anisotropy=4;
+  const m=new THREE.MeshLambertMaterial({color:'#e9e9e2',map:t,transparent:true,opacity:0.78,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6});
+  const G=ST_N.map((n,k)=>{const g=new THREE.PlaneGeometry(1.7,0.088,1,1).rotateX(-Math.PI/2),uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setY(i,1-(k*64+(uv.getY(i)>0.5?6:58))/1024);return g});return{m,G}})();
+function netHwyDecor(g,geo,cut,ox,oz,ra,rb){const L=geo.L;
+  for(let s=Math.ceil((cut[0]-1)/2)*2+1;s<cut[1];s+=2){if(s<ra+0.3||s>L-rb-0.3)continue;const q=cvAt(geo,s),h=netHs(geo,s);
+    for(const sd of[-1,1]){if((Math.round((s-1)/2)+(sd>0?1:0))%2)continue;const nx=-q[3]*sd,nz=q[2]*sd;
+      model(g,'prop_streetlight',null,q[0]+nx*0.76-ox,0.06+h,q[1]+nz*0.76-oz,Math.atan2(nz,-nx),1.55);
+      if(!h){const pm=new THREE.Mesh(FLAT,poolMat);pm.scale.set(2.1,1,2.1);pm.position.set(q[0]+nx*0.45-ox,0.079,q[1]+nz*0.45-oz);pm.castShadow=false;g.add(pm)}}}
+  const k=(geo.sg.id*5+3)%ST_N.length;
+  for(let s=Math.ceil((cut[0]-3.5)/7)*7+3.5;s<cut[1];s+=7){if(s<ra+0.8||s>L-rb-0.8)continue;const q=cvAt(geo,s),h=netHs(geo,s),ry=Math.atan2(-q[3],q[2]);
+    for(const sd of[-1,1]){const m=new THREE.Mesh(HWYNAME.G[k],HWYNAME.m);m.position.set(q[0]-q[3]*sd*0.55-ox,0.0612+h,q[1]+q[2]*sd*0.55-oz);m.rotation.y=ry+(sd>0?0:Math.PI);m.castShadow=false;g.add(m)}}}
 function netDecor(g,geo,s0,s1,ox,oz,v,ra,rb){if(v===12&&geo.kind==='road')return netPedDecor(g,geo,s0,s1,ox,oz,ra,rb);if(v===1||v===11||NETHWL.has(v)||geo.kind!=='road')return;const L=geo.L,sg=geo.sg,W=NETW[v]||NETW[0],in_=s=>s>=s0&&s<s1,
   P=(s,o)=>{const q=cvAt(geo,s);return[q[0]-q[3]*o,q[1]+q[2]*o]},flat=s=>!netHs(geo,s),lanes=NETLN[v]||NETLN[0],
   big=n=>(NET.deg.get(n)||0)+netGridArms(n)>=3;
@@ -10525,12 +10550,14 @@ function hwRefresh(){const oldJ=HWY.eastJ;HWY.eastJ=-1;HWY.eastN=-1;HWY.nv=netVe
 /* keep trees off the highway's strip of land */
 {const _lt=landTree;landTree=function(x,z){if(G&&!SC.ferry){const wx=x-HALF+0.5,wz=z-HALF+0.5;if(wx>STUB-HALF&&Math.abs(wz-hwZf(wx))<1.6)return false}return _lt(x,z)}}
 /* ---- darker land you do not own ---- */
-const HWLOCKM=new THREE.MeshBasicMaterial({color:'#0b1016',transparent:true,opacity:0.24,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
-function hwLock(){if(HWY.lockG){world.remove(HWY.lockG);HWY.lockG.geometry.dispose();HWY.lockG=null}if(!G)return;const V=[],I=[],seg=24;
+/* fades out toward the map edge (alphaMap ramp read through uv.x), so the world past the edge does not start with a line */
+const HWLOCKA=(()=>{const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,64,0);gr.addColorStop(0,'#000');gr.addColorStop(1,'#fff');x.fillStyle=gr;x.fillRect(0,0,64,1);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;return t})();
+const HWLOCKM=new THREE.MeshBasicMaterial({color:'#0b1016',transparent:true,opacity:0.24,alphaMap:HWLOCKA,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+function hwLock(){if(HWY.lockG){world.remove(HWY.lockG);HWY.lockG.geometry.dispose();HWY.lockG=null}if(!G)return;const V=[],I=[],UV=[],seg=24;
   for(let a=0;a<AGRID*AGRID;a++){if(OWN.has(a))continue;const x0=(a%AGRID)*AREA-HALF,z0=((a/AGRID)|0)*AREA-HALF,b=V.length/3;
-    for(let r=0;r<=seg;r++)for(let c=0;c<=seg;c++)V.push(x0+AREA*c/seg,0.035,z0+AREA*r/seg);
+    for(let r=0;r<=seg;r++)for(let c=0;c<=seg;c++){const X=x0+AREA*c/seg,Z=z0+AREA*r/seg;V.push(X,0.035,Z);UV.push(Math.min(1,(HALF-Math.max(Math.abs(X),Math.abs(Z)))/70),0.5)}
     for(let r=0;r<seg;r++)for(let c=0;c<seg;c++){const p=b+r*(seg+1)+c;I.push(p,p+seg+1,p+1,p+1,p+seg+1,p+seg+2)}}
-  if(!V.length)return;const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(V,3));bg.setIndex(I);bg.computeVertexNormals();
+  if(!V.length)return;const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(V,3));bg.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));bg.setIndex(I);bg.computeVertexNormals();
   HWY.lockG=new THREE.Mesh(bg,HWLOCKM);HWY.lockG.renderOrder=2;HWY.lockG.frustumCulled=false;world.add(HWY.lockG)}
 /* ---- arrivals and leavers through the east end ---- */
 const hwPhone=()=>MOBILE;

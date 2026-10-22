@@ -1506,7 +1506,7 @@ function terrainH(x,z){
   if(x<-HALF+0.5){const hd=Math.abs(z-hwZ(x));if(hd<7){const k=sstep(1.2,7,hd);h=h*k;if(hd<2.5)h=Math.max(h,0)}}
   return h;
 }
-let FOREST=null;
+let FOREST=null;const HORIZ=6000;
 {
   const S0=N+440,SEG=MOBILE?220:380,geo=new THREE.PlaneGeometry(S0,S0,SEG,SEG);geo.rotateX(-Math.PI/2);
   const P=geo.attributes.position,cols=new Float32Array(P.count*3),c=new THREE.Color(),c2=new THREE.Color();
@@ -1527,6 +1527,8 @@ let FOREST=null;
     else if(isField(x,z,d,h))c.set(FIELD[(hash2(Math.floor(x/7),Math.floor(z/5))*FIELD.length)|0]);
     else c.set('#7d9852').lerp(c2.set('#6b8748'),n*0.8);
     cols[k*3]=c.r;cols[k*3+1]=c.g;cols[k*3+2]=c.b}
+  /* endless horizon: the outer ring of the backdrop is stretched far out (same height and colour), so the land never ends in a visible edge; fog fades it into the sky long before the stretched edge */
+  for(let k=0;k<P.count;k++){const x=P.getX(k),z=P.getZ(k);if(Math.abs(x)>S0/2-0.01)P.setX(k,Math.sign(x)*HORIZ);if(Math.abs(z)>S0/2-0.01)P.setZ(k,Math.sign(z)*HORIZ)}
   geo.setAttribute('color',new THREE.BufferAttribute(cols,3));geo.computeVertexNormals();
   const landMat=new THREE.MeshPhongMaterial({vertexColors:true,flatShading:true,shininess:0});landMat.defines={NO_TERRAIN:''};landMat.userData.snowK=1;window.__snowPending=[groundMat,landMat];const land=new THREE.Mesh(geo,landMat);land.receiveShadow=true;scene.add(land);
   const lake=new THREE.Mesh(new THREE.PlaneGeometry(S0,S0),new THREE.MeshPhongMaterial({color:'#ffffff',map:waterTex2,shininess:90,specular:'#cfe6ff'}));lake.rotation.x=-Math.PI/2;lake.position.y=-0.13;scene.add(lake);window.__seaLake=lake;if(SC.river)lake.position.y=-0.4;
@@ -1799,7 +1801,7 @@ vec2 wavG(vec2 p,float t,float px){vec2 g=vec2(0.0);vec2 d;float k,ph;
 if(SC.sea){const lk=window.__seaLake;if(lk)seaShader(lk.material,false,lk);
   /* the sea outside the map uses the same water look as inside (WMAT), so there is no seam at the map edge: depth comes
      from the shore-distance texture with the same formula as the water bed (watBase), the map itself is cut out */
-  if(lk&&WSEA){const S0=lk.geometry.parameters.width,g=new THREE.PlaneGeometry(S0,S0,8,8).rotateX(-Math.PI/2),n=g.attributes.position.count;
+  if(lk&&WSEA){const S0=HORIZ*2,g=new THREE.PlaneGeometry(S0,S0,8,8).rotateX(-Math.PI/2),n=g.attributes.position.count;
     g.setAttribute('aD',new THREE.Float32BufferAttribute(new Float32Array(n).fill(0.5),1));g.setAttribute('aF',new THREE.Float32BufferAttribute(new Float32Array(n*2),2));
     g.setAttribute('aM',new THREE.Float32BufferAttribute(new Float32Array(n),1));
     const fs=WMAT.fragmentShader.replace('uniform sampler2D nTex;','uniform sampler2D nTex;uniform sampler2D dMap;uniform float dE;uniform float edge;')
@@ -7261,6 +7263,7 @@ function preview(a,b,cx,cy){
   tip.style.left=(cx+16)+'px';tip.style.top=(cy+14)+'px';tip.hidden=false;
 }
 const ptrs=new Map();let drag=null,pinch=null;
+let keyHold=0;
 function panBy(dx,dy){if(dx||dy)unfollow();const k=cam.dist*0.0021,c=Math.cos(cam.theta),s=Math.sin(cam.theta);
   cam.target.x-=(c*dx+s*dy)*k;cam.target.z-=(-s*dx+c*dy)*k;updateCamera()}
 /* point on the ground under a screen position (continuous, for grab-to-pan) */
@@ -8263,18 +8266,21 @@ function frame(now){
    else{perfA.slow=0;if(perfA.ema<1.05/GFX.fps&&drawK<1){perfA.fast=(perfA.fast||0)+dt;if(perfA.fast>10){perfA.fast=0;drawK=Math.min(1,drawK+0.05);fogByCam()}}else perfA.fast=0}}
   if(speed>0){acc+=dt*1000;let n=0;while(acc>=INTERVAL[speed]&&n<6){acc-=INTERVAL[speed];tick();n++}if(n>=6)acc=0}
   const p=dt*60*cam.dist*0.012;
-  if(keys.has('w')||keys.has('arrowup'))panBy(0,p*1.5);
-  if(keys.has('s')||keys.has('arrowdown'))panBy(0,-p*1.5);
-  if(keys.has('a')||keys.has('arrowleft'))panBy(p*1.5,0);
-  if(keys.has('d')||keys.has('arrowright'))panBy(-p*1.5,0);
+  /* keyboard pan: twice the old speed, speeds up while held (up to 2.5x after ~1.5 s), Shift doubles it */
+  {const mv=keys.has('w')||keys.has('s')||keys.has('a')||keys.has('d')||keys.has('arrowup')||keys.has('arrowdown')||keys.has('arrowleft')||keys.has('arrowright');
+    keyHold=mv?keyHold+dt:0;const kp=p*3*(1+1.5*Math.min(1,keyHold/1.5))*(keys.has('shift')?2:1);
+    if(keys.has('w')||keys.has('arrowup'))panBy(0,kp);
+    if(keys.has('s')||keys.has('arrowdown'))panBy(0,-kp);
+    if(keys.has('a')||keys.has('arrowleft'))panBy(kp,0);
+    if(keys.has('d')||keys.has('arrowright'))panBy(-kp,0)}
   if((edge.x||edge.y)&&!(drag&&drag.mode==='rotate'))panBy(edge.x*p*1.6,edge.y*p*1.6);
   if(fling.vx||fling.vz){cam.target.x+=fling.vx*dt;cam.target.z+=fling.vz*dt;const f=Math.exp(-dt*4.5);fling.vx*=f;fling.vz*=f;if(Math.hypot(fling.vx,fling.vz)<0.05)fling.vx=fling.vz=0;updateCamera()}
   if(zoomGoal!==null){cam.dist+=(zoomGoal-cam.dist)*(1-Math.exp(-dt*14));updateCamera();if(Math.abs(zoomGoal-cam.dist)<0.02)zoomGoal=null}
   if(keys.has('=')||keys.has('+'))zoomBy(1-dt*6);if(keys.has('-'))zoomBy(1+dt*6);
   if(keys.has('r')){cam.phi-=dt*1.1;updateCamera()}
   if(keys.has('f')){cam.phi+=dt*1.1;updateCamera()}
-  if(keys.has('q')){cam.theta+=dt*1.4;updateCamera()}
-  if(keys.has('e')){cam.theta-=dt*1.4;updateCamera()}
+  if(keys.has('q')){cam.theta+=dt*2.6;updateCamera()}
+  if(keys.has('e')){cam.theta-=dt*2.6;updateCamera()}
   for(let k=growing.length-1;k>=0;k--){const o=growing[k];o.t=Math.min(1,o.t+dt*2.2);o.g.scale.y=0.05+0.95*(1-Math.pow(1-o.t,3));
     if(o.t>=1){growing.splice(k,1);const t=tiles[o.i];if(t&&t.ag===o.g){world.remove(o.g);for(const q of o.g.userData.geos)q.dispose();t.ag=null;t.anim=false;dirtyChunks.add(chunkOf(o.i))}}}
   if(terrDirty&&performance.now()-terrT>500)terrBuild();chunkCull(performance.now());if(dirtyChunks.size)flushChunks(4);else if(lodQ.size)lodFlush(performance.now());

@@ -154,3 +154,13 @@ edit the PC file by hand.
 - `rdScan` caches department list and stats for 2 s (OWNIDX scan). Decals: two InstancedMeshes `RDI` (cracks > 0.35,
   potholes > 0.7) laid along the road (`rdDecor`, after `buildAll` and each month). Info view `roads` (Road condition).
 - Test placement: single buildings go through free placement (`FP`); call `apply` with `FP.inner=1`.
+
+## Shops with a purpose
+
+- `SHOPS` (24 brands: dentist, soda bar, ice cream, clothes, grocery, bakery, pharmacy, food places...) picked per shop
+  lot by a hash of `tl.seed` (`shopOf`; COM with level, not offices `s >= 10`). `bname` shows "Brand (kind)".
+- `shopSigns` (adjTile wrapper, local frame: +z faces the road) measures the shadow-casting parts, then adds a shop-front
+  sign, a rooftop billboard on buildings lower than 0.9 and, for food (`SHOPS[k][5]`), a pole sign at the lot corner.
+- One atlas `SHOPAT` (2048², 4 x 16 panels of 512 x 128: panel 2k billboard, 2k+1 shop front, emoji icons) and one
+  material `SHOPM` (emissive map; `applyTime` wrapper raises emissiveIntensity at night). Add brands at the end of
+  `SHOPS` only (index decides the panel; max 32 brands).

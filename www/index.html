@@ -11405,6 +11405,49 @@ function rdDecor(){if(!G)return;const L=[[],[]];for(const k in G.rw){const w=G.r
       if(e){const g=e.g,s=(g.e0[e.k]+g.e1[e.k])/2,q=cvAt(g,s);px=q[0];pz=q[1];ry=Math.atan2(q[2],q[3])+(h>0.5?Math.PI:0);wd=(NETW[netLk(g.sg)]||NETW[0]).ae*(netLk(g.sg)===5?0.75:1.7);y+=netHs(g,s)}
       o.position.set(px,y,pz);o.rotation.set(0,ry,0);o.scale.set(wd,1,0.75+h*0.25);o.updateMatrix();im.setMatrixAt(n++,o.matrix)}
     im.count=n;im.instanceMatrix.needsUpdate=true}}
+/* ---- shops with a purpose (Cities: Skylines style): every shop lot gets a business from SHOPS (by seed): a lit rooftop
+   billboard with the brand, a sign over the shop front and, for food places, a tall roadside pole sign. All signs come
+   from one canvas atlas (SHOPAT: 4 x 16 panels of 512 x 128; panel 2k billboard, 2k+1 shop-front sign) so they bake into
+   the chunk as one material; they glow at night (applyTime wrapper). ---- */
+const SHOPS=[
+  ['Fall in Dental','Dentist','🦷','#e9f2f8','#5aa9d6',0],['Pop Soda','Soda bar','🥤','#ff5b6e','#ffffff',1],['Scoops','Ice cream parlour','🍦','#ffd1e3','#d14b86',1],
+  ['Thread & Co','Clothes shop','👕','#2d3a55','#f0c96b',0],['Fresh Mart','Grocery','🛒','#2f8f4e','#ffffff',0],['Golden Crust','Bakery','🥐','#f3d9a4','#8a4b20',0],
+  ['CarePlus','Pharmacy','💊','#1f9d6e','#ffffff',0],['Napoli Pizza','Pizzeria','🍕','#c0392b','#fff3d6',1],['Shake It!','Burger bar','🍔','#d62f2f','#ffe14d',1],
+  ['Bean There','Café','☕','#4a2f24','#f2d6b3',0],['Page Turner','Bookshop','📚','#283f63','#f6e7c1',0],['Fix-It','Hardware store','🔨','#f39c12','#222222',0],
+  ['Volt','Electronics','📱','#151a24','#45c3ff',0],['Petal & Stem','Florist','💐','#f6e3ec','#3f8a4a',0],['Sharp Cuts','Barber','💈','#ffffff','#c0392b',0],
+  ['Sole Mates','Shoe shop','👟','#ff8a3d','#ffffff',0],['Iron Gym','Gym','🏋️','#202020','#ff4d4d',0],['Sushi Go','Sushi bar','🍣','#f5f0e6','#c0392b',1],
+  ['Level Up','Game shop','🎮','#5b2a86','#7dfcff',0],['Paws','Pet shop','🐾','#f7c948','#5a3b1b',0],['Taco Loco','Tacos','🌮','#2a9d8f','#ffd166',1],
+  ['Lucky Noodle','Noodle bar','🍜','#b22222','#ffd700',1],['Chill Tea','Bubble tea','🧋','#c7f0d8','#2d6a4f',1],['Bright Eyes','Optician','👓','#ffffff','#3b5bdb',0]];
+const SHOPAT=(()=>{const c=document.createElement('canvas');c.width=2048;c.height=2048;const x=c.getContext('2d'),EM='"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  SHOPS.forEach(([nm,kind,ic,bg,fg],k)=>{for(const f of[0,1]){const q=2*k+f,px=(q%4)*512,py=((q/4)|0)*128;x.save();x.beginPath();x.rect(px,py,512,128);x.clip();
+    if(!f){const gr=x.createLinearGradient(px,py,px+512,py+128);gr.addColorStop(0,bg);gr.addColorStop(1,fg==='#ffffff'?bg:'#ffffff');x.fillStyle=gr;x.fillRect(px,py,512,128);
+      x.fillStyle=fg;x.globalAlpha=0.18;x.beginPath();x.arc(px+70,py+64,90,0,7);x.fill();x.globalAlpha=1;x.font=`84px ${EM}`;x.textAlign='center';x.textBaseline='middle';x.fillText(ic,px+72,py+70);
+      x.fillStyle=fg==='#ffffff'?'#ffffff':fg;x.font='bold 54px system-ui,sans-serif';x.textAlign='left';x.fillText(nm,px+140,py+58,360);x.font='26px system-ui,sans-serif';x.globalAlpha=0.85;x.fillText(kind,px+142,py+100,360);x.globalAlpha=1;
+      x.strokeStyle='rgba(0,0,0,0.25)';x.lineWidth=6;x.strokeRect(px+3,py+3,506,122)}
+    else{x.fillStyle='#1d2025';x.fillRect(px,py,512,128);x.fillStyle=bg;x.fillRect(px,py+112,512,16);x.font=`64px ${EM}`;x.textAlign='center';x.textBaseline='middle';x.fillText(ic,px+60,py+62);
+      x.shadowColor=fg==='#ffffff'||fg==='#222222'?bg:fg;x.shadowBlur=14;x.fillStyle=fg==='#222222'?bg:fg;x.font='bold 60px system-ui,sans-serif';x.textAlign='left';x.fillText(nm,px+112,py+60,385)}
+    x.restore()}});
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t})();
+const SHOPM=new THREE.MeshLambertMaterial({map:SHOPAT,emissive:'#ffffff',emissiveMap:SHOPAT,emissiveIntensity:0.2});SHOPM.userData.keep=1;
+const SHOPG={};function shopGeo(q,w,h){const key=q+':'+w+':'+h;if(SHOPG[key])return SHOPG[key];const g=new THREE.PlaneGeometry(w,h),uv=g.attributes.uv;const u0=(q%4)/4,v0=1-(((q/4)|0)+1)/16;
+  for(let i=0;i<uv.count;i++)uv.setXY(i,u0+uv.getX(i)*0.25,v0+uv.getY(i)/16);return SHOPG[key]=g}
+function shopOf(tl){if(!tl||tl.t!==T.COM||!tl.l||(tl.s|0)>=10)return null;let h=Math.imul((tl.seed|0)^0x9e3779b9,0x85ebca6b);h^=h>>>13;h=Math.imul(h,0xc2b2ae35);h^=h>>>16;return SHOPS[(h>>>0)%SHOPS.length]}
+const _shB=new THREE.Box3(),_shB2=new THREE.Box3();
+function shopSigns(g,tl){const sh=shopOf(tl);if(!sh)return;const k=SHOPS.indexOf(sh);g.updateMatrixWorld(true);_shB.makeEmpty();
+  g.traverse(m=>{if(m.isMesh&&m.castShadow&&m.geometry){if(!m.geometry.boundingBox)m.geometry.computeBoundingBox();_shB2.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld);_shB.union(_shB2)}});
+  if(_shB.isEmpty())return;const top=_shB.max.y,fz=Math.min(0.49,_shB.max.z),cx=(_shB.min.x+_shB.max.x)/2,bw=Math.min(0.9,_shB.max.x-_shB.min.x);
+  const add=(geo,px,py,pz,ry=0)=>{const m=new THREE.Mesh(geo,SHOPM);m.position.set(px,py,pz);m.rotation.y=ry;m.castShadow=false;g.add(m);return m};
+  /* shop-front sign just above the ground floor, a hair in front of the facade */
+  const sw=Math.min(bw*0.8,0.5);add(shopGeo(2*k+1,sw,sw/4),cx,Math.min(top-0.02,0.16),fz+0.012);
+  /* rooftop billboard on low buildings: frame posts + the panel facing the road */
+  if(top<0.9){const bwid=Math.min(0.62,bw*0.9),bh=bwid/4,by=top+0.05+bh/2,bz=Math.max(_shB.min.z+0.05,fz-0.12);
+    box(g,'#8d9298',bwid+0.02,bh+0.02,0.012,cx,by-bh/2-0.01,bz-0.008,false);for(const s of[-1,1])box(g,'#6b7076',0.012,0.06,0.012,cx+s*bwid*0.35,top,bz-0.01,false);add(shopGeo(2*k,bwid,bh),cx,by,bz)}
+  /* food places: tall pole sign at the road-side corner of the lot */
+  if(sh[5]){const px=_shB.max.x+0.06>0.46?-0.4:0.4;box(g,'#5b5f66',0.02,0.5,0.02,px,0,0.42,false);const p=add(shopGeo(2*k,0.3,0.075),px,0.52,0.43);p.rotation.y=0;
+    add(shopGeo(2*k,0.3,0.075),px,0.52,0.418,Math.PI)}}
+{const _adj=adjTile;adjTile=function(g,i,tl,rot,em){const r=_adj.apply(this,arguments);try{if(tl&&tl.t===T.COM&&tl.l)shopSigns(g,tl)}catch(e){console.error(e)}return r}}
+{const _at=applyTime;applyTime=function(){const r=_at.apply(this,arguments);SHOPM.emissiveIntensity=0.22+0.85*Math.max(0,Math.min(1,(0.6-dayLight)/0.45));return r}}
+{const _bn=bname;bname=function(i){const t=i>=0&&tiles[i],sh=t&&shopOf(t);if(sh)return`${sh[0]} (${sh[1].toLowerCase()})`;return _bn.apply(this,arguments)}}
 /* the picked variant's extra cost per tile (the base type's cost is charged by the normal build code) */
 {const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const pl=_np(tl,A,B,C1,C2);
   if(pl&&!pl.bad&&pl.kind==='road'&&pl.need&&tl&&tl.rp){const p=RPOf(tl.rp);if(p&&p.t===pl.type){pl.extra=Math.max(-RI(p.t).cost,p.cost-RI(p.t).cost)*pl.need.length;pl.cost=(pl.cost||0)+pl.extra}}return pl}}

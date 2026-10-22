@@ -11342,8 +11342,8 @@ setRoadType=function(v){setRoadPreset(rpBase(v))};
   TOOLS.find(t=>t.id==='road').rp='street'}
 /* road menu tabs (Cities: Skylines style): Streets / Medium / Large / Highways / Pedestrian / Junctions; the strip only
    shows the picked tab's roads. The tab bar sits on top of the menu card. */
-const RTABS=[['street','Streets'],['medium','Medium'],['large','Large'],['hwy','Highways'],['ped','Pedestrian'],['junc','Junctions']];
-const rtOf=b=>{if(b.dataset.fp)return'ped';const id=b.dataset.p;if(!id)return'junc';if(id==='ped')return'ped';const p=RPOf(id);
+const RTABS=[['street','Streets'],['medium','Medium'],['large','Large'],['hwy','Highways'],['ped','Pedestrian'],['junc','Junctions'],['signs','Signs']];
+const rtOf=b=>{if(b.dataset.bb)return'signs';if(b.dataset.fp)return'ped';const id=b.dataset.p;if(!id)return'junc';if(id==='ped')return'ped';const p=RPOf(id);
   return p.t===5||id==='ramp'?'hwy':p.t===4?'large':p.t===3?'medium':'street'};
 {const m=$('#roadMenu'),bar=document.createElement('div');bar.id='roadTabs';bar.className='card';bar.hidden=true;
   bar.innerHTML=RTABS.map(([k,n])=>`<button data-rt="${k}">${n}</button>`).join('');document.body.appendChild(bar);
@@ -11498,6 +11498,42 @@ function lotParking(g,tl){if(!tl||!tl.l||(tl.t!==T.RES&&tl.t!==T.COM&&tl.t!==T.I
     lotBays(g,e>0?{x0:s.x0,x1:s.x1-0.52,z0:s.z0,z1:s.z1}:{x0:s.x0+0.52,x1:s.x1,z0:s.z0,z1:s.z1},R,0.5);return}
   lotBays(g,s,R,0.5)}
 {const _adj2=adjTile;adjTile=function(g,i,tl,rot,em){const r=_adj2.apply(this,arguments);try{if(tl&&tl.l&&(tl.t===T.RES||tl.t===T.COM||tl.t===T.IND))lotParking(g,tl)}catch(e){console.error(e)}return r}}
+/* ---- city brand billboards: big roadside hoardings that advertise your own city (road menu, Signs tab). G.bb =
+   [{i: tile, ry, v: design}] on empty land next to a road, $500 each; slogan and colour in G.brand. They light up at
+   night, raise city pride (+0.4 happiness each, up to +2) and go when the tile is built on or bulldozed. ---- */
+TOOLS.push({id:'bboard',nm:'City billboard',key:'',kind:'one',col:'#ffd166',ct:'$500',hidden:1});
+const BBG=new THREE.Group();scene.add(BBG);let BBT=null,BBKEY='';
+function bbBrand(){const b=(G&&G.brand)||{};return{nm:(G&&G.name)||'Our City',sl:b.sl||'',col:b.col||'#2f6fd6'}}
+function bbTex(){const B=bbBrand(),key=B.nm+'|'+B.sl+'|'+B.col;if(BBT&&BBKEY===key)return BBT;BBKEY=key;const c=BBT?BBT.image:document.createElement('canvas');c.width=1024;c.height=1024;const x=c.getContext('2d');
+  const sl=[B.sl||`Visit ${B.nm}`,`${B.nm} ❤ you`,`Invest in ${B.nm}`],sub=['Shops · parks · good times','The friendliest city around','Jobs, homes and room to grow'],ic=['🏙️','❤️','📈'];
+  x.clearRect(0,0,1024,1024);
+  for(let v=0;v<3;v++){const y=v*256,gr=x.createLinearGradient(0,y,1024,y+256);gr.addColorStop(0,B.col);gr.addColorStop(1,v===1?'#ff6b8b':v===2?'#1d9a6c':'#0e2a55');x.fillStyle=gr;x.fillRect(0,y,1024,256);
+    x.fillStyle='rgba(255,255,255,0.12)';x.beginPath();x.arc(150,y+128,190,0,7);x.fill();x.font='130px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(ic[v],150,y+140);
+    x.fillStyle='#fff';x.textAlign='left';x.font='bold 92px system-ui,sans-serif';x.fillText(sl[v],300,y+108,700);x.font='44px system-ui,sans-serif';x.globalAlpha=0.9;x.fillText(sub[v],304,y+190,700);x.globalAlpha=1}
+  x.fillStyle='#e9ecef';x.fillRect(0,768,1024,256);
+  if(!BBT){BBT=new THREE.CanvasTexture(c);BBT.anisotropy=4}else BBT.needsUpdate=true;return BBT}
+const BBM=new THREE.MeshLambertMaterial({emissive:'#ffffff',emissiveIntensity:0.45});
+const bbGeo=[0,1,2,3].map(v=>{const g=new THREE.PlaneGeometry(0.96,0.24),uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setY(i,1-(v+1)/4+uv.getY(i)/4);return g});
+function bbOk(i){const t=tiles[i];if(!t||t.lock||(t.t!==T.EMPTY&&t.t!==T.TREE)||isEntry(i))return null;const x=i%N,z=(i/N)|0;
+  for(const[dx,dz]of[[0,1],[1,0],[0,-1],[-1,0]])if(isRoad(x+dx,z+dz))return Math.atan2(dx,dz);return null}
+function bbDraw(){BBG.clear();if(!G||!G.bb||!G.bb.length)return;const T_=bbTex();BBM.map=T_;BBM.emissiveMap=T_;BBM.needsUpdate=true;
+  G.bb=G.bb.filter(b=>{const t=tiles[b.i];return t&&(t.t===T.EMPTY||t.t===T.TREE)});
+  for(const b of G.bb){const x=b.i%N-HALF+0.5,z=((b.i/N)|0)-HALF+0.5,g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=b.ry;BBG.add(g);
+    for(const s of[-1,1])box(g,'#5b5f66',0.03,0.62,0.03,s*0.32,0.02,-0.005);box(g,'#6b7076',1.0,0.28,0.03,0,0.5,0.025);box(g,'#4a4d52',0.9,0.02,0.07,0,0.48,0.075,false);
+    const p=new THREE.Mesh(bbGeo[b.v%3],BBM);p.position.set(0,0.64,0.042);g.add(p);const k=new THREE.Mesh(bbGeo[3],mat('#cfd3d8'));k.position.set(0,0.64,0.008);k.rotation.y=Math.PI;g.add(k)}}
+{const _cf=costFor;costFor=function(tl,i){if(tl&&tl.id==='bboard')return bbOk(i)===null||(G.bb&&G.bb.some(b=>b.i===i))?null:500;return _cf.apply(this,arguments)}}
+{const _ap=apply;apply=function(tl,list){
+  if(tl&&tl.id==='bboard'){const p=list&&list[0];if(!p)return;const i=idx(p.x,p.z),ry=bbOk(i);if(ry===null){toast('Put a billboard on empty land right next to a road.');sfx('err');return}
+    if(G.money<500){toast('Not enough money.');sfx('err');return}G.money-=500;(G.bb||(G.bb=[])).push({i,ry,v:G.bb.length%3});bbDraw();hud();sfx('build');toast('Billboard up! It advertises '+bbBrand().nm+'.');return}
+  if(tl&&tl.id==='doze'&&G.bb&&list){const kill=new Set(list.map(p=>idx(p.x,p.z)));const n=G.bb.length;G.bb=G.bb.filter(b=>!kill.has(b.i));if(G.bb.length!==n)bbDraw()}
+  _ap(tl,list);if(G.bb&&G.bb.length&&G.bb.some(b=>{const t=tiles[b.i];return!t||(t.t!==T.EMPTY&&t.t!==T.TREE)}))bbDraw()}}
+{const _ba=buildAll;buildAll=function(){const r=_ba.apply(this,arguments);try{bbDraw()}catch(e){}return r}}
+{const _at=applyTime;applyTime=function(){const r=_at.apply(this,arguments);BBM.emissiveIntensity=0.45+0.55*Math.max(0,Math.min(1,(0.6-dayLight)/0.45));return r}}
+{const _hp=happyParts;happyParts=function(){const o=_hp();const n=G&&G.bb?G.bb.length:0;if(n&&S&&S.pop)o.push({v:Math.min(2,Math.round(n*0.4*10)/10),nm:'City pride',tip:'Billboards advertising your city.'});return o}}
+/* road menu: Signs tab with the billboard and a slogan box */
+{const m=$('#roadMenu');m.insertAdjacentHTML('beforeend',`<button data-rb="bb" data-bb="1" aria-pressed="false"><svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#6f8f4c"/><rect x="0" y="54" width="120" height="16" fill="#4a5058"/><rect x="33" y="24" width="4" height="32" fill="#5b5f66"/><rect x="83" y="24" width="4" height="32" fill="#5b5f66"/><rect x="18" y="8" width="84" height="24" rx="2" fill="#2f6fd6"/><text x="60" y="25" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">VISIT US</text></svg><b>City billboard</b><span>Advertise your city</span><span class="cost">$500 each</span><span class="lk" hidden></span></button>`);
+  const b=m.querySelector('button[data-bb]');b.onclick=()=>{setTool(TOOLS.find(t=>t.id==='bboard'));const tb=$('#tool-road');tb.querySelector('.nm').textContent='City billboard';tb.querySelector('.ct').textContent='$500';
+    toggleRoadMenu(false);sfx('ui');const sl=prompt('Slogan for your billboards (leave empty for "Visit '+bbBrand().nm+'"):',(G.brand&&G.brand.sl)||'');if(sl!==null){(G.brand||(G.brand={})).sl=sl.slice(0,32);bbDraw()}}}
 /* the picked variant's extra cost per tile (the base type's cost is charged by the normal build code) */
 {const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const pl=_np(tl,A,B,C1,C2);
   if(pl&&!pl.bad&&pl.kind==='road'&&pl.need&&tl&&tl.rp){const p=RPOf(tl.rp);if(p&&p.t===pl.type){pl.extra=Math.max(-RI(p.t).cost,p.cost-RI(p.t).cost)*pl.need.length;pl.cost=(pl.cost||0)+pl.extra}}return pl}}

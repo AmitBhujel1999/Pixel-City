@@ -173,3 +173,10 @@ edit the PC file by hand.
   the back edge). Shops/flats: paved strip with bays and low-poly cars (`lotCar`, <= 4, phones 2); houses: driveway,
   garage when there is side room, a car; industry: yard with a truck (`lotTruck`) and staff bays.
 - Inside these helpers use `LY0` (0.03, lot ground); `Y0` only exists inside `buildTile0`.
+
+## City billboards
+
+- Road menu tab Signs: hidden tool `bboard` ($500, kind one) on empty land next to a road; `G.bb` [{i, ry, v}],
+  slogan/colour in `G.brand` (prompt on picking the tool). Drawn as a separate group `BBG` (`bbDraw`, after
+  `buildAll`, on place / doze / when the tile is built on), one canvas texture `BBT` (3 designs + back), `BBM` glows at
+  night. Each adds +0.4 happiness ("City pride", max +2).

@@ -143,3 +143,14 @@ edit the PC file by hand.
   Plain boxes were tried first and rejected by the user: far buildings must keep their shapes, colours and windows.
 - `drawK` (0.5-1): when frames stay slow after the pixel ratio is already 1, `frame()` lowers it by 0.1 (fog and
   chunk culling come closer, LOD distance shrinks on phones only); it creeps back up by 0.05 after 10 s of smooth frames.
+
+## Roads department and road wear
+
+- `G.rw` {tile: wear 0..1} grows each month in `rdMonth` (monthEnd wrapper): base + traffic (`jam`), dirt x1.6, highway
+  x0.7, pedestrian x0.4. Wear > 0.4 slows cars (`lkSpd` wrapper), city average > 0.35 costs happiness.
+- Roads department = Gov size 7 (`gov:'roads'`, transport model in yellow). Each month every department sends
+  1 + 2 x roads budget crews (`rdSend`: flatbed, yellow, role `roads`) to the worst roads within `RD_R` 60 tiles;
+  `arrive` wrapper calls `rdFix` (tile and road tiles within 2, -0.85 wear, $5 a tile); no path = fixed directly ($15).
+- `rdScan` caches department list and stats for 2 s (OWNIDX scan). Decals: two InstancedMeshes `RDI` (cracks > 0.35,
+  potholes > 0.7) laid along the road (`rdDecor`, after `buildAll` and each month). Info view `roads` (Road condition).
+- Test placement: single buildings go through free placement (`FP`); call `apply` with `FP.inner=1`.

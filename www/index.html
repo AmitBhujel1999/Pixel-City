@@ -817,7 +817,7 @@ const SV={
  18:{nm:'Airport',what:'Flights bring tourists, trade and jobs. Build one domestic and one international airport',one:1,order:[0,1,2,3,4],sizes:[{nm:'Domestic airport · runway east–west',tag:'30 × 10 · 420 m runway',cost:90000,up:600,lv:16,tier:2,big:[30,10],eff:'Regional jets to towns in Nepal · tourism +$200 / month'},{nm:'Domestic airport · runway north–south',tag:'10 × 30 · 420 m runway',cost:90000,up:600,lv:16,tier:2,big:[10,30],eff:'Regional jets to towns in Nepal · tourism +$200 / month'},{nm:'Helicopter depot',tag:'3 × 3 · heliport',cost:40000,up:400,lv:12,tier:1,big:[3,3],heli:1,eff:'Sightseeing flights and air ambulance · tourism +$300 / month'},{nm:'International airport · lotus terminal',tag:'48 × 16 · 700 m runway',eff:'Airliners to world cities · tourism +$400 / month',cost:150000,up:900,lv:20,tier:2,big:[48,16],lotus:1},{nm:'Cargo airport',tag:'10 × 5 · freight',cost:120000,up:800,lv:15,tier:2,big:[10,5],cargo:1,eff:'Freight flights and trucks · industry demand up · trade income'}]},
  23:{nm:'Cargo airport',what:'Freight flights',sizes:[{nm:'Cargo airport',cost:120000,up:800,lv:15,tier:2,big:[10,5]}]},
  22:{nm:'Helicopter depot',what:'Helicopter flights',sizes:[{nm:'Helicopter depot',cost:40000,up:400,lv:12,tier:1,big:[3,3]}]},
- 21:{nm:'Government',what:'Runs the city',sizes:[{nm:"Mayor's office",tag:'Happiness',cost:3000,up:50,lv:1,tier:0,gov:'mayor',k:3,eff:'+3 happiness across the city'},{nm:'Post office',tag:'Happiness',cost:1800,up:30,lv:3,tier:0,gov:'post',k:1.5,eff:'+1.5 happiness across the city'},{nm:'Library',tag:'Happiness',cost:2200,up:35,lv:4,tier:0,gov:'lib',k:2,eff:'+2 happiness across the city'},{nm:'Tax office',tag:'+8% taxes',cost:4000,up:70,lv:6,tier:1,gov:'tax',k:0.08,eff:'Collects 8% more tax'},{nm:'Courthouse',tag:'Less crime',cost:5000,up:90,lv:10,tier:1,gov:'court',k:2,eff:'Crime grows 20% slower · +2 happiness'},{nm:'City hall',tag:'Big mayor\'s office',cost:14000,up:200,lv:20,tier:2,gov:'mayor',k:6,eff:'+6 happiness across the city'},{nm:'Transport department',tag:'Buses · trains · traffic',cost:6000,up:100,lv:5,tier:1,gov:'trans',k:1,eff:'Lets you run buses, train fares and traffic rules (Transport button)'}]}
+ 21:{nm:'Government',what:'Runs the city',sizes:[{nm:"Mayor's office",tag:'Happiness',cost:3000,up:50,lv:1,tier:0,gov:'mayor',k:3,eff:'+3 happiness across the city'},{nm:'Post office',tag:'Happiness',cost:1800,up:30,lv:3,tier:0,gov:'post',k:1.5,eff:'+1.5 happiness across the city'},{nm:'Library',tag:'Happiness',cost:2200,up:35,lv:4,tier:0,gov:'lib',k:2,eff:'+2 happiness across the city'},{nm:'Tax office',tag:'+8% taxes',cost:4000,up:70,lv:6,tier:1,gov:'tax',k:0.08,eff:'Collects 8% more tax'},{nm:'Courthouse',tag:'Less crime',cost:5000,up:90,lv:10,tier:1,gov:'court',k:2,eff:'Crime grows 20% slower · +2 happiness'},{nm:'City hall',tag:'Big mayor\'s office',cost:14000,up:200,lv:20,tier:2,gov:'mayor',k:6,eff:'+6 happiness across the city'},{nm:'Transport department',tag:'Buses · trains · traffic',cost:6000,up:100,lv:5,tier:1,gov:'trans',k:1,eff:'Lets you run buses, train fares and traffic rules (Transport button)'},{nm:'Roads department',tag:'Repairs worn roads',cost:5000,up:80,lv:4,tier:1,gov:'roads',k:1,eff:'Yellow crews repair worn roads within 60 tiles (Road condition view)'}]}
 };
 SV[29]={nm:'Sewage',what:'Takes dirty water away',sizes:[{nm:'Sewage outlet',tag:'River',cost:1500,up:30,lv:2,tier:0,sew:250000,river:1,eff:'Takes 250k L a day · dirties the river downstream'},{nm:'Treatment plant',tag:'Clean',cost:9000,up:150,lv:8,tier:1,sew:1000000,eff:'Cleans 1M L a day, river stays clean'}]};
 SV[30]={nm:'Deathcare',what:'Cemeteries and crematoria',sizes:[{nm:'Cemetery',tag:'Graves',cost:2500,up:40,lv:3,tier:0,graves:800,eff:'Room for 800 graves'},{nm:'Crematorium',tag:'Cremation',cost:7000,up:120,lv:10,tier:1,crem:150,eff:'150 cremations a month · empties cemeteries'}]};
@@ -3417,7 +3417,7 @@ function buildTile0(i,anim){
     case T.DEATH:{rot=faceRoad(x,z,r);lot('#6f9a4e');model(g,tl.l?'crematorium':'cemetery',{wall:'#e4e0d6',roof:'#5d4c46',stone:'#b8b6ae',grass:'#6f9a4e',dirt:'#6b5640',brick:'#8a4b3a',water:'#6fa8d6'},0,Y0-0.004,0);break;}
     case T.METRO:{rot=faceRoad(x,z,r);lot('#c9c5bd');model(g,'metro_station',{wall:'#e4e2dc',roof:'#5b6470',sign:'#d93a32',trim:'#f4f4f2'},0,Y0-0.004,0);break;}
     case T.GOV:{rot=faceRoad(x,z,r);lot('#c9c5bd');box(g,'#65803f',0.96,0.004,0.2,0,Y0,-0.38,false);
-      model(g,['gov_mayor','gov_post','gov_library','gov_tax','gov_court','gov_cityhall','gov_transport'][tl.l|0]||'gov_mayor',{wall:'#e6dfcf',wall2:'#6f9a8d',roof:'#7a5a4a',awn:'#c0392b',sign:'#2f5fc4',sign2:'#2f5fc4'},0,Y0-0.004,0);
+      model(g,['gov_mayor','gov_post','gov_library','gov_tax','gov_court','gov_cityhall','gov_transport','gov_transport'][tl.l|0]||'gov_mayor',tl.l===7?{wall:'#e9d9a8',wall2:'#e0a21b',roof:'#5d5f63',awn:'#e0a21b',sign:'#2b2b2b',sign2:'#e0a21b'}:{wall:'#e6dfcf',wall2:'#6f9a8d',roof:'#7a5a4a',awn:'#c0392b',sign:'#2f5fc4',sign2:'#2f5fc4'},0,Y0-0.004,0);
       tree(-0.4,-0.4,0.75);tree(0.4,-0.4,0.75);break;}
     case T.MONU:{const sv=SVI(31,tl.l),bg=new THREE.Group();bg.position.set(1,0,1);bg.rotation.y=G.fb&&G.fb[i]?0:(faceRoad(x+1,z+1,r)||0);g.add(bg);
       model(bg,sv.mdl,{white:'#f2efe7',gold:'#d9a637',brick:'#a8573b',wood:'#5e3d25',roof:'#4f4540',stone:'#c4c0b6',grass:'#5f9a46',dark:'#1d1f24',flag1:'#e04a3c',flag2:'#3f78d6',flag3:'#f2c94c',clock:'#f6f3ea',concrete:'#b9b7b0'},0,Y0-0.03,0);break;}
@@ -7150,7 +7150,7 @@ const ovMesh=new THREE.Mesh(new THREE.PlaneGeometry(N,N,N/2,N/2).rotateX(-Math.P
 const ov={mode:null,user:null,auto:null};
 const OVS={power:{nm:'Power',c:[247,201,72],leg:'Has power',no:'No power'},water:{nm:'Water',c:[74,168,240],leg:'Has water',no:'No water'},pollution:{nm:'Pollution'},
   health:{nm:'Health',c:[255,111,125],leg:'Clinic nearby',no:'No health care'},fire:{nm:'Fire safety',c:[255,138,80],leg:'Fire cover',no:'No fire cover'},police:{nm:'Police',c:[91,141,239],leg:'Police cover',no:'No police'},
-  garbage:{nm:'Garbage',c:[176,131,85],leg:'Trash pickup',no:'No pickup'},education:{nm:'Education',c:[230,130,95],leg:'School or college',no:'None nearby'},parks:{nm:'Parks',c:[121,191,94],leg:'Near a park',no:'No park'},crime:{nm:'Crime'},traffic:{nm:'Traffic'},resources:{nm:'Resources'},districts:{nm:'Districts'},noise:{nm:'Noise'},land:{nm:'Land value'},link:{nm:'Highway link',c:[139,224,201],leg:'Linked',no:'Not linked'}};
+  garbage:{nm:'Garbage',c:[176,131,85],leg:'Trash pickup',no:'No pickup'},education:{nm:'Education',c:[230,130,95],leg:'School or college',no:'None nearby'},parks:{nm:'Parks',c:[121,191,94],leg:'Near a park',no:'No park'},crime:{nm:'Crime'},traffic:{nm:'Traffic'},roads:{nm:'Road condition',c:[232,176,40]},resources:{nm:'Resources'},districts:{nm:'Districts'},noise:{nm:'Noise'},land:{nm:'Land value'},link:{nm:'Highway link',c:[139,224,201],leg:'Linked',no:'Not linked'}};
 const OVSRC={power:()=>power,water:()=>water,health:()=>healthC,fire:()=>fireC,police:()=>policeC,garbage:()=>garbC,parks:()=>park};
 let ovT=0;
 function drawOverlay(){const m=ov.mode;ovMesh.visible=!!m;const lg=$('#ovLegend');if(!m){lg.hidden=true;return}const o=OVS[m],src=OVSRC[m]&&OVSRC[m]();
@@ -7160,6 +7160,7 @@ function drawOverlay(){const m=ov.mode;ovMesh.visible=!!m;const lg=$('#ovLegend'
     else if(m==='districts'){if(t.d){const d=distOf(t.d);if(d){const c=new THREE.Color(d.c);r=c.r*255|0;g=c.g*255|0;b=c.b*255|0;a=t.d===distCur&&tool.id==='dist'?185:130}}}
     else if(m==='noise'){const v=noiseV[i];if(v>15){const f=Math.min(1,v/160);r=Math.round(120+135*f);g=Math.round(80-40*f);b=Math.round(200-120*f);a=Math.round(50+160*f)}}
     else if(m==='traffic'){if(t.t===T.ROAD){const v=Math.min(1,jam[i]/1.5);r=Math.round(80+175*v);g=Math.round(205-165*v);b=Math.round(120-80*v);a=Math.round(150+80*v)}}
+    else if(m==='roads'){if(t.t===T.ROAD){const v=Math.min(1,((G.rw&&G.rw[i])||0)/0.8);r=Math.round(70+185*v);g=Math.round(200-150*v);b=Math.round(110-70*v);a=210}}
     else if(t.t===T.ROAD&&m==='link'){if(linkR[i]){[r,g,b]=o.c;a=200}else{r=255;g=70;b=60;a=200}}
     else if(t.t===T.ROAD&&(m==='power'||m==='water'||m==='garbage')){const rm=m==='power'?U.roadPW:m==='water'?U.roadWT:U.roadGB;if(rm[i]){[r,g,b]=o.c;a=120}}
     else if(t.t===T.ROAD||t.t===T.RIVER){}
@@ -7176,6 +7177,7 @@ function drawOverlay(){const m=ov.mode;ovMesh.visible=!!m;const lg=$('#ovLegend'
     :m==='districts'?((G.dists||[]).map(d=>`<span>${sw(new THREE.Color(d.c).toArray().map(v=>v*255|0).join(','))}${esc(d.n)}</span>`).join('')||'<span style="color:var(--muted)">No districts yet. Use the Districts tool</span>')
     :m==='noise'?`<span>${sw('150,70,190')}Some</span><span>${sw('255,40,80')}Loud</span><span style="color:var(--muted)">Homes next to loud lots can't become towers</span>`
     :m==='pollution'?`<span>${sw('255,215,40')}Light</span><span>${sw('255,40,40')}Heavy</span><span style="color:var(--muted)">Homes in heavy smog can't become towers</span>`
+    :m==='roads'?`<span>${sw('70,200,110')}Smooth</span><span>${sw('255,50,40')}Worn out</span><span style="color:var(--muted)">${rdHint()}</span>`
     :m==='traffic'?`<span>${sw('80,205,120')}Flowing</span><span>${sw('255,40,40')}Jammed</span><span style="color:var(--muted)">Click a junction to change its lights</span>`
     :m==='land'?`<span>${sw('230,70,60')}Cheap</span><span>${sw('30,220,120')}Valuable</span><span style="color:var(--muted)">Parks, services, shops and transit raise it · pollution and noise lower it · city average ${landAvg()}</span>`
     :m==='crime'?`<span>${sw('90,200,130')}Low</span><span>${sw('255,50,60')}High</span><span style="color:var(--muted)">Police stations bring it down</span>`
@@ -11357,6 +11359,52 @@ const rtOf=b=>{if(b.dataset.fp)return'ped';const id=b.dataset.p;if(!id)return'ju
   const _tr=toggleRoadMenu;toggleRoadMenu=function(force){_tr(force);if(m.hidden){bar.hidden=true;return}
     let k=null;try{k=localStorage.getItem('pc-rtab')}catch(e){}const cur=m.querySelector('button[aria-pressed=true]');if(cur)k=rtOf(cur);rtSet(RTABS.some(t=>t[0]===k)?k:'street')};
   addEventListener('resize',()=>rtPlace());new MutationObserver(()=>{if(m.hidden)bar.hidden=true}).observe(m,{attributes:true,attributeFilter:['hidden']})}
+/* ---- Roads department: roads wear out with traffic and age; crews from a Roads department (Gov menu) drive out in
+   yellow trucks and repair the worst roads within RD_R tiles. Wear per road tile is G.rw {tile: 0..1}. Worn roads slow
+   cars (lkSpd), lower happiness, and show cracks (light) or potholes and patches (heavy). ---- */
+const RD_R=60;
+let RDC={t:-1e9,d:[],st:null};
+function rdScan(){const now=performance.now();if(now-RDC.t<2000)return RDC;RDC.t=now;const d=[];let n=0,sum=0,bad=0;const rw=G&&G.rw||{};
+  for(const i of OWNIDX){const t=tiles[i];if(t.t===T.ROAD){n++;const w=rw[i]||0;sum+=w;if(w>0.5)bad++}else if(t.t===T.GOV&&t.l===7)d.push(i)}RDC.d=d;RDC.st={n,avg:n?sum/n:0,bad};return RDC}
+function rdDepts(){return rdScan().d}
+function rdStats(){return rdScan().st}
+function rdHint(){const st=rdStats(),d=rdDepts().length;return`Average wear ${Math.round(st.avg*100)}% · ${st.bad} worn tiles · `+(d?`${d} Roads department${d>1?'s':''}`:'build a Roads department (Gov)')}
+function rdMonth(){if(!G)return;if(!G.rw)G.rw={};const rw=G.rw;RDC.t=-1e9;for(const k in rw){const t=tiles[+k];if(!t||t.t!==T.ROAD)delete rw[k]}
+  for(const i of OWNIDX){const t=tiles[i];if(t.t!==T.ROAD)continue;const v=RI(t.l).v,lk=NET.lk&&NET.lk.get(i),w=lk&&lk.w;
+    const k=v===1?1.6:v===5?0.7:w===12?0.4:1,inc=(0.006+Math.min(0.03,jam[i]*0.02))*k*(0.6+0.8*Math.random());rw[i]=Math.min(1,Math.round(((rw[i]||0)+inc)*1000)/1000)}
+  /* crews: 1 + 2 x budget per department, each takes the worst road in reach that nobody is on yet */
+  const taken=new Set();for(const c of cars)if(c.role==='roads')taken.add(c.to);let fixed=0;
+  for(const d of rdDepts()){if(access[d]<0)continue;const dx=d%N,dz=(d/N)|0,crews=1+Math.round(2*budF('roads'));
+    const cand=[];for(const k in rw){const i=+k,w=rw[k];if(w<0.3||taken.has(i))continue;if(Math.max(Math.abs(i%N-dx),Math.abs(((i/N)|0)-dz))>RD_R)continue;cand.push([w,i])}
+    cand.sort((a,b)=>b[0]-a[0]);for(let q=0;q<crews&&q<cand.length;q++){const i=cand[q][1];taken.add(i);if(!rdSend(d,i)){rdFix(i);fixed++}}}
+  if(fixed)G.money-=fixed*15;rdDecor()}
+function rdSend(d,i){if(cars.length>=(typeof carCap==='function'?carCap():9999))return false;bfs(access[d],'car');if(!reached(i))return false;const path=pathTo(i);if(path.length<2)return false;
+  const c=spawnVehicle({role:'roads',purpose:'repair',from:d,to:i,fromCat:'gov',toCat:'road',path,person:makePerson('adult')},VT.flatbed||VT.truck);if(!c)return false;c.col='#e8b021';return true}
+/* a crew fixes the tile and its road neighbours within 2 tiles */
+function rdFix(i){if(!G||!G.rw)return;const x=i%N,z=(i/N)|0;let n=0;for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){const j=(z+dz)*N+x+dx;if(G.rw[j]>0.05){G.rw[j]=Math.max(0,G.rw[j]-0.85);if(G.rw[j]<0.02)delete G.rw[j];n++}}G.money-=n*5;rdDecor()}
+{const _ar=arrive;arrive=function(c){if(c&&c.role==='roads'){rdFix(c.to);return}return _ar.apply(this,arguments)}}
+{const _ls=lkSpd;lkSpd=function(j){const w=G&&G.rw&&G.rw[j]||0;return _ls(j)*(w>0.4?1-0.4*(w-0.4)/0.6:1)}}
+{const _me=monthEnd;monthEnd=function(){const r=_me.apply(this,arguments);try{rdMonth()}catch(e){console.error(e)}return r}}
+{const _hp=happyParts;happyParts=function(){const o=_hp();if(!G||!S||S.pop<100)return o;const st=rdStats();
+  if(st.avg>0.35)o.push({v:-Math.min(6,Math.round((st.avg-0.35)*14*10)/10),nm:'Worn-out roads',tip:'Build a Roads department (Gov) or raise its budget.'});
+  else if(st.avg<0.15&&rdDepts().length)o.push({v:1,nm:'Smooth roads',tip:''});return o}}
+/* cracks and potholes: two instanced decals laid along the road on worn tiles */
+const RDTEX=k=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),R=mulberry32(77+k);x.lineCap='round';
+  if(k){for(let q=0;q<5;q++){const px=12+R()*104,py=12+R()*104,r=4+R()*9;x.fillStyle=`rgba(${q%2?'62,62,64':'46,47,50'},0.7)`;x.beginPath();x.ellipse(px,py,r,r*(0.6+R()*0.4),R()*3,0,7);x.fill()}
+    x.fillStyle='rgba(38,39,42,0.35)';x.fillRect(20+R()*30,30+R()*40,40+R()*30,24+R()*20)}
+  x.strokeStyle='rgba(30,31,33,0.55)';for(let q=0;q<(k?9:6);q++){x.lineWidth=0.6+R()*0.9;x.beginPath();let px=R()*128,py=R()*128;x.moveTo(px,py);for(let s=0;s<6;s++){px+=(R()-0.5)*40;py+=(R()-0.5)*40;x.lineTo(px,py)}x.stroke()}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t};
+const RDM=[0,1].map(k=>new THREE.MeshLambertMaterial({map:RDTEX(k),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6}));
+const RDG=new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2);let RDI=[null,null];
+{const _ba=buildAll;buildAll=function(){const r=_ba.apply(this,arguments);try{rdDecor()}catch(e){}return r}}
+function rdDecor(){if(!G)return;const L=[[],[]];for(const k in G.rw){const w=G.rw[k];if(w<0.35)continue;const i=+k;if(!tiles[i]||tiles[i].t!==T.ROAD)continue;L[w>0.7?1:0].push(i)}
+  const o=new THREE.Object3D(),M=netMap&&G.net&&G.net.s.length?netMap():null;
+  for(let k=0;k<2;k++){let im=RDI[k];if(!im||im.instanceMatrix.count<L[k].length){if(im){scene.remove(im);im.dispose&&im.dispose()}im=RDI[k]=new THREE.InstancedMesh(RDG,RDM[k],Math.max(64,L[k].length*2));im.frustumCulled=false;im.renderOrder=2;scene.add(im)}
+    let n=0;for(const i of L[k]){const x=i%N-HALF+0.5,z=((i/N)|0)-HALF+0.5,h=(i*2654435761>>>0)%997/997;let px=x,pz=z,ry=(h*4|0)*Math.PI/2,wd=0.7,y=0.0615;
+      const sl=M&&M.seg.get(i);const e=sl&&sl.find(q=>q.g.kind==='road');
+      if(e){const g=e.g,s=(g.e0[e.k]+g.e1[e.k])/2,q=cvAt(g,s);px=q[0];pz=q[1];ry=Math.atan2(q[2],q[3])+(h>0.5?Math.PI:0);wd=(NETW[netLk(g.sg)]||NETW[0]).ae*(netLk(g.sg)===5?0.75:1.7);y+=netHs(g,s)}
+      o.position.set(px,y,pz);o.rotation.set(0,ry,0);o.scale.set(wd,1,0.75+h*0.25);o.updateMatrix();im.setMatrixAt(n++,o.matrix)}
+    im.count=n;im.instanceMatrix.needsUpdate=true}}
 /* the picked variant's extra cost per tile (the base type's cost is charged by the normal build code) */
 {const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const pl=_np(tl,A,B,C1,C2);
   if(pl&&!pl.bad&&pl.kind==='road'&&pl.need&&tl&&tl.rp){const p=RPOf(tl.rp);if(p&&p.t===pl.type){pl.extra=Math.max(-RI(p.t).cost,p.cost-RI(p.t).cost)*pl.need.length;pl.cost=(pl.cost||0)+pl.extra}}return pl}}

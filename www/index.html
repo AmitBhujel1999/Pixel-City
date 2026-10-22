@@ -1809,12 +1809,13 @@ if(SC.sea){const lk=window.__seaLake;if(lk)seaShader(lk.material,false,lk);
     const mo=new THREE.ShaderMaterial({uniforms:Object.assign({},WU,{dMap:SEAU.dMap,dE:SEAU.dE}),vertexShader:WMAT.vertexShader,fragmentShader:fs,fog:true,transparent:true,depthWrite:false});
     const m=new THREE.Mesh(g,mo);m.position.y=SEAL;m.renderOrder=1;m.frustumCulled=false;scene.add(m);lk.visible=false;window.__seaOut=m}}
 /* the highway out of the map, through the valley */
-const hwTex=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.fillStyle='#3e434a';x.fillRect(0,0,128,64);
-  const X=u=>(u+0.5)*128;x.fillStyle='#c9ccd0';x.fillRect(X(-0.025),0,0.05*128,64);x.fillStyle='#e9ebe6';for(const u of[-0.43,0.43])x.fillRect(X(u)-1.5,0,3,64);
-  for(const u of[-0.23,0.23])x.fillRect(X(u)-1.5,8,3,26);x.fillStyle='#9aa0a8';for(const u of[-0.49,0.49])x.fillRect(X(u)-1.5,0,3,64);
+/* outside highway: same split look as in the city (texture spans -0.8..0.8 across) */
+const hwTex=(()=>{const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d'),X=u=>(u/1.6+0.5)*256,band=(a,b,col)=>{x.fillStyle=col;x.fillRect(X(a),0,X(b)-X(a),64)};
+  band(-0.8,0.8,'#c9bc9e');for(const s of[-1,1]){band(Math.min(s*0.13,s*0.71),Math.max(s*0.13,s*0.71),'#5d6166')}band(-0.095,0.095,'#7f9c55');
+  x.fillStyle='#f1f1ec';for(const u of[-0.68,-0.16,0.16,0.68])x.fillRect(X(u)-1.2,0,2.4,64);for(const u of[-0.42,0.42])x.fillRect(X(u)-1,6,2,26);
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t})();
-if(!SC.ferry){const road=new THREE.Mesh(stripGeo(-HALF-128,-HALF,0.5,hwZ,0.49,(x,z)=>Math.max(0,terrainH(x,z))+0.06,(x,s)=>[0.5+s*0.49,x]),new THREE.MeshLambertMaterial({map:hwTex}));road.receiveShadow=true;scene.add(road);
- const kerb=new THREE.Mesh(stripGeo(-HALF-128,-HALF,0.5,hwZ,0.62,(x,z)=>Math.max(0,terrainH(x,z))+0.03,(x,s)=>[0,0]),new THREE.MeshLambertMaterial({color:'#b7ab86'}));kerb.receiveShadow=true;scene.add(kerb)}
+if(!SC.ferry){const road=new THREE.Mesh(stripGeo(-HALF-128,-HALF,0.5,hwZ,0.8,(x,z)=>Math.max(0,terrainH(x,z))+0.06,(x,s)=>[0.5+s*0.5,x]),new THREE.MeshLambertMaterial({map:hwTex}));road.receiveShadow=true;scene.add(road);
+ const kerb=new THREE.Mesh(stripGeo(-HALF-128,-HALF,0.5,hwZ,0.93,(x,z)=>Math.max(0,terrainH(x,z))+0.03,(x,s)=>[0,0]),new THREE.MeshLambertMaterial({color:'#7d9852'}));kerb.receiveShadow=true;scene.add(kerb)}
 /* welcome sign at the city limit */
 const signCv=document.createElement('canvas');signCv.width=512;signCv.height=160;const signTex=new THREE.CanvasTexture(signCv);signTex.anisotropy=4;
 function drawSign(name){const x=signCv.getContext('2d');x.fillStyle='#2f6b4f';x.fillRect(0,0,512,160);x.strokeStyle='#f4f4ef';x.lineWidth=8;x.strokeRect(10,10,492,140);
@@ -2756,6 +2757,10 @@ function buildTile0(i,anim){
       const c0=g.children.length;
       const ew=nb[0]&&nb[1]&&!nb[2]&&!nb[3],ns=nb[2]&&nb[3]&&!nb[0]&&!nb[1],straight=ew||ns,inter=cnt>=3;
       const DIRT=rv===1,HWY=rv===5,AVE=rv===3,BLV=rv===4,ONE=rv===2,curve=cnt===2&&!straight&&!tl.w&&!HWY&&!DIRT;
+      /* straight tile highway (the entry stub at the map edge, old grid highways): same split look as network highways */
+      if(HWY&&!tl.w&&straight&&cnt===2){const geo=ew?{X:[-0.5,0.5],Z:[0,0],S:[0,1],n:1,L:1,H:null,kind:'road'}:{X:[0,0],Z:[-0.5,0.5],S:[0,1],n:1,L:1,H:null,kind:'road'};
+        netRoadStrip(g,geo,0,1,0,0,5,true,x,z);if((x+z)%2===0){const sd=(x+z)%4?1:-1,nx=ew?0:sd,nz=ew?sd:0;model(g,'prop_streetlight',null,nx*0.76,0.06,nz*0.76,Math.atan2(nz,-nx),1.55);
+          const pm=new THREE.Mesh(FLAT,poolMat);pm.scale.set(2.1,1,2.1);pm.position.set(nx*0.45,0.079,nz*0.45);pm.castShadow=false;g.add(pm)}break}
       const asph=DIRT?'#9a8663':HWY?'#696d73':((x*31+z*17)%5)?'#74787d':'#71757a';
       /* grass verge sloping from each open side of the tile down to the ground, so the road sits in the land */
       if(!tl.w){const top=DIRT||HWY?0.059:0.074,ang=Math.atan2(top-0.003,0.13),vw=Math.hypot(top-0.003,0.13);
@@ -7925,12 +7930,13 @@ function addPost(who,msg,opt={}){const nm=who.split(' '),handle=opt.handle||(nm[
   const p={id:++postId,who,handle,msg,when:clock(),likes:opt.mayor?base*6+40:base,replies:Math.round(base*(0.05+Math.random()*0.25)),col:opt.mayor?'#f2c14e':AVC[(who.charCodeAt(0)+who.length)%AVC.length],mayor:!!opt.mayor};
   feedLog.unshift(p);if(feedLog.length>40)feedLog.pop();
   if($('#feedPanel').hidden){unread++;const bd=$('#feedBadge');bd.textContent=unread>9?'9+':unread;bd.hidden=false}else renderFeed()}
-function renderFeed(){const f=$('#feedPanel');f.querySelector('.fl').innerHTML=feedLog.length?feedLog.map(p=>postHTML(p,true)).join(''):'<p class="empty">No posts yet. People start talking once someone lives here.</p>';
+function renderFeed(){const f=$('#feedPanel');const posts=S&&S.pop>0?feedLog:feedLog.filter(p=>p.mayor);f.querySelector('.fl').innerHTML=posts.length?posts.map(p=>postHTML(p,true)).join(''):'<p class="empty">No posts yet. People start talking once someone lives here.</p>';
   f.querySelectorAll('.lk').forEach(b=>b.onclick=()=>{const p=feedLog.find(q=>q.id===+b.closest('.post').dataset.id);if(!p)return;p.liked=!p.liked;renderFeed();sfx('ui')});
   const good=feedLog.slice(0,20).filter(p=>p.mood>0).length,bad=feedLog.slice(0,20).filter(p=>p.mood<0).length;}
 $('#feedBtn').onclick=()=>{const f=$('#feedPanel');f.hidden=!f.hidden;sfx('ui');if(!f.hidden){unread=0;$('#feedBadge').hidden=true;renderFeed();for(const m of['#menu','#roadMenu','#sizeMenu','#ovMenu','#taxPanel','#utilPanel'])$(m).hidden=true}};
 $('#feedPanel .close').onclick=()=>{$('#feedPanel').hidden=true};
-function chirp(){
+/* citizens only post when someone lives in the city (mayor posts still show) */
+function chirp(){if(!S||!(S.pop>0))return;
   const c=G.name,o=[],st=()=>`${ST_N[(Math.random()*ST_N.length)|0]} Street`;
   if(U.pw.short)o.push(`Power cut on ${st()} again. Third time this week! @mayor please build another plant.`);
   if(U.wt.short)o.push('Barely any water pressure in my building this morning. Showers are a trickle.');
@@ -9029,7 +9035,7 @@ function netPlan(tl,A,B,C1,C2){const kind=NETKIND(tl),KT=NETKT(kind),M=netMap(),
     for(const[key,list]of dirs){if(!key.startsWith('n'))continue;const id=+key.slice(1);for(const g of M.geo.values()){const sg=g.sg;if(sg.a!==id&&sg.b!==id)continue;const q=cvAt(g,sg.a===id?0.2:g.L-0.2),s=sg.a===id?1:-1;list.push(Math.atan2(q[3]*s,q[2]*s))}}
     for(const c of cuts)if(c.seg!==undefined){const key='p'+c.p[0].toFixed(3)+','+c.p[1].toFixed(3),g=M.geo.get(c.seg);if(!g)continue;const r=netNear(g,c.p[0],c.p[1]),q=cvAt(g,r.s);let l=dirs.get(key);if(!l)dirs.set(key,l=[]);l.push(Math.atan2(q[3],q[2]),Math.atan2(-q[3],-q[2]))}
     for(const list of dirs.values())for(let a=0;a<list.length;a++)for(let b=a+1;b<list.length;b++){let d=Math.abs(list[a]-list[b]);if(d>Math.PI)d=2*Math.PI-d;if(d<0.43)return{bad:'Too sharp an angle where the '+(kind==='rail'?'tracks':'roads')+' meet.'}}}
-  let cost=0;const tl2=kind==='rail'?tl:Object.assign({},tl);for(const j of need){const c=costFor(tl2,j);if(c===null){const t=tiles[j];if(t.t===T.RIVER||inRiverBand(j%N,(j/N)|0)){cost+=(kind==='rail'?90:RI(type).cost+30);continue}return{bad:'Blocked here. Clear the land first.'}}cost+=c}
+  let cost=0;const tl2=kind==='rail'?tl:Object.assign({},tl);for(const j of need){const c=costFor(tl2,j);if(c===null){const t=tiles[j];if(t.t===T.RIVER||inRiverBand(j%N,(j/N)|0)||(!t.lock&&(t.t===T.EMPTY||t.t===T.TREE)&&typeof watDug==='function'&&watDug(j))){cost+=(kind==='rail'?90:RI(type).cost+30);continue}return{bad:t.lock?'That land is not yours yet. Buy the area first (Areas).':t.t!==T.EMPTY&&t.t!==T.TREE&&t.t!==T.ROAD&&t.t!==T.RAIL?'A building is in the way. Bulldoze it first.':'Blocked here. Clear the land first.'}}cost+=c}
   if(xing.size&&kind==='road'&&type===5)return{bad:'Highways cannot have level crossings. Use a bridge.'};
   if(kind==='road'&&netHW(type)>0.55){const hw=netHW(type);for(const pc of pieces){const own=new Set(pc.geo.ext);for(let s=0;s<=pc.geo.L;s+=0.2){const q=cvAt(pc.geo,s);for(let o=-hw+0.05;o<=hw-0.05;o+=0.2){const j=netTile(q[0]-q[3]*o,q[1]+q[2]*o);if(j<0||own.has(j))continue;const t=tiles[j];
       if(t.lock||isEntry(j))return{bad:'That land is not yours yet. Buy the area first.'};if(t.t===T.EMPTY||t.t===T.TREE||(t.t>=2&&t.t<=4)||t.t===T.ROAD||t.t===T.RAIL||t.t===T.RIVER||t.t===T.PATH)continue;return{bad:'This wide road needs more room: buildings are in the way. Bulldoze them first.'}}}}}

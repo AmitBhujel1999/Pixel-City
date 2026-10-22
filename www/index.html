@@ -11441,13 +11441,63 @@ function shopSigns(g,tl){const sh=shopOf(tl);if(!sh)return;const k=SHOPS.indexOf
   const sw=Math.min(bw*0.8,0.5);add(shopGeo(2*k+1,sw,sw/4),cx,Math.min(top-0.02,0.16),fz+0.012);
   /* rooftop billboard on low buildings: frame posts + the panel facing the road */
   if(top<0.9){const bwid=Math.min(0.62,bw*0.9),bh=bwid/4,by=top+0.05+bh/2,bz=Math.max(_shB.min.z+0.05,fz-0.12);
-    box(g,'#8d9298',bwid+0.02,bh+0.02,0.012,cx,by-bh/2-0.01,bz-0.008,false);for(const s of[-1,1])box(g,'#6b7076',0.012,0.06,0.012,cx+s*bwid*0.35,top,bz-0.01,false);add(shopGeo(2*k,bwid,bh),cx,by,bz)}
+    box(g,'#c3c7cc',bwid+0.02,bh+0.02,0.012,cx,by-bh/2-0.01,bz-0.008,false);for(const s of[-1,1])box(g,'#6b7076',0.012,0.06,0.012,cx+s*bwid*0.35,top,bz-0.01,false);add(shopGeo(2*k,bwid,bh),cx,by,bz)}
   /* food places: tall pole sign at the road-side corner of the lot */
   if(sh[5]){const px=_shB.max.x+0.06>0.46?-0.4:0.4;box(g,'#5b5f66',0.02,0.5,0.02,px,0,0.42,false);const p=add(shopGeo(2*k,0.3,0.075),px,0.52,0.43);p.rotation.y=0;
     add(shopGeo(2*k,0.3,0.075),px,0.52,0.418,Math.PI)}}
 {const _adj=adjTile;adjTile=function(g,i,tl,rot,em){const r=_adj.apply(this,arguments);try{if(tl&&tl.t===T.COM&&tl.l)shopSigns(g,tl)}catch(e){console.error(e)}return r}}
 {const _at=applyTime;applyTime=function(){const r=_at.apply(this,arguments);SHOPM.emissiveIntensity=0.22+0.85*Math.max(0,Math.min(1,(0.6-dayLight)/0.45));return r}}
 {const _bn=bname;bname=function(i){const t=i>=0&&tiles[i],sh=t&&shopOf(t);if(sh)return`${sh[0]} (${sh[1].toLowerCase()})`;return _bn.apply(this,arguments)}}
+/* ---- parking on every lot: shops get a car park, homes a driveway and garage, apartments a parking strip, industry a
+   loading yard with a truck at the dock. Uses the free part of the lot (lotFree: strips not covered by any part taller
+   than the ground), in the lot's local frame (+z faces the road). Cars are low-poly boxes so thousands of lots stay
+   cheap. ---- */
+const LY0=0.03,LOTC=['#c0392b','#ecf0f1','#2e5fb8','#e5b33a','#2c3e50','#7f8c8d','#6aa89b','#1b1b1b','#8e2f2f','#b8bcc2'];
+function lotCar(g,px,pz,ry,col,big){const q=new THREE.Group();q.position.set(px,0,pz);q.rotation.y=ry;g.add(q);const L=big?0.34:0.26;
+  box(q,col,0.13,0.05,L,0,0.032,0,true);box(q,col,0.115,0.04,L*0.5,0,0.082,-L*0.06,true);box(q,'#25303a',0.118,0.028,L*0.52,0,0.086,-L*0.06,false);
+  box(q,'#1c1c1c',0.135,0.03,0.05,0,0.03,L*0.3,false);box(q,'#1c1c1c',0.135,0.03,0.05,0,0.03,-L*0.3,false);return q}
+function lotTruck(g,px,pz,ry,col){const q=new THREE.Group();q.position.set(px,0,pz);q.rotation.y=ry;g.add(q);
+  box(q,'#d9dcdf',0.16,0.17,0.36,0,0.05,-0.06,true);box(q,col,0.15,0.11,0.12,0,0.04,0.19,true);box(q,'#25303a',0.152,0.04,0.02,0,0.11,0.25,false);
+  for(const z of[-0.18,0.0,0.19])box(q,'#1c1c1c',0.17,0.045,0.06,0,0.028,z,false);return q}
+function lotFree(g){const B=[];g.updateMatrixWorld(true);const b=new THREE.Box3();
+  g.traverse(m=>{if(!m.isMesh||!m.geometry)return;if(!m.geometry.boundingBox)m.geometry.computeBoundingBox();b.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld);if(b.max.y>0.075)B.push(b.clone())});
+  const free=(x0,x1,z0,z1)=>!B.some(q=>q.max.x>x0&&q.min.x<x1&&q.max.z>z0&&q.min.z<z1);return{B,free}}
+/* biggest free strip along one edge: returns {x0,x1,z0,z1,side} or null */
+function lotStrip(F,minD){const E=0.47;let best=null;
+  for(const side of['f','l','r','b']){for(let d=0.42;d>=minD;d-=0.02){const r=side==='f'?[-E,E,E-d,E]:side==='b'?[-E,E,-E,-E+d]:side==='l'?[-E,-E+d,-E,E]:[E-d,E,-E,E];
+      if(F.free(...r)){const a=(r[1]-r[0])*(r[3]-r[2]);if(!best||a>best.a*1.15)best={x0:r[0],x1:r[1],z0:r[2],z1:r[3],side,a};break}}}
+  return best}
+function lotPave(g,s,col){box(g,col,s.x1-s.x0,0.006,s.z1-s.z0,(s.x0+s.x1)/2,LY0-0.001,(s.z0+s.z1)/2,false)}
+/* bays across a strip: cars nose-in when the strip is deep enough, else parallel */
+function lotBays(g,s,R,fill,big){const W=s.x1-s.x0,D=s.z1-s.z0,alongX=W>=D,len=alongX?W:D,dep=alongX?D:W,nose=dep>=0.27,bw=nose?0.17:0.33,n=Math.floor((len-0.02)/bw);let cars=0;
+  for(let k=0;k<n;k++){const u=-len/2+0.01+bw*(k+0.5);const cx=alongX?(s.x0+s.x1)/2+u:(s.x0+s.x1)/2,cz=alongX?(s.z0+s.z1)/2:(s.z0+s.z1)/2+u;
+    /* bay line */const lu=u-bw/2;if(alongX)box(g,'#f1f1ec',0.008,0.002,dep*0.8,(s.x0+s.x1)/2+lu,LY0+0.005,cz,false);else box(g,'#f1f1ec',dep*0.8,0.002,0.008,cx,LY0+0.005,(s.z0+s.z1)/2+lu,false);
+    if(R()<fill&&cars<(MOBILE?2:4)){const ry=nose?(alongX?0:Math.PI/2):(alongX?Math.PI/2:0);lotCar(g,cx,cz,ry+(R()<0.5?Math.PI:0),LOTC[(R()*LOTC.length)|0],big);cars++}}}
+/* lots whose building fills them: the building (not the flat lot ground) shrinks to 70% against the back of the lot,
+   which frees a strip along the road for the car park / loading yard */
+function lotMakeRoom(g){const b=new THREE.Box3(),keep=[],move=[];g.updateMatrixWorld(true);
+  for(const m of g.children){b.setFromObject(m);if(b.isEmpty()||b.max.y<LY0+0.02)keep.push(m);else move.push(m)}
+  const sub=new THREE.Group();for(const m of move)sub.add(m);sub.scale.set(0.7,1,0.7);sub.position.z=-0.47*0.3;g.add(sub)}
+function lotParking(g,tl){if(!tl||!tl.l||(tl.t!==T.RES&&tl.t!==T.COM&&tl.t!==T.IND))return;const R=mulberry32((tl.seed|0)^0x5bd1e995);let F=lotFree(g);
+  const roomy=tl.t===T.COM?tl.l<=2&&(tl.s|0)<10:tl.t===T.IND?tl.l<=2:(tl.s|0)===0&&tl.l===2;
+  if(roomy&&!lotStrip(F,0.2)&&!bigDims(tl.t,tl.l)){lotMakeRoom(g);F=lotFree(g)}
+  if(tl.t===T.RES){const flats=tl.l>=3||((tl.s|0)===0&&tl.l>=2);
+    if(!flats){/* house: driveway from the road to a garage beside the house */const s=lotStrip(F,0.17);if(!s||s.side==='b')return;
+      const sideStrip=s.side==='l'||s.side==='r',x=sideStrip?(s.x0+s.x1)/2:(R()<0.5?-0.3:0.3);if(!sideStrip&&!F.free(x-0.09,x+0.09,0.1,0.47))return;
+      box(g,'#b7b2a8',0.16,0.005,sideStrip?0.94:0.37,x,LY0-0.001,sideStrip?0:0.285,false);
+      if(sideStrip&&F.free(x-0.1,x+0.1,-0.45,-0.12)){box(g,'#d8d2c4',0.19,0.13,0.26,x,LY0,-0.3,true);box(g,'#6b6f75',0.21,0.015,0.28,x,LY0+0.13,-0.3,true);box(g,'#e9e6df',0.15,0.1,0.005,x,LY0,-0.168,false)}
+      if(R()<0.75)lotCar(g,x,sideStrip?0.12:0.29,R()<0.5?0:Math.PI,LOTC[(R()*LOTC.length)|0]);return}
+    const s=lotStrip(F,0.2);if(!s)return;lotPave(g,s,'#5d6166');lotBays(g,s,R,0.6);return}
+  if(tl.t===T.COM){if((tl.s|0)>=10)return;const s=lotStrip(F,0.2);if(!s)return;lotPave(g,s,'#5a5e63');lotBays(g,s,R,0.55);return}
+  /* industry: loading yard, a truck backed onto the building, bays for staff cars */
+  const s=lotStrip(F,0.24);if(!s)return;lotPave(g,s,'#8f9296');const alongX=s.x1-s.x0>=s.z1-s.z0;
+  const tx=alongX?(s.x0+s.x1)/2+(R()-0.5)*0.3:(s.x0+s.x1)/2,tz=alongX?(s.z0+s.z1)/2:(s.z0+s.z1)/2+(R()-0.5)*0.3;
+  const ry=s.side==='f'?Math.PI:s.side==='b'?0:s.side==='l'?Math.PI/2:-Math.PI/2;if(Math.min(s.x1-s.x0,s.z1-s.z0)>=0.36){lotTruck(g,tx,tz,ry,LOTC[(R()*LOTC.length)|0]);return}
+  /* shallow yard: a truck parked along it at one end, staff bays in the rest */
+  if(alongX&&s.x1-s.x0>0.7){const e=R()<0.5?1:-1,xt=e>0?s.x1-0.26:s.x0+0.26;lotTruck(g,xt,(s.z0+s.z1)/2,Math.PI/2*e,LOTC[(R()*LOTC.length)|0]);
+    lotBays(g,e>0?{x0:s.x0,x1:s.x1-0.52,z0:s.z0,z1:s.z1}:{x0:s.x0+0.52,x1:s.x1,z0:s.z0,z1:s.z1},R,0.5);return}
+  lotBays(g,s,R,0.5)}
+{const _adj2=adjTile;adjTile=function(g,i,tl,rot,em){const r=_adj2.apply(this,arguments);try{if(tl&&tl.l&&(tl.t===T.RES||tl.t===T.COM||tl.t===T.IND))lotParking(g,tl)}catch(e){console.error(e)}return r}}
 /* the picked variant's extra cost per tile (the base type's cost is charged by the normal build code) */
 {const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const pl=_np(tl,A,B,C1,C2);
   if(pl&&!pl.bad&&pl.kind==='road'&&pl.need&&tl&&tl.rp){const p=RPOf(tl.rp);if(p&&p.t===pl.type){pl.extra=Math.max(-RI(p.t).cost,p.cost-RI(p.t).cost)*pl.need.length;pl.cost=(pl.cost||0)+pl.extra}}return pl}}

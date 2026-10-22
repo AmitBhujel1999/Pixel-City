@@ -164,3 +164,12 @@ edit the PC file by hand.
 - One atlas `SHOPAT` (2048², 4 x 16 panels of 512 x 128: panel 2k billboard, 2k+1 shop front, emoji icons) and one
   material `SHOPM` (emissive map; `applyTime` wrapper raises emissiveIntensity at night). Add brands at the end of
   `SHOPS` only (index decides the panel; max 32 brands).
+
+## Parking on lots
+
+- `lotParking` (adjTile wrapper, after `shopSigns`): `lotFree` collects bounding boxes of parts taller than 0.075,
+  `lotStrip` finds the biggest free strip along a lot edge. Low shops (level <= 2), small industry and mid flats
+  (`s 0`, level 2) whose building fills the lot get room first (`lotMakeRoom`: the non-flat parts shrink to 70% against
+  the back edge). Shops/flats: paved strip with bays and low-poly cars (`lotCar`, <= 4, phones 2); houses: driveway,
+  garage when there is side room, a car; industry: yard with a truck (`lotTruck`) and staff bays.
+- Inside these helpers use `LY0` (0.03, lot ground); `Y0` only exists inside `buildTile0`.

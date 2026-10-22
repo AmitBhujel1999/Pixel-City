@@ -11349,12 +11349,15 @@ const rtOf=b=>{if(b.dataset.bb)return'signs';if(b.dataset.fp)return'ped';const i
   bar.innerHTML=RTABS.map(([k,n])=>`<button data-rt="${k}">${n}</button>`).join('');document.body.appendChild(bar);
   const st=document.createElement('style');st.textContent='#roadTabs{position:absolute;z-index:7;display:flex;gap:4px;padding:5px;border-radius:10px;max-width:calc(100vw - 24px);overflow-x:auto}#roadTabs[hidden]{display:none!important}'+
     '#roadTabs button{flex:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap}#roadTabs button[aria-pressed=true]{background:#8be0c9;color:#10231d}#roadMenu>.rpGrp{display:none!important}'+
-    'body:has(#roadMenu:not([hidden])) :is(#cvBar,#landBar,#lineBar,#mlBar){bottom:calc(var(--barH) + var(--sb) + 204px)!important}';document.head.appendChild(st);
+    'body:has(#roadMenu:not([hidden])) :is(#cvBar,#landBar,#lineBar,#mlBar){display:none!important}'+'#roadMenu{width:max-content}#roadTabs{gap:3px;padding:4px}#roadTabs button{padding:5px 10px;font-size:11.5px}#cvBar{zoom:.85}'+
+    '@media (pointer:coarse),(max-width:820px),(max-height:520px){#cvBar,#roadTabs,#roadMenu{zoom:.72}}';document.head.appendChild(st);
   window.rtSet=k=>{try{localStorage.setItem('pc-rtab',k)}catch(e){}for(const b of m.querySelectorAll('button'))b.style.display=rtOf(b)===k?'':'none';
     for(const b of bar.querySelectorAll('button'))b.setAttribute('aria-pressed',b.dataset.rt===k);m.scrollLeft=0;rtPlace()};
   window.rtPlace=()=>{if(m.hidden){bar.hidden=true;return}bar.hidden=false;const b=$('#tool-road').getBoundingClientRect();
-    m.style.left=Math.max(12,Math.min(innerWidth-m.offsetWidth-12,b.left+b.width/2-m.offsetWidth/2))+'px';const r=m.getBoundingClientRect();
-    bar.style.left=Math.max(12,Math.min(innerWidth-bar.offsetWidth-12,r.left))+'px';bar.style.top=(r.top-bar.offsetHeight-6)+'px'};
+    /* zoomed on phones: positions are set in the element's own (unzoomed) px */
+    const zm=parseFloat(getComputedStyle(m).zoom)||1,zb=parseFloat(getComputedStyle(bar).zoom)||1,mw=m.offsetWidth*zm,bw=bar.offsetWidth*zb;
+    m.style.left=Math.max(12,Math.min(innerWidth-mw-12,b.left+b.width/2-mw/2))/zm+'px';const r=m.getBoundingClientRect();
+    bar.style.left=Math.max(12,Math.min(innerWidth-bw-12,r.left))/zb+'px';bar.style.top=(r.top-bar.offsetHeight*zb-6)/zb+'px'};
   bar.querySelectorAll('button').forEach(b=>b.onclick=()=>{rtSet(b.dataset.rt);sfx('ui')});
   const _tr=toggleRoadMenu;toggleRoadMenu=function(force){_tr(force);if(m.hidden){bar.hidden=true;return}
     let k=null;try{k=localStorage.getItem('pc-rtab')}catch(e){}const cur=m.querySelector('button[aria-pressed=true]');if(cur)k=rtOf(cur);rtSet(RTABS.some(t=>t[0]===k)?k:'street')};

@@ -11315,9 +11315,10 @@ function roadSvg(p){const v=p.w||p.t,W=NETW[v]||NETW[0],o=p.o||{},k=Math.min(28,
   if(o.tr||o.gr)for(const sd of[-1,1])band(sd*(W.ae+0.03),sd*(W.ae+0.11),'#5d8a3c');
   if(o.bus){const ln=NETLN[v]||NETLN[0],out=ln[ln.length-1];for(const sd of(NETOWL.has(v)?[1]:[-1,1]))band(sd*(out-0.11),sd*Math.min(W.ae,out+0.12),'#b0463c')}
   if(o.bike)for(const sd of[-1,1])band(sd*(W.ae-0.1),sd*(W.ae-0.025),'#4caf5f');
+  if(v===5){for(const sd of[-1,1])band(sd*0.71,sd*W.hw,'#c4b799');band(-0.13,0.13,'#c4b799');band(-0.095,0.095,'#6f8f4c')}
   if(v===4||(v===3&&(o.tr||o.gr)))band(v===4?-0.2:-0.08,v===4?0.2:0.08,'#5d8a3c');else if(v===3)band(-0.05,0.05,'#c9ccd0');
   const ln=NETLN[v]||NETLN[0],L=(v===16?[-0.37,0,0.37]:NETOWL.has(v)?ln:[...ln.map(q=>-q),...ln]).slice().sort((a,b)=>a-b);
-  for(let q=0;q+1<L.length;q++){const m=(L[q]+L[q+1])/2;if((v===3||v===4)&&Math.abs(m)<0.21)continue;
+  for(let q=0;q+1<L.length;q++){const m=(L[q]+L[q+1])/2;if((v===3||v===4||v===5)&&Math.abs(m)<0.21)continue;
     const solid=v===16&&m<0;s+=`<line x1="0" x2="120" y1="${Y(m)}" y2="${Y(m)}" stroke="#fff" stroke-width="1.3"${solid?'':' stroke-dasharray="7 6"'}/>`}
   if(o.tr){for(let x=10;x<120;x+=24){if(v===3)tree(x+6,0);else{tree(x,-(W.ae+0.07));tree(x+12,W.ae+0.07)}}}
   if(o.nb)for(const sd of[-1,1])band(sd*(W.hw-0.05),sd*W.hw,'#9aa7b1');
@@ -11337,6 +11338,25 @@ setRoadType=function(v){setRoadPreset(rpBase(v))};
   m.querySelectorAll('button[data-p]').forEach(x=>x.onclick=()=>{setRoadPreset(x.dataset.p);setTool(TOOLS.find(t=>t.id==='road'));toggleRoadMenu(false);sfx('ui')});
   const st=document.createElement('style');st.textContent='#roadMenu>.rpGrp{flex:none;align-self:stretch;display:flex;align-items:center;writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 1px}';document.head.appendChild(st);
   TOOLS.find(t=>t.id==='road').rp='street'}
+/* road menu tabs (Cities: Skylines style): Streets / Medium / Large / Highways / Pedestrian / Junctions; the strip only
+   shows the picked tab's roads. The tab bar sits on top of the menu card. */
+const RTABS=[['street','Streets'],['medium','Medium'],['large','Large'],['hwy','Highways'],['ped','Pedestrian'],['junc','Junctions']];
+const rtOf=b=>{if(b.dataset.fp)return'ped';const id=b.dataset.p;if(!id)return'junc';if(id==='ped')return'ped';const p=RPOf(id);
+  return p.t===5||id==='ramp'?'hwy':p.t===4?'large':p.t===3?'medium':'street'};
+{const m=$('#roadMenu'),bar=document.createElement('div');bar.id='roadTabs';bar.className='card';bar.hidden=true;
+  bar.innerHTML=RTABS.map(([k,n])=>`<button data-rt="${k}">${n}</button>`).join('');document.body.appendChild(bar);
+  const st=document.createElement('style');st.textContent='#roadTabs{position:absolute;z-index:7;display:flex;gap:4px;padding:5px;border-radius:10px;max-width:calc(100vw - 24px);overflow-x:auto}#roadTabs[hidden]{display:none!important}'+
+    '#roadTabs button{flex:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap}#roadTabs button[aria-pressed=true]{background:#8be0c9;color:#10231d}#roadMenu>.rpGrp{display:none!important}'+
+    'body:has(#roadMenu:not([hidden])) :is(#cvBar,#landBar,#lineBar,#mlBar){bottom:calc(var(--barH) + var(--sb) + 204px)!important}';document.head.appendChild(st);
+  window.rtSet=k=>{try{localStorage.setItem('pc-rtab',k)}catch(e){}for(const b of m.querySelectorAll('button'))b.style.display=rtOf(b)===k?'':'none';
+    for(const b of bar.querySelectorAll('button'))b.setAttribute('aria-pressed',b.dataset.rt===k);m.scrollLeft=0;rtPlace()};
+  window.rtPlace=()=>{if(m.hidden){bar.hidden=true;return}bar.hidden=false;const b=$('#tool-road').getBoundingClientRect();
+    m.style.left=Math.max(12,Math.min(innerWidth-m.offsetWidth-12,b.left+b.width/2-m.offsetWidth/2))+'px';const r=m.getBoundingClientRect();
+    bar.style.left=Math.max(12,Math.min(innerWidth-bar.offsetWidth-12,r.left))+'px';bar.style.top=(r.top-bar.offsetHeight-6)+'px'};
+  bar.querySelectorAll('button').forEach(b=>b.onclick=()=>{rtSet(b.dataset.rt);sfx('ui')});
+  const _tr=toggleRoadMenu;toggleRoadMenu=function(force){_tr(force);if(m.hidden){bar.hidden=true;return}
+    let k=null;try{k=localStorage.getItem('pc-rtab')}catch(e){}const cur=m.querySelector('button[aria-pressed=true]');if(cur)k=rtOf(cur);rtSet(RTABS.some(t=>t[0]===k)?k:'street')};
+  addEventListener('resize',()=>rtPlace());new MutationObserver(()=>{if(m.hidden)bar.hidden=true}).observe(m,{attributes:true,attributeFilter:['hidden']})}
 /* the picked variant's extra cost per tile (the base type's cost is charged by the normal build code) */
 {const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const pl=_np(tl,A,B,C1,C2);
   if(pl&&!pl.bad&&pl.kind==='road'&&pl.need&&tl&&tl.rp){const p=RPOf(tl.rp);if(p&&p.t===pl.type){pl.extra=Math.max(-RI(p.t).cost,p.cost-RI(p.t).cost)*pl.need.length;pl.cost=(pl.cost||0)+pl.extra}}return pl}}

@@ -1346,7 +1346,10 @@ function farSmooth(){const o=TB.slice();farBlur(2);
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const i=z*TN+x;let h=TB[i];if(x>0)h=Math.min(h,TB[i-1]+FARSL);if(z>0)h=Math.min(h,TB[i-TN]+FARSL);TB[i]=h}
     for(let z=N;z>=0;z--)for(let x=N;x>=0;x--){const i=z*TN+x;let h=TB[i];if(x<N)h=Math.min(h,TB[i+1]+FARSL);if(z<N)h=Math.min(h,TB[i+TN]+FARSL);TB[i]=h}}
   farBlur(1);
-  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const e=Math.min(x,z,N-x,N-z);if(e<6){const k=e/6,i=z*TN+x;TB[i]=o[i]*(1-k)+TB[i]*k}}}
+  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const e=Math.min(x,z,N-x,N-z);if(e<6){const k=e/6,i=z*TN+x;TB[i]=o[i]*(1-k)+TB[i]*k}}
+  /* the entry highway climbs from the map edge as one even ramp (the edge blend above made a step on hilly maps) */
+  if(!SC.ferry){const X1=STUB+6;for(let z=Math.max(0,ZR-5);z<=Math.min(N,ZR+6);z++){const d=z<ZR?ZR-z:z>ZR+1?z-ZR-1:0,w=1-sstep(1,5,d),a=TB[z*TN],b=TB[z*TN+X1];
+    for(let x=1;x<X1;x++){const i=z*TN+x,r=a+(b-a)*sstep(0,1,x/X1);TB[i]=TB[i]*(1-w)+r*w}}}}
 /* level pads under multi-tile buildings, rigid mask for building tiles, then the texture */
 
 /* ramps round leveled pads (patch_terrblend.py) */
@@ -1409,6 +1412,10 @@ function terrBuild(){terrDirty=false;terrT=performance.now();TMAX=0;for(let k=0;
     for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){sum+=TC[z*TN+x];c++}
     const v=sum/c;for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){const k=z*TN+x;TC[k]=v;TPH[k]=v;TPD[k]=0;TPS[k]=k;TPQ.push(k)}}
   terrPadBlend(TPQ);terrRoadGrade();terrRoadLevel();
+  /* entry highway: one even climb from the map edge to where the city's road starts (no kink at the stub's end);
+     land beside it follows within 4 tiles */
+  if(TERRAIN_ON&&!SC.ferry){const X1=STUB-1;for(let z=Math.max(0,ZR-4);z<=Math.min(N,ZR+5);z++){const d=z<ZR?ZR-z:z>ZR+1?z-ZR-1:0,w=1-sstep(0.5,4,d),a=TC[z*TN],b=TC[z*TN+X1];
+    for(let x=1;x<X1;x++){const k=z*TN+x;TC[k]=TC[k]*(1-w)+(a+(b-a)*x/X1)*w}}}
   /* one texel per tile: its four corner heights, +1000 on the first when the tile is a building */
   for(let z=0;z<N;z++)for(let x=0;x<N;x++){const k=z*TN+x,o=(z*N+x)*4;TDAT[o]=TC[k]+(TRG[z*N+x]?1000:0);TDAT[o+1]=TC[k+1];TDAT[o+2]=TC[k+TN];TDAT[o+3]=TC[k+TN+1]}
   TTEX.needsUpdate=true}

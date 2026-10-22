@@ -122,6 +122,11 @@ edit the PC file by hand.
   ramps with `tl.rt=2` does not inherit a picked look); the variant's extra cost is added in the `netPlan` wrapper.
 - Segment splits must copy the look: use `netLookOf(sg)` wherever a segment is cut in two.
 - Upgrade / Reverse on network roads work per segment in the `apply` wrapper of road_types.
+- Highway (`v === 5`, ground level, outside junction areas) is a split highway: grass median ±0.13 with gravel edges,
+  carriageways 0.13-0.71, gravel shoulders to 0.8; lanes `NETLN[5]` = 0.29 / 0.55 and `laneOf` returns those on network
+  tiles (`netOn`), old tile highways keep 0.13 / 0.33. `netHwyDecor`: tall lamps (prop_streetlight x1.55) alternating
+  shoulders every 2, light pools, names painted every 7 from one text atlas (`HWYNAME`, `ST_N` + ' Highway').
+  Elevated / bridge highways keep the older look.
 - Traffic noise: highways 80 (25 with barriers), boulevards 55, avenues 45, trees -20, grass -10; keep road noise
   below 90, which caps homes at level 2.
 

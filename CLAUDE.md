@@ -41,11 +41,42 @@ Browsers block `models.bin` when the page is opened as a file (double-click), so
 models and three.js inside: `python3 tools/pc_build.py "out.html"`. Build it from `www/` after every change; never
 edit the PC file by hand.
 
+## Map size: 480 for new cities, 720 for old ones
+
+- `AREA` is picked at page load (`areaBoot`): new cities 160-tile areas (3 x 3 = 480 tiles, 7.2 km); cities saved on
+  240-tile areas (v7 save with `N` 720 or 1200) keep them (`saveArea(o)`, `cityArea(id)`). `openCity` / `foundCity`
+  reload the page when the size differs, like hills. `load` refuses a v7 save of the other area size.
+- River, highway and start area are anchored to the start area (`XS`), so they scale with `AREA`; check any new
+  scenery placed at absolute world positions on both sizes.
+
+## Northern sound scenario (`sound`)
+
+- `SC.sea==='sound'`: `soundW(x,z)` (x from the start area's centre; map x -80..400) puts a noisy oval island inside the
+  map so sea fills the corners and edges (no square edge). `SND`: `ways` (wide fjord from the south splitting into three
+  channels north, plus short inlets; polylines with half widths, `sndWay`), `bays`, `lakes`, `isles`. The middle of the
+  start area and the highway line stay dry. No branch rivers (not in `TRSC`); all water is sea level.
+- Mild green climate, `forest:1`, `ferry:1` (no highway, like the island: a harbour bay is cut right outside the west
+  edge at the dock). Listed in `SCLIST`. Hills (ticked by default) use `sndHills` (ridged noise, strongest east of the
+  fjord) instead of `farRaw`, a steeper slope cap in `farSmooth` (0.42 instead of `FARSL`) and no border hill band.
+
+## Map view
+
+- `#mapBtn` (top left, under the cinematic button): `mapView(on)` saves the camera, shows the whole map from about
+  1.1 x N away at a tilt (`MAPVIEW` raises the zoom limit like `AREAMODE`), hides the locked-area shade, cancels the
+  intro glide. Tap again or Esc to return.
+
+## Riverbend scenery is open on two sides
+
+- `openSide(x,z)` (classic and rich only): past the east and south map edges `terrainH` drops the mountains and
+  keeps low rolling farmland to the horizon; mountains stay north and west. Scenery only, buildable land unchanged.
+
 ## Roads and river sit in the land
 
 - Roads stand 0.06 (sidewalks 0.075) above the ground; every logic height (cars, `surfY`) assumes that, so the road is
   not lowered. Instead a grass verge (`VERGE` colour) slopes from the road's outer edge down to the ground: in
   `netRoadStrip` for network roads and in the `T.ROAD` case of `buildTile` for tile roads (open sides only).
+  Network verges (0.2 wide) use `groundMat` with world-mapped uv (`netGroundUV`), not the flat `VERGE` colour: the
+  dark flat strip read as a wall under a floating road (user report 2026-10-27).
 - Boats float on the water grid level (`watLevelAt`), hidden where the river is blocked; bridge piers reach -0.3.
 
 ## Water: one simulated grid for river, sea, lakes and dug channels
@@ -144,10 +175,31 @@ edit the PC file by hand.
 - `drawK` (0.5-1): when frames stay slow after the pixel ratio is already 1, `frame()` lowers it by 0.1 (fog and
   chunk culling come closer, LOD distance shrinks on phones only); it creeps back up by 0.05 after 10 s of smooth frames.
 
+## Realism pass (2026-10-28, user: "something is not feeling realistic")
+
+- Ground shader (second `groundMat.onBeforeCompile` wrapper, cache key `groundWater2`): world-noise meadow / dry /
+  lush patches at three scales, saturation 0.74; outer landscape vertex colours get the same treatment.
+- Zone growth infill (`zSpawn`): 75% of new buildings go beside a standing one. Floors capped by population
+  (3 floors under 600 people ... no cap from 25,000).
+- Lot yards `zYards()` (rebuilt in `zInstBuild`): paved / gravel plots to the back of the zone for shops, offices,
+  industry (with fence); homes keep the lawn with low hedge strips. Hedges are horizontal strips: vertical
+  double-sided quads went black.
+- Outer landscape smooth-shaded (was flat low-poly facets). Non-forest maps: woods from noise with ragged edges,
+  hedgerows on warped field borders (`landTree`), no more periodic round clumps.
+- Clouds: `renderOrder` 20 so they draw after the (transparent) water; with -1 the water painted over them and only
+  land looked clouded. Opacity fades as the camera rises into the layer (y 60-140) and is 0.35 in Map view.
+- Light: sun 0.8, sky fill 0.36-0.46 (more shadow contrast). River beaches uneven (low-freq noise in the sand edge).
+
+## Free starter roads
+
+- `hwFree()` (cached on `netVer` + `G.hw.b`): tiles of the starter highway pieces (`hwLay`), its ramps and starter
+  street (`hwRamps`: segments among the ramp nodes, junction and `G.hw.gn`) and the entry stub. `stats` skips their
+  upkeep; before this a new Riverbend city paid $552 a month for a highway the player never built (user report).
+
 ## Roads department and road wear
 
-- `G.rw` {tile: wear 0..1} grows each month in `rdMonth` (monthEnd wrapper): base + traffic (`jam`), dirt x1.6, highway
-  x0.7, pedestrian x0.4. Wear > 0.4 slows cars (`lkSpd` wrapper), city average > 0.35 costs happiness.
+- `G.rwear` {tile: wear 0..1} grows each month in `rdMonth` (monthEnd wrapper): base + traffic (`jam`), dirt x1.6, highway
+  x0.7, pedestrian x0.4. (`G.rw` is the river half width, a number: never reuse it; loading moves an old wear object out of `G.rw`.) Wear > 0.4 slows cars (`lkSpd` wrapper), city average > 0.35 costs happiness.
 - Roads department = Gov size 7 (`gov:'roads'`, transport model in yellow). Each month every department sends
   1 + 2 x roads budget crews (`rdSend`: flatbed, yellow, role `roads`) to the worst roads within `RD_R` 60 tiles;
   `arrive` wrapper calls `rdFix` (tile and road tiles within 2, -0.85 wear, $5 a tile); no path = fixed directly ($15).
@@ -180,3 +232,5 @@ edit the PC file by hand.
   slogan/colour in `G.brand` (prompt on picking the tool). Drawn as a separate group `BBG` (`bbDraw`, after
   `buildAll`, on place / doze / when the tile is built on), one canvas texture `BBT` (3 designs + back), `BBM` glows at
   night. Each adds +0.4 happiness ("City pride", max +2).
+  Zone buildings (`ZN`) leave their tiles EMPTY, so `bbOk` also refuses `ZN.cov`, free-placed footprints, curved
+  road cover and transit corridors; zone growth skips a building that would stand on a billboard (`bbHits`).

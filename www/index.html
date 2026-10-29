@@ -3504,6 +3504,7 @@ function buildTile0(i,anim){
     case T.PATH:{rot=0;const PC='#d8cfb8';box(g,PC,0.24,0.012,0.24,0,0.004,0,false);
       for(const[dx,dz]of[[1,0],[-1,0],[0,1],[0,-1]]){if(!inB(x+dx,z+dz))continue;const q=tiles[idx(x+dx,z+dz)];if(q.t===T.PATH||q.t===T.ROAD)box(g,PC,dx?0.5:0.24,0.012,dz?0.5:0.24,dx*0.25,0.004,dz*0.25,false)}
       if((x+z)%3===0)model(g,'prop_streetlight',null,0.2,0.004,0.2,0);tree(-0.3,0.3,0.55);if((x*7+z)%4===0)tree(0.32,-0.3,0.45);break;}
+    case T.TEL:{rot=faceRoad(x,z,r);telDraw(g,tl,Y0);telLive(i,tl,x,z,rot);break;}
     case T.SEWER:{rot=faceRoad(x,z,r);model(g,tl.l?'sew_plant':'sew_outlet',{wall:'#d9d4c8',roof:'#6a6f78',concrete:'#b9bbb8',metal:'#7d8590',water:'#5f7f6a'},0,Y0-0.03,0);break;}
     case T.DEATH:{rot=faceRoad(x,z,r);lot('#6f9a4e');model(g,tl.l?'crematorium':'cemetery',{wall:'#e4e0d6',roof:'#5d4c46',stone:'#b8b6ae',grass:'#6f9a4e',dirt:'#6b5640',brick:'#8a4b3a',water:'#6fa8d6'},0,Y0-0.004,0);break;}
     case T.METRO:{rot=faceRoad(x,z,r);lot('#c9c5bd');model(g,'metro_station',{wall:'#e4e2dc',roof:'#5b6470',sign:'#d93a32',trim:'#f4f4f2'},0,Y0-0.004,0);break;}
@@ -7113,6 +7114,17 @@ function apply(tl,list){
 const toolbar=$('#tools');
 const LOCKSVG='<svg viewBox="0 0 24 24" class="lockI"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none"/></svg>';
 const toolLv=tl=>tl.kind==='single'?Math.min(...SV[tl.t].sizes.map(z=>z.lv)):tl.id==='off'?8:tl.id==='dist'?6:1;
+/* telecom tool (full module: telecom block before boot) */
+T.TEL=32;
+SV[32]={nm:'Telecom',what:'Phone signal, internet, radio and disaster warning',sizes:[
+  {nm:'Mobile tower',tag:'4G signal',cost:2500,up:40,r:14,lv:2,tier:0,tel:'cell',eff:'Phone signal for everyone within 14 tiles (210 m)'},
+  {nm:'5G tower',tag:'Fast signal',cost:6500,up:95,r:20,lv:8,tier:1,tel:'cell5',eff:'Fast 5G signal within 20 tiles · offices grow faster'},
+  {nm:'Internet exchange',tag:'Fibre',cost:9000,up:150,r:28,lv:5,tier:1,tel:'isp',eff:'Fibre broadband to buildings within 28 tiles · land value up'},
+  {nm:'Radio and TV mast',tag:'Broadcast',cost:7000,up:110,r:60,lv:4,tier:1,tel:'radio',eff:'Radio and TV for 60 tiles · broadcasts disaster warnings'},
+  {nm:'Warning siren',tag:'Disasters',cost:900,up:10,r:12,lv:3,tier:0,tel:'siren',eff:'Wails when a disaster comes · warned buildings lose less within 12 tiles'},
+  {nm:'Data centre',tag:'Tech jobs',cost:40000,up:500,r:0,lv:14,tier:2,tel:'dc',jobs:120,eff:'120 tech jobs · offices +15% demand · needs internet exchange reach'}]};
+TOOLS.splice(TOOLS.findIndex(t=>t.id==='garb')+1,0,{id:'tel',nm:'Telecom',key:'',kind:'single',col:'#8f7ae0',t:32,sz:0});
+ICON.tel='<svg viewBox="0 0 24 24"><path d="M12 7 8 22h2l2-8 2 8h2z" fill="#8f7ae0"/><circle cx="12" cy="6" r="2" fill="#8f7ae0"/><path d="M7.5 2.5a6.5 6.5 0 0 0 0 7M16.5 2.5a6.5 6.5 0 0 1 0 7M5 1a9.5 9.5 0 0 0 0 10M19 1a9.5 9.5 0 0 1 0 10" stroke="#8f7ae0" stroke-width="1.4" fill="none"/></svg>';
 TOOLS.forEach(tl=>{
   if(tl.id==='select'||tl.hidden)return;
   const b=document.createElement('button');b.className='tool';b.id='tool-'+tl.id;
@@ -11730,6 +11742,117 @@ function netPedDecor(g,geo,s0,s1,ox,oz,ra,rb){const L=geo.L,in_=s=>s>=s0&&s<s1,P
   for(let s=0.8,k=0;s<L;s+=1.2,k++){if(!in_(s)||s<ra+0.3||s>L-rb-0.3||netHs(geo,s))continue;const sd=k%2?1:-1,p=P(s,sd*0.34),r=mulberry32((Math.round(p[0]*97)^Math.round(p[1]*131))>>>0);
     box(g,'#8b7f6c',0.11,0.09,0.11,p[0]-ox,0.066,p[1]-oz,false);model(g,'tree_round',{leaf:['#4f7a35','#5a8638','#46702f'][(r()*3)|0]},p[0]-ox,0.156,p[1]-oz,r()*6.3,0.2+r()*0.05);
     const b=P(s+0.5,-sd*0.36);if(in_(s+0.5)&&s+0.5<L-rb-0.3)box(g,'#7a5a3a',0.12,0.03,0.035,b[0]-ox,0.066,b[1]-oz,false).rotation.y=Math.atan2(b[2],b[3])}}
+/* ---------- telecom: mobile towers, internet exchanges, radio masts, warning sirens and data centres (telecom) ----------
+   T.TEL tiles (SV[32]). Coverage arrays are rebuilt after every recompute(): cellC phone signal, netC fibre internet,
+   radC radio and TV, sirC siren reach. Homes covered lift happiness, land value and office demand. When a disaster
+   starts inside siren or radio reach, sirens wail and warned buildings lose less (people shelter, crews brace). */
+const TELSVG=[
+  '<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#9cc7e8"/><rect y="56" width="120" height="14" fill="#6f9a4e"/><path d="M58 8h4l3 50h-10z" fill="#8a9099"/><rect x="50" y="10" width="5" height="12" fill="#f2f2f0"/><rect x="65" y="10" width="5" height="12" fill="#f2f2f0"/><rect x="57.5" y="6" width="5" height="12" fill="#f2f2f0"/><rect x="74" y="48" width="16" height="9" fill="#d9dbde"/></svg>',
+  '<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#9cc7e8"/><rect y="56" width="120" height="14" fill="#6f9a4e"/><path d="M52 58 58 6h4l6 52z" fill="none" stroke="#7b828c" stroke-width="2.5"/><path d="M55 30h10M54 42h12M56 18h8" stroke="#7b828c" stroke-width="2"/><rect x="48" y="6" width="5" height="10" fill="#f2f2f0"/><rect x="67" y="6" width="5" height="10" fill="#f2f2f0"/><text x="80" y="22" font-size="13" font-weight="700" fill="#5b3fd1" font-family="sans-serif">5G</text></svg>',
+  '<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#9cc7e8"/><rect y="56" width="120" height="14" fill="#6f9a4e"/><rect x="24" y="26" width="64" height="32" fill="#e6e8ea"/><rect x="24" y="22" width="64" height="5" fill="#8f7ae0"/><rect x="30" y="34" width="52" height="4" fill="#5c6670"/><rect x="30" y="44" width="52" height="4" fill="#5c6670"/><circle cx="40" cy="16" r="6" fill="#f2f2f0"/><circle cx="62" cy="16" r="6" fill="#f2f2f0"/><path d="M96 58V12" stroke="#8a9099" stroke-width="3"/></svg>',
+  '<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#9cc7e8"/><rect y="58" width="120" height="12" fill="#6f9a4e"/><path d="M60 4v54" stroke="#d6453b" stroke-width="4" stroke-dasharray="7 7"/><path d="M60 4v54" stroke="#f4f4f2" stroke-width="4" stroke-dasharray="7 7" stroke-dashoffset="7"/><path d="M60 14 22 60M60 14l38 46M60 32 36 60M60 32l24 28" stroke="#5c6670" stroke-width="1"/><circle cx="60" cy="4" r="3" fill="#ff3b30"/></svg>',
+  '<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#e9d9a8"/><rect y="58" width="120" height="12" fill="#6f9a4e"/><path d="M60 22v36" stroke="#8a9099" stroke-width="4"/><path d="M60 14l-22-8v20zM60 14l22-8v20z" fill="#d6453b"/><circle cx="60" cy="16" r="6" fill="#5c6670"/><path d="M28 10a20 20 0 0 0 0 16M92 10a20 20 0 0 1 0 16" stroke="#d6453b" stroke-width="2" fill="none"/></svg>',
+  '<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#9cc7e8"/><rect y="56" width="120" height="14" fill="#6f9a4e"/><rect x="16" y="22" width="88" height="36" fill="#4b525c"/><rect x="16" y="22" width="88" height="5" fill="#8f7ae0"/><g fill="#9aa3ad"><rect x="24" y="14" width="14" height="8"/><rect x="44" y="14" width="14" height="8"/><rect x="64" y="14" width="14" height="8"/><rect x="84" y="14" width="14" height="8"/></g><g fill="#7fd1ff"><rect x="24" y="34" width="72" height="2"/><rect x="24" y="42" width="72" height="2"/><rect x="24" y="50" width="72" height="2"/></g></svg>'];
+{const _svT=ICO3.svc;ICO3.svc=(t,l)=>t===32?TELSVG[l|0]:_svT(t,l)}
+{const _bn=bname;bname=function(i){const t=i>=0&&tiles[i];if(t&&t.t===T.TEL){const s=t.seed|0,cn=(G&&G.name)||'City';
+  return[ST_N[(s>>>2)%ST_N.length]+' Mobile Tower',ST_N[(s>>>2)%ST_N.length]+' 5G Tower',cn+' Internet Exchange',cn+' Radio and TV',AV_N[(s>>>2)%AV_N.length]+' Warning Siren',cn+' Data Centre'][t.l|0]}return _bn(i)}}
+
+const cellC=U8(),netC=U8(),radC=U8(),sirC=U8(),telV=U8();
+const TEL={cell:0,net:0,rad:0,sir:0,g5:0,dc:0,dcOn:0,list:[],wail:0,wailAt:null,saved:0};
+function telScan(){cellC.fill(0);netC.fill(0);radC.fill(0);sirC.fill(0);telV.fill(0);TEL.list=[];TEL.g5=0;TEL.dc=0;TEL.dcOn=0;
+  for(const i of OWNIDX){const t=tiles[i];if(t.t!==T.TEL)continue;TEL.list.push(i);const sv=SVI(32,t.l),x=i%N,z=(i/N)|0;
+    const fp=G.fp&&G.fp[i],cx=fp?Math.floor(fp[0]+HALF):x,cz=fp?Math.floor(fp[1]+HALF):z;
+    if(access[i]<0&&sv.tel!=='siren')continue;const r=Math.max(1,Math.round(sv.r*(0.7+0.3*budF('police'))));
+    if(sv.tel==='cell'||sv.tel==='cell5'){markR(cx,cz,r,cellC);if(sv.tel==='cell5')TEL.g5++}
+    else if(sv.tel==='isp')markR(cx,cz,r,netC);else if(sv.tel==='radio')markR(cx,cz,r,radC);else if(sv.tel==='siren')markR(cx,cz,r,sirC);else if(sv.tel==='dc')TEL.dc++}
+  for(const i of TEL.list){const t=tiles[i];if(t.l===5&&netC[i])TEL.dcOn++}
+  for(const i of OWNIDX)if(cellC[i]||netC[i])telV[i]=1;
+  /* share of residents reached, weighted by home size (tile homes and zone-cell homes) */
+  let tot=0,c=0,n=0,r=0;const add=(i,w)=>{tot+=w;if(cellC[i])c+=w;if(netC[i])n+=w;if(radC[i])r+=w};
+  for(const i of OWNIDX){const t=tiles[i];if(t.t===T.RES&&t.l)add(i,capOf(t))}
+  if(typeof ZN!=='undefined'&&ZN.blds)for(const b of ZN.blds)if(b.zone===1&&b.state==='done'&&b.host>=0)add(b.host,b.cap||1);
+  TEL.cell=tot?c/tot:0;TEL.net=tot?n/tot:0;TEL.rad=tot?r/tot:0}
+{const _rc=recompute;recompute=function(){_rc();if(G)telScan()}}
+{const _lc=landCalc;landCalc=function(){_lc();if(!G)return;for(const i of OWNIDX){if(!cellC[i]&&!netC[i])continue;landV[i]=Math.min(100,landV[i]+(netC[i]?6:0)+(cellC[i]?3:0))}}}
+{const _st=stats;stats=function(){const s=_st();for(const i of TEL.list){const t=tiles[i];if(t&&t.t===T.TEL&&t.l===5&&netC[i]&&access[i]>=0){const j=SVI(32,5).jobs;s.jc+=j;s.jcT=(s.jcT||0)+j*1.6;s.jo=(s.jo||0)+j}}return s}}
+{const _cd=computeDemand;computeDemand=function(){_cd();if(!G||!S.pop)return;const cl=v=>Math.max(-1,Math.min(1,v));
+  D.o=cl(D.o+TEL.net*0.12+(TEL.g5?0.05:0)+(TEL.dcOn?0.15:0)-(S.pop>3000&&TEL.cell<0.3?0.1:0));D[3]=cl(D[3]+TEL.cell*0.04)}}
+{const _hp=happyParts;happyParts=function(){const o=_hp();if(!G||!S||!S.pop)return o;const add=(v,nm,tip)=>{if(Math.abs(v)>=0.5)o.push({v,nm,tip})};
+  const p=S.pop,need=p>=1500;
+  add(TEL.cell*3-(need?(1-TEL.cell)*4:0),need&&TEL.cell<0.5?'No phone signal':'Phone signal','Build mobile towers (Telecom menu) so every home gets signal.');
+  add(TEL.net*3,'Home internet','');add(TEL.rad*1.5,'Radio and TV','');return o}}
+{const _s2=svc2Rows;svc2Rows=function(i,t,sv,rows){if(t.t!==T.TEL)return _s2(i,t,sv,rows);const pc=v=>Math.round(v*100)+'%';
+  if(sv.tel==='dc')rows.push(['Jobs',sv.jobs],['Internet',netC[i]?'<span class="ok">Fibre connected</span>':'<span class="no">No internet exchange in reach</span>']);
+  else rows.push(['Reach',`${sv.r} tiles · ${sv.r*TILE_M} m`]);
+  if(sv.tel==='cell'||sv.tel==='cell5')rows.push(['Homes with signal',pc(TEL.cell)]);
+  if(sv.tel==='isp')rows.push(['Homes with fibre',pc(TEL.net)]);
+  if(sv.tel==='radio')rows.push(['Homes in range',pc(TEL.rad)],['Warnings','Broadcasts disaster alerts']);
+  if(sv.tel==='siren')rows.push(['Status',TEL.wail>0?'<span class="no">Wailing · take shelter</span>':'<span class="ok">Ready</span>'],['Test','<button class="telTest" style="padding:3px 8px">Sound a test</button>']);
+  rows.push(['Upkeep',fmt(sv.up)+' / month']);return true}}
+{const _sh=svc2HomeRows;svc2HomeRows=function(i,rows){_sh(i,rows);rows.push(['Phone signal',cellC[i]?(TEL.g5?'<span class="ok">5G</span>':'<span class="ok">4G</span>'):'<span class="no">None</span>'],['Internet',netC[i]?'<span class="ok">Fibre</span>':cellC[i]?'Mobile only':'<span class="no">None</span>'])}}
+document.addEventListener('click',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('telTest')){telWail(null,6);toast('Siren test. This is only a test.')}});
+OVS.telecom={nm:'Phone and internet',c:[150,122,240],leg:'Signal or internet',no:'No signal'};OVSRC.telecom=()=>telV;
+{const m=$('#ovMenu'),off=m&&m.querySelector('button[data-m=""]');if(off){off.insertAdjacentHTML('beforebegin','<button data-m="telecom" aria-pressed="false"><i style="background:rgb(150,122,240)"></i>Phone and internet</button>');
+  const b=m.querySelector('button[data-m="telecom"]');b.onclick=()=>{setOverlayUser('telecom');$('#ovMenu').hidden=true;sfx('ui')}}}
+
+/* drawing: towers, masts and buildings from boxes and cylinders; beacons and siren horns live in funLive */
+function telBar(g,c,a,b,w){const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],L=Math.hypot(dx,dy,dz);const m=part(g,BOX,c,w,L,w,a[0],a[1],a[2],false);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx/L,dy/L,dz/L));return m}
+function telPanels(g,y,r,n,c){for(let k=0;k<n;k++){const a=k/n*Math.PI*2,m=part(g,BOX,c||'#f1f1ee',0.075,0.2,0.03,Math.sin(a)*r,y,Math.cos(a)*r,false);m.rotation.y=a}}
+function telLattice(g,h,b0,b1,c){const L=[[1,1],[1,-1],[-1,-1],[-1,1]];for(const[sx,sz]of L)telBar(g,c,[sx*b0,0,sz*b0],[sx*b1,h,sz*b1],0.018);
+  const n=Math.round(h/0.32);for(let k=1;k<=n;k++){const y=k*h/n,y0=(k-1)*h/n,w=b0+(b1-b0)*y/h,w0=b0+(b1-b0)*y0/h;
+    for(let q=0;q<4;q++){const[ax,az]=L[q],[bx,bz]=L[(q+1)%4];telBar(g,c,[ax*w,y,az*w],[bx*w,y,bz*w],0.01);telBar(g,c,[ax*w0,y0,az*w0],[bx*w,y,bz*w],0.007)}}}
+function telDraw(g,tl,Y0){const l=tl.l|0,steel='#8b9199',white='#f1f1ee',cab='#d9dbde';
+  const fence=(s,h)=>{for(const[w,d,x,z]of[[s,0.012,0,s/2],[s,0.012,0,-s/2],[0.012,s,s/2,0],[0.012,s,-s/2,0]])box(g,'#9aa0a6',w,h,d,x,Y0,z,false)};
+  if(l===0){box(g,'#b9bbb8',0.56,0.02,0.56,0,Y0,0,false);fence(0.56,0.1);box(g,cab,0.14,0.13,0.1,0.16,Y0+0.02,0.16);box(g,cab,0.14,0.13,0.1,-0.02,Y0+0.02,0.17);
+    part(g,CYL,steel,0.05,1.1,0.05,0,Y0,0);part(g,CYL,steel,0.038,0.9,0.038,0,Y0+1.1,0);part(g,CYL,steel,0.028,0.5,0.028,0,Y0+2.0,0);
+    telPanels(g,Y0+2.05,0.07,3);telPanels(g,Y0+1.75,0.06,3,'#e4e4e0');const d=part(g,CYL,white,0.06,0.03,0.06,0.06,Y0+1.5,0,false);d.rotation.z=Math.PI/2;
+    telBar(g,'#3a3f45',[0.03,Y0+0.15,0.03],[0.13,Y0+0.08,0.13],0.012)}
+  else if(l===1){box(g,'#b9bbb8',0.7,0.02,0.7,0,Y0,0,false);fence(0.7,0.11);box(g,cab,0.2,0.15,0.12,0.2,Y0+0.02,-0.2);box(g,cab,0.12,0.15,0.12,-0.2,Y0+0.02,-0.2);
+    const tw=new THREE.Group();tw.position.y=Y0+0.02;g.add(tw);telLattice(tw,2.5,0.17,0.05,steel);
+    telPanels(g,Y0+2.35,0.085,6);telPanels(g,Y0+2.0,0.085,3,'#e4e4e0');box(g,white,0.1,0.02,0.1,0,Y0+2.52,0,false);part(g,CYL,steel,0.01,0.4,0.01,0,Y0+2.52,0,false)}
+  else if(l===2){box(g,'#c9c5bd',0.98,0.006,0.98,0,Y0,0,false);box(g,'#e3e5e7',0.78,0.34,0.5,0,Y0,0.05);box(g,'#8f7ae0',0.78,0.04,0.5,0,Y0+0.34,0.05);
+    for(let k=0;k<4;k++)box(g,'#2e3a48',0.78,0.03,0.002,0,Y0+0.08+k*0.065,0.301,false);box(g,'#3f4a56',0.16,0.12,0.004,0.24,Y0,0.302,false);
+    for(const x of[-0.22,0.02]){const d=part(g,CYL,white,0.09,0.02,0.09,x,Y0+0.42,-0.05);d.rotation.x=-0.7}
+    for(let k=0;k<5;k++)box(g,'#56606b',0.08,0.08,0.08,-0.32+k*0.16,Y0+0.38,0.2);part(g,CYL,steel,0.02,0.8,0.02,0.3,Y0+0.38,-0.1);telPanels(g,Y0+1.0,0.04,3);
+    for(let k=0;k<3;k++)box(g,'#6b7480',0.06,0.11,0.05,-0.36+k*0.09,Y0,-0.36)}
+  else if(l===3){box(g,'#b9bbb8',0.4,0.02,0.4,0,Y0,0,false);box(g,cab,0.26,0.18,0.18,0.24,Y0,0.25);const H=6.2,n=14;
+    for(let k=0;k<n;k++)box(g,k%2?'#f4f4f2':'#d6453b',0.06,H/n,0.06,0,Y0+k*H/n,0,false);
+    for(const h of[0.33,0.66,0.92])for(let q=0;q<3;q++){const a=q/3*Math.PI*2+0.4,R=0.47+h*0.4;telBar(g,'#4a5058',[0,Y0+H*h,0],[Math.sin(a)*R,Y0,Math.cos(a)*R],0.006)}
+    for(let q=0;q<3;q++){const a=q/3*Math.PI*2+0.4,R=0.47+0.92*0.4;box(g,'#9a9a96',0.05,0.03,0.05,Math.sin(a)*R,Y0,Math.cos(a)*R,false)}
+    for(let k=0;k<3;k++){const m=part(g,BOX,'#c9ccd0',0.18,0.012,0.012,0,Y0+H-0.35-k*0.22,0,false);m.rotation.y=k}}
+  else if(l===4){box(g,'#6f9a4e',0.98,0.004,0.98,0,Y0,0,false);box(g,'#b9bbb8',0.24,0.02,0.24,0,Y0,0,false);part(g,CYL,'#7d838b',0.035,1.05,0.035,0,Y0,0);
+    box(g,'#d9dbde',0.1,0.14,0.07,0,Y0+0.35,0.05);box(g,'#f2c94c',0.1,0.02,0.071,0,Y0+0.47,0.05,false);box(g,'#5e3d25',0.3,0.03,0.08,-0.3,Y0+0.06,0.3)}
+  else{box(g,'#c9c5bd',0.98,0.006,0.98,0,Y0,0,false);box(g,'#4b525c',0.86,0.46,0.66,0,Y0,0.02);box(g,'#8f7ae0',0.86,0.03,0.66,0,Y0+0.46,0.02);
+    for(let k=0;k<3;k++)box(g,'#7fd1ff',0.7,0.012,0.002,0,Y0+0.12+k*0.12,0.351,false);
+    for(let q=0;q<4;q++)for(let k=0;k<2;k++){box(g,'#9aa3ad',0.16,0.06,0.16,-0.3+q*0.2,Y0+0.46,-0.16+k*0.3);part(g,CYL,'#3a3f45',0.06,0.01,0.06,-0.3+q*0.2,Y0+0.52,-0.16+k*0.3,false)}
+    box(g,'#d9dbde',0.2,0.12,0.1,0.34,Y0,-0.42);fence(0.98,0.08)}}
+/* live parts: red beacons (always blink, brighter at night), siren horn turns and strobes while TEL.wail>0 */
+const TELBM=new THREE.MeshBasicMaterial({color:'#ff2a1f'}),TELSM=new THREE.MeshBasicMaterial({color:'#ffb020'});
+function telLive(i,tl,x,z,rot){const L=new THREE.Group(),fp=G.fp&&G.fp[i];if(fp){L.position.set(fp[0],0,fp[1]);L.rotation.y=fp[2]}else{L.position.set(x-HALF+0.5,0,z-HALF+0.5);L.rotation.y=rot||0}
+  const Y0=0.05,l=tl.l|0,bc=[],H=[2.53,2.56,1.42,6.25,0,0][l];const geo=new THREE.SphereGeometry(1,8,6);
+  if(H){const m=new THREE.Mesh(geo,TELBM);m.scale.setScalar(l===3?0.045:0.035);m.position.y=Y0+H;L.add(m);bc.push(m);if(l===3)for(const h of[2.1,4.2]){const q=new THREE.Mesh(geo,TELBM);q.scale.setScalar(0.035);q.position.y=Y0+h;L.add(q);bc.push(q)}}
+  let horn=null,strobe=null;if(l===4){horn=new THREE.Group();horn.position.y=Y0+1.08;L.add(horn);const hm=new THREE.MeshLambertMaterial({color:'#d6453b'});
+    for(const s of[-1,1]){const c=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.075,0.2,10,1,true),hm);c.rotation.z=s*Math.PI/2;c.position.x=s*0.12;horn.add(c)}
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.09,10),new THREE.MeshLambertMaterial({color:'#5c6670'}));horn.add(hub);
+    strobe=new THREE.Mesh(geo,TELSM);strobe.scale.setScalar(0.035);strobe.position.y=0.07;horn.add(strobe)}
+  world.add(L);let t=Math.random()*2;funLive.set(i,{g:L,u:dt=>{t+=dt;const h=hour(),nt=h<6.5||h>18.5,on=(t%1.6)<(nt?0.55:0.3);for(const m of bc)m.visible=on;
+    if(horn){const w=TEL.wail>0&&(!TEL.wailAt||sirC[i]||TEL.wailAt==='all');if(w)horn.rotation.y+=dt*4.5;strobe.visible=w&&(t%0.5)<0.25}}})}
+/* the wail: a rising and falling sawtooth through a low-pass, two cycles per call */
+function telSound(sec){if(!AU.ctx||!AU.sfx)return;const c=AU.ctx,t=c.currentTime,o=c.createOscillator(),o2=c.createOscillator(),lp=c.createBiquadFilter(),e=c.createGain();
+  o.type='sawtooth';o2.type='square';lp.type='lowpass';lp.frequency.value=1800;o.connect(lp);o2.connect(lp);lp.connect(e);e.connect(AU.master);
+  const cyc=3;for(let k=0;k*cyc<sec;k++){const s=t+k*cyc;for(const[q,m]of[[o,1],[o2,1.5]]){q.frequency.setValueAtTime(380*m,s);q.frequency.linearRampToValueAtTime(820*m,s+cyc*0.45);q.frequency.linearRampToValueAtTime(380*m,s+cyc)}}
+  e.gain.setValueAtTime(0.0001,t);e.gain.exponentialRampToValueAtTime(0.05,t+0.6);e.gain.setValueAtTime(0.05,t+sec-0.8);e.gain.exponentialRampToValueAtTime(0.0001,t+sec);
+  o.start(t);o2.start(t);o.stop(t+sec+0.05);o2.stop(t+sec+0.05)}
+function telWail(at,sec){TEL.wail=Math.max(TEL.wail,sec);TEL.wailAt=at;telSound(sec)}
+(function(){let last=performance.now();setInterval(()=>{const n=performance.now(),dt=(n-last)/1000;last=n;if(TEL.wail>0)TEL.wail=Math.max(0,TEL.wail-dt)},250)})();
+/* disasters: warn when the hit point is in siren or radio reach; warned buildings lose one level instead of all, 40% of services hold */
+function telWarned(x,z){const i=idx(Math.floor(x+HALF),Math.floor(z+HALF));return inB(Math.floor(x+HALF),Math.floor(z+HALF))&&(sirC[i]||radC[i])}
+{const _ds=disStart;disStart=function(k,x,z){const w=telWarned(x,z),anyS=TEL.list.some(i=>tiles[i].l===4);
+  if(w){if(anyS)telWail('all',k==='tornado'?20:10);notify(`<b>${{meteor:'Meteor warning',tornado:'Tornado warning',quake:'Earthquake warning'}[k]||'Disaster warning'}!</b> ${anyS?'Sirens are sounding':'Radio and TV broadcast the alert'}. People are taking shelter.`,'adv sos')}
+  const d=_ds(k,x,z);if(d)d.warn=w;return d}}
+{const _dh=disHit;disHit=function(i){const t=tiles[i];if(t&&(sirC[i]||radC[i])){if(t.t>=2&&t.t<=4&&t.l>1){t.l--;t.fire=0;buildTile(i);TEL.saved++;return true}if(SV[t.t]&&t.t!==T.PART&&!bigDims(t.t,t.l)&&Math.random()<0.4){TEL.saved++;return false}}return _dh(i)}}
+
 /* ---------- boot ---------- */
 /* ---------- cloud saves (net_cloud.js) ----------
    Every city on this device is backed up to Firestore under a sync code (players/<code>/cities/<id>, the save

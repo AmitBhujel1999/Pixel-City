@@ -11878,6 +11878,163 @@ function telWarned(x,z){const i=idx(Math.floor(x+HALF),Math.floor(z+HALF));retur
   const d=_ds(k,x,z);if(d)d.warn=w;return d}}
 {const _dh=disHit;disHit=function(i){const t=tiles[i];if(t&&(sirC[i]||radC[i])){if(t.t>=2&&t.t<=4&&t.l>1){t.l--;t.fire=0;buildTile(i);TEL.saved++;return true}if(SV[t.t]&&t.t!==T.PART&&!bigDims(t.t,t.l)&&Math.random()<0.4){TEL.saved++;return false}}return _dh(i)}}
 
+/* ---------- the mayor's game: goals, advisor decisions, elections, achievements, neighbour towns, hard mode, festivals (mayor) ----------
+   All state lives in G (saved with the city): G.ms missions {i,got}, G.fx timed effects [{nm,h,until,d2,d3,d4,dO,m}],
+   G.dec {next,n,cur}, G.elec {next,promise,base,won,lost}, G.nb neighbour towns, G.fest {next,cur}, G.hard.
+   Time is counted in months (G.mo, +1 in the monthEnd wrapper). Achievements are kept per player in localStorage. */
+const MY={T:0};
+const myMo=()=>(G&&G.mo)||0;
+function homeShare(arr){let t=0,c=0;const add=(i,w)=>{t+=w;if(arr[i])c+=w};
+  for(const i of S.lists.home)add(i,capOf(tiles[i]));if(typeof ZN!=='undefined'&&ZN.blds)for(const b of ZN.blds)if(b.zone===1&&b.state==='done'&&b.host>=0)add(b.host,b.cap||1);return t?c/t:0}
+function avgJam(){const L=S.roadList||[];if(!L.length)return 0;let s=0;for(const i of L)s+=Math.min(2,jam[i]||0);return s/L.length}
+/* timed effects */
+function fxAdd(nm,o){(G.fx||(G.fx=[])).push(Object.assign({nm,until:myMo()+(o.mo||6),h:0},o))}
+function fxLive(){return(G&&G.fx||[]).filter(e=>e.until>myMo())}
+{const _hp=happyParts;happyParts=function(){const o=_hp();if(!G||!S||!S.pop)return o;const m=new Map();for(const e of fxLive())if(e.h)m.set(e.nm,(m.get(e.nm)||0)+e.h);
+  for(const[nm,v]of m)o.push({v:Math.max(-8,Math.min(8,v)),nm,tip:''});if(G.hard&&S.pop>200)o.push({v:-3,nm:'Hard mode',tip:'People expect more in hard mode.'});return o}}
+{const _cd=computeDemand;computeDemand=function(){_cd();if(!G)return;const cl=v=>Math.max(-1,Math.min(1,v));for(const e of fxLive()){if(e.d2)D[2]=cl(D[2]+e.d2);if(e.d3)D[3]=cl(D[3]+e.d3);if(e.d4)D[4]=cl(D[4]+e.d4);if(e.dO)D.o=cl(D.o+e.dO)}
+  if(G.hard){D[2]=cl(D[2]-0.05);D[3]=cl(D[3]-0.05);D[4]=cl(D[4]-0.05)}}}
+{const _st=stats;stats=function(){const s=_st();if(G&&G.hard){s.svcUp*=1.25;if(s.roadUp)s.roadUp*=1.25}return s}}
+{const _dm=disMonth;disMonth=function(){_dm();if(G&&G.hard&&Math.random()<0.5)_dm()}}
+
+/* ---- missions: one goal at a time, cash and XP when done ---- */
+const MISS=[
+  ['First neighbours','Reach 50 residents',()=>S.pop>=50,2000,20],
+  ['Lights on','100 residents and every home with power',()=>S.pop>=100&&!S.noPower,3000,30],
+  ['Village','Reach 500 residents',()=>S.pop>=500,5000,40],
+  ['Safe streets','Fire and police cover for 70% of homes (1,000+ residents)',()=>S.pop>=1000&&homeShare(fireC)>=0.7&&homeShare(policeC)>=0.7,8000,60],
+  ['Can you hear me?','Phone signal for 80% of homes (800+ residents)',()=>S.pop>=800&&TEL.cell>=0.8,6000,50],
+  ['Happy town','Happiness 75% with 1,000+ residents',()=>S.pop>=1000&&happiness()>=75,8000,60],
+  ['Town','Reach 2,500 residents',()=>S.pop>=2500,12000,80],
+  ['In the black','End 3 months in a row with a profit',()=>(G.blk|0)>=3,10000,60],
+  ['School for all','Schools near 80% of homes (2,000+ residents)',()=>S.pop>=2000&&homeShare(schoolC)>=0.8,12000,80],
+  ['Smooth traffic','Average road jam below 35% with 3,000+ residents',()=>S.pop>=3000&&avgJam()<0.35,15000,90],
+  ['City','Reach 10,000 residents',()=>S.pop>=10000,30000,150],
+  ['Fibre city','Fibre internet for 70% of homes',()=>S.pop>=3000&&TEL.net>=0.7,20000,100],
+  ['Ready for anything','Siren or radio warning for 60% of homes',()=>S.pop>=3000&&homeShare(sirC.map((v,i)=>v||radC[i]))>=0.6,20000,100],
+  ['Something to see','Build a landmark',()=>!!(S.cnt[31]),25000,120],
+  ['Underground','Open a metro station',()=>!!(S.cnt[27]),25000,120],
+  ['Big city','Reach 25,000 residents',()=>S.pop>=25000,60000,250],
+  ['Metropolis','Reach 50,000 residents',()=>S.pop>=50000,120000,400],
+  ['Megacity','Reach 100,000 residents',()=>S.pop>=100000,250000,800]];
+function msTick(){const M=G.ms||(G.ms={i:0});while(M.i<MISS.length){const m=MISS[M.i];let ok=false;try{ok=m[2]()}catch(e){}if(!ok)break;
+  const cash=Math.round(m[3]*(G.hard?1.5:1));G.money+=cash;addXP(m[4]);M.i++;toast(`Goal done: ${m[0]} · +${fmt(cash)}`);sfx('level');addPost('Mayor of '+G.name,`We did it: <b>${esc(m[0])}</b>! The council adds ${fmt(cash)} to the city budget.`);achCheck()}}
+
+/* ---- advisor decisions: a question every few months, each answer has a cost ---- */
+const ADV={fin:['Finance advisor','#e0a21b'],plan:['City planner','#4a90f0'],hl:['Health advisor','#ff6f7d'],pol:['Police chief','#5b8def'],biz:['Business council','#8f7ae0'],env:['Environment advisor','#5cc46f'],nb:['Neighbour town','#c97a4a']};
+const DECS=[
+  {w:'biz',min:300,q:'A furniture maker wants to open a big factory here if we give it a tax break.',a:[['Give the break',()=>fxAdd('New factory',{d4:0.15,h:-1,mo:12})],['Say no',()=>fxAdd('Factory went elsewhere',{d4:-0.05,mo:4})]]},
+  {w:'plan',min:400,q:'Neighbours ask for a street festival this weekend. It costs $3,000.',a:[['Fund it ($3,000)',()=>{G.money-=3000;fxAdd('Street festival',{h:4,mo:3})}],['Not this year',()=>fxAdd('No street festival',{h:-1,mo:3})]]},
+  {w:'hl',min:800,q:'Doctors and nurses ask for a pay rise of $800 a month for a year.',a:[['Pay the rise',()=>fxAdd('Happy health workers',{h:2,m:-800,mo:12})],['Hold pay',()=>fxAdd('Health workers unhappy',{h:-2,mo:6})]]},
+  {w:'pol',min:1000,q:'Night-time break-ins are up. Extra patrols cost $600 a month for six months.',a:[['Extra patrols',()=>fxAdd('Night patrols',{h:2,m:-600,mo:6})],['No extra money',()=>fxAdd('Break-ins',{h:-2,mo:4})]]},
+  {w:'env',min:600,q:'Volunteers will plant 2,000 street trees if we buy the saplings for $5,000.',a:[['Buy the saplings',()=>{G.money-=5000;fxAdd('Greener streets',{h:1.5,mo:24})}],['Maybe later',()=>{}]]},
+  {w:'plan',min:2000,q:'Builders want to raise height limits so more people can live downtown.',a:[['Raise the limits',()=>fxAdd('Taller buildings',{d2:0.15,h:-1,mo:12})],['Keep the skyline',()=>fxAdd('Kept the skyline',{h:1,d2:-0.05,mo:6})]]},
+  {w:'biz',min:1500,q:'Traders want a night market on the main street, open till midnight.',a:[['Allow it',()=>fxAdd('Night market',{d3:0.12,h:0.5,mo:12})],['Too noisy',()=>{}]]},
+  {w:'biz',min:2500,q:'A tech company will move its office here if the city has good internet.',a:[['Welcome them',()=>{if(TEL.net>=0.3){fxAdd('Tech office',{dO:0.2,h:1,mo:12});toast('The tech office is moving in.')}else{fxAdd('Tech office went elsewhere',{dO:-0.05,mo:4});toast('They looked at our internet and went elsewhere. Build an internet exchange.')}}],['Not now',()=>{}]]},
+  {w:'fin',min:1200,q:'Bus riders ask for a free-fares trial. It costs about $1,000 a month for six months.',a:[['Try free fares',()=>fxAdd('Free bus trial',{h:2,m:-1000,mo:6})],['Keep fares',()=>{}]]},
+  {w:'fin',min:3000,q:'A bank offers to sponsor a new park sign in return for its logo. We get $8,000.',a:[['Take the money',()=>{G.money+=8000;fxAdd('Logos in the park',{h:-0.5,mo:6})}],['No logos',()=>fxAdd('Clean parks',{h:0.5,mo:6})]]},
+  {w:'env',min:2000,q:'Factories ask to burn waste at night to save money. Air will be worse.',a:[['Allow it',()=>{G.money+=4000;fxAdd('Smoky nights',{h:-3,d4:0.08,mo:6})}],['Refuse',()=>fxAdd('Clean air rules',{h:1,d4:-0.04,mo:6})]]},
+  {w:'nb',min:1500,nb:1,q:'{T} wants to send its garbage to our landfill and will pay $1,500 a month for a year.',a:[['Take the deal',()=>{fxAdd('Garbage from {T}',{m:1500,h:-1,mo:12});nbRel(10)}],['No thanks',()=>nbRel(-5)]]},
+  {w:'nb',min:2500,nb:1,q:'{T} asks us to share the cost of a new road link: $10,000. Trade will grow.',a:[['Share the cost',()=>{G.money-=10000;nbRel(20);fxAdd('Road link to {T}',{d3:0.06,d4:0.06,mo:24})}],['Not now',()=>nbRel(-8)]]},
+  {w:'nb',min:5000,nb:1,q:'{T} is building a mall at our border and wants our shoppers.',a:[['Build our own shops',()=>fxAdd('Shop local campaign',{d3:0.1,m:-500,mo:6})],['Let them',()=>fxAdd('Shoppers go to {T}',{d3:-0.1,mo:6})]]},
+  {w:'hl',min:4000,q:'A flu wave is coming. Free flu jabs cost $6,000.',a:[['Free jabs',()=>{G.money-=6000;fxAdd('Healthy winter',{h:1,mo:4})}],['Skip it',()=>fxAdd('Flu wave',{h:-3,mo:3})]]},
+  {w:'pol',min:6000,q:'Fans want a city marathon. Roads close for a day and it costs $4,000.',a:[['Run the marathon',()=>{G.money-=4000;fxAdd('City marathon',{h:3,mo:2});festStart('City marathon')}],['Not this year',()=>{}]]}];
+function decTick(){const D0=G.dec||(G.dec={next:myMo()+3,n:0});if(D0.cur!=null||myMo()<D0.next||S.pop<300)return;
+  const ok=DECS.map((d,k)=>k).filter(k=>S.pop>=DECS[k].min&&!(D0.last||[]).includes(k)&&(!DECS[k].nb||(G.nb&&G.nb.length)));if(!ok.length)return;
+  const k=ok[(Math.random()*ok.length)|0];D0.cur=k;D0.town=DECS[k].nb?G.nb[(Math.random()*G.nb.length)|0].nm:'';D0.next=myMo()+2+((Math.random()*3)|0);decShow()}
+const decT=s=>s.replace(/\{T\}/g,(G.dec&&G.dec.town)||'Our neighbour');
+function decShow(){const D0=G.dec,c=$('#decCard');if(!c)return;if(D0.cur==null){c.hidden=true;return}const d=DECS[D0.cur],w=ADV[d.w];
+  c.innerHTML=`<div class="dcw" style="color:${w[1]}">${w[0]}${d.nb?' · '+esc(D0.town):''}</div><p>${esc(decT(d.q))}</p><div class="dcb">${d.a.map((a,i)=>`<button data-dc="${i}">${esc(decT(a[0]))}</button>`).join('')}</div>`;c.hidden=false;
+  c.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{const a=d.a[+b.dataset.dc];const fx0=fxAdd;fxAdd=(nm,o)=>fx0(decT(nm),o);try{a[1]()}finally{fxAdd=fx0}
+    D0.cur=null;D0.n++;(D0.last||(D0.last=[])).push(DECS.indexOf(d));if(D0.last.length>5)D0.last.shift();c.hidden=true;sfx('ui');computeDemand();achCheck();if(!$('#mayPanel').hidden)myRender()})}
+
+/* ---- elections every 4 years: pick a promise 6 months before, keep it to win votes ---- */
+const PROM={happy:['Happy city','Happiness 75% or more',()=>happiness()>=75],traffic:['Free-flowing roads','Average jam below 35%',()=>avgJam()<0.35],grow:['A growing city','20% more people than now',e=>S.pop>=e.base*1.2],green:['Clean air','Less than 10% of homes in polluted air',()=>homeShare(pollu)<0.1]};
+function elecTick(){const E=G.elec||(G.elec={next:myMo()+48});const m=myMo();if(S.pop<500){if(E.next<m+12)E.next=m+12;return}
+  if(!E.promise&&m>=E.next-6&&!E.ask){E.ask=1;elecAsk()}
+  if(m>=E.next){const H=(G.hist||[]).slice(-12),avg=H.length?H.reduce((a,r)=>a+(r.h||0),0)/H.length:happiness();
+    const kept=E.promise?!!PROM[E.promise][2](E):false,vote=Math.round(Math.max(5,Math.min(95,avg-15+(kept?10:E.promise?-8:0)+((G.lastNet|0)>0?3:-3)+(G.hard?-4:0))));
+    E.last={vote,kept,pr:E.promise};E.promise=null;E.ask=0;E.next=m+48;
+    if(vote>=50){E.won=(E.won|0)+1;const b=Math.round(Math.max(5000,S.pop*1.5));G.money+=b;fxAdd('Re-elected',{h:3,mo:6});notify(`<b>You won the election</b> with ${vote}% of the vote${kept?' and kept your promise':''}. The party fund gives ${fmt(b)}.`,'adv sos');sfx('level')}
+    else{E.lost=(E.lost|0)+1;fxAdd('New council',{m:-Math.round(Math.max(500,(G.lastInc||0)*0.1)),h:-1,mo:12});notify(`<b>You lost the election</b> (${vote}% of the vote). The new council takes 10% of income for a year. Win them back next time.`,'adv sos');sfx('err')}
+    addPost('City news',`Election result: the mayor got <b>${vote}%</b> of the vote.`);achCheck()}}
+function elecAsk(){const c=$('#decCard');const k=Object.keys(PROM);c.innerHTML=`<div class="dcw" style="color:#c9a227">Election in 6 months</div><p>Pick one promise for the campaign. Keep it by election day to win votes; break it and you lose votes.</p><div class="dcb">${k.map(p=>`<button data-pr="${p}"><b>${PROM[p][0]}</b><small>${PROM[p][1]}</small></button>`).join('')}</div>`;c.hidden=false;
+  c.querySelectorAll('[data-pr]').forEach(b=>b.onclick=()=>{G.elec.promise=b.dataset.pr;G.elec.base=S.pop;c.hidden=true;sfx('ui');toast('Promise made: '+PROM[b.dataset.pr][0])})}
+
+/* ---- neighbour towns: grow on their own, trade with you while you are linked to the highway ---- */
+const NBN=['Rampur','Bhimdatta','Gorkha','Tansen','Dhulikhel','Ilam','Besisahar','Bandipur','Damauli','Jiri','Palpa','Dhankuta'];
+function nbInit(){if(G.nb)return;const s=(G.rseed||curId||'x')+'',h=[...s].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7),L=[];
+  for(let k=0;k<3;k++){const nm=NBN[Math.abs(h+k*5)%NBN.length];if(!L.some(o=>o.nm===nm))L.push({nm,pop:3000+Math.abs((h>>k*3)%9000),rel:50})}G.nb=L}
+function nbRel(v){const t=(G.dec&&G.dec.town)||'';const o=(G.nb||[]).find(n=>n.nm===t);if(o)o.rel=Math.max(0,Math.min(100,o.rel+v))}
+function nbTrade(){if(!G.nb||!S.pop)return 0;const link=typeof hwConnected==='function'?hwConnected():true;if(!link)return 0;let s=0;for(const n of G.nb)s+=n.rel/100*Math.min(S.pop,n.pop)*0.02;return Math.round(s)}
+function nbMonth(){nbInit();for(const n of G.nb){n.pop=Math.round(n.pop*(1.004+Math.random()*0.01));n.rel+=(50-n.rel)*0.03}}
+
+/* ---- festivals: fireworks at night, a short boost to happiness and tourism ---- */
+const FESTS=['Dashain fair','Tihar lights','Holi colours','Food festival','Music in the park','Kite festival','Lantern night'];
+function festStart(nm){const F=G.fest||(G.fest={next:0});F.cur={nm:nm||FESTS[(Math.random()*FESTS.length)|0],until:myMo()+1};fxAdd(F.cur.nm,{h:3,mo:1});
+  const tour=Math.round(800+S.pop*0.25);G.money+=tour;notify(`<b>${esc(F.cur.nm)}!</b> Visitors fill the streets (+${fmt(tour)} tourism). Fireworks after dark.`,'adv sos');addPost('City news',`${esc(F.cur.nm)} starts today in ${esc(G.name)}.`);G.fests=(G.fests|0)+1;achCheck()}
+function festTick(){const F=G.fest||(G.fest={next:myMo()+5});if(F.cur&&F.cur.until<=myMo())F.cur=null;if(!F.cur&&S.pop>=800&&myMo()>=F.next){F.next=myMo()+5+((Math.random()*4)|0);festStart()}}
+const FW={g:null,b:[],t:0};
+function fwTick(dt){const on=G&&G.fest&&G.fest.cur&&!atTitle,h=hour(),night=h<5||h>19;
+  if(!FW.g){const geo=new THREE.BufferGeometry(),n=60*24;geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(n*3),3));
+    FW.g=new THREE.Points(geo,new THREE.PointsMaterial({size:1.1,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));FW.g.frustumCulled=false;FW.g.renderOrder=21;scene.add(FW.g)}
+  FW.t-=dt;if(on&&night&&FW.t<=0&&FW.b.length<20&&speed){FW.t=0.35+Math.random()*0.6;const x=cam.target.x+(Math.random()-0.5)*30,z=cam.target.z+(Math.random()-0.5)*30,y=7+Math.random()*7,
+    col=new THREE.Color().setHSL(Math.random(),0.9,0.6),P=[];for(let k=0;k<60;k++){const u=Math.random()*2-1,a=Math.random()*6.283,r=Math.sqrt(1-u*u);P.push([r*Math.cos(a),u,r*Math.sin(a)])}FW.b.push({x,y,z,t:0,col,P});if(Math.random()<0.5)sfx('thunder')}
+  const pos=FW.g.geometry.attributes.position,cl=FW.g.geometry.attributes.color;let n=0;
+  for(let k=FW.b.length-1;k>=0;k--){const b=FW.b[k];b.t+=dt;if(b.t>2.4){FW.b.splice(k,1);continue}const r=b.t*3.2*(1-b.t*0.15),f=Math.max(0,1-b.t/2.4);
+    for(const p of b.P){if(n>=pos.count)break;pos.setXYZ(n,b.x+p[0]*r,b.y+p[1]*r-b.t*b.t*0.6,b.z+p[2]*r);cl.setXYZ(n,b.col.r*f,b.col.g*f,b.col.b*f);n++}}
+  for(let k=n;k<pos.count&&k<n+1;k++){}FW.g.geometry.setDrawRange(0,n);pos.needsUpdate=true;cl.needsUpdate=true;FW.g.visible=n>0}
+
+/* ---- achievements: kept for the player across cities ---- */
+const ACH=[['tower','First signal','Build a mobile tower',()=>TEL.list.some(i=>tiles[i].l<=1)],['siren','Be prepared','Build a warning siren',()=>TEL.list.some(i=>tiles[i].l===4)],
+  ['saved','Lives saved','Sirens or radio warned people before a disaster',()=>TEL.saved>0],['goal5','Getting started','Finish 5 goals',()=>(G.ms&&G.ms.i)>=5],['goalall','Master planner','Finish every goal',()=>(G.ms&&G.ms.i)>=MISS.length],
+  ['dec10','Decisive','Answer 10 advisor questions',()=>(G.dec&&G.dec.n)>=10],['elect','Re-elected','Win an election',()=>(G.elec&&G.elec.won)>=1],['elect3','Mayor for life','Win 3 elections',()=>(G.elec&&G.elec.won)>=3],
+  ['fest','Party town','Hold a festival',()=>(G.fests|0)>=1],['friends','Good neighbours','Get any neighbour town to 90% friendship',()=>(G.nb||[]).some(n=>n.rel>=90)],
+  ['k10','Ten thousand','Reach 10,000 residents',()=>S.pop>=10000],['k100','One lakh','Reach 100,000 residents',()=>S.pop>=100000],['hard10','Tough mayor','Reach 10,000 residents in hard mode',()=>G.hard&&S.pop>=10000],
+  ['happy90','Joyful city','Happiness 90% with 5,000+ residents',()=>S.pop>=5000&&happiness()>=90],['rich','Deep pockets','Have $1,000,000 in the bank',()=>G.money>=1e6&&SC.id!=='rich']];
+function achGot(){try{return JSON.parse(localStorage.getItem('pc-ach')||'{}')}catch(e){return{}}}
+function achCheck(){if(!G||atTitle)return;const got=achGot();let ch=false;for(const a of ACH){if(got[a[0]])continue;let ok=false;try{ok=a[3]()}catch(e){}if(ok){got[a[0]]=Date.now();ch=true;toast('Achievement: '+a[1]);sfx('cash')}}
+  if(ch)try{localStorage.setItem('pc-ach',JSON.stringify(got))}catch(e){}}
+
+/* ---- monthly bookkeeping ---- */
+{const _me=monthEnd;monthEnd=function(){_me();if(!G)return;G.mo=(G.mo|0)+1;G.blk=(G.lastNet|0)>0?(G.blk|0)+1:0;let m=0;for(const e of fxLive())if(e.m)m+=e.m;
+  const tr=nbTrade();G.money+=m+tr;G.lastNet=(G.lastNet|0)+m+tr;G.myTr=tr;nbMonth();try{elecTick();festTick()}catch(e){console.error(e)}if(G.fx)G.fx=G.fx.filter(e=>e.until>myMo())}}
+setInterval(()=>{if(!G||atTitle)return;try{nbInit();msTick();decTick();if(G.dec&&G.dec.cur!=null&&$('#decCard').hidden)decShow();achCheck()}catch(e){console.error(e)}},3000);
+(function(){let last=performance.now();(function L(n){const dt=Math.min(0.1,(n-last)/1000);last=n;try{fwTick(dt)}catch(e){}requestAnimationFrame(L)})(last)})();
+/* hard mode: ticked on the new-city card, applied once to the new city */
+{const lab=$('#newHills')&&$('#newHills').closest('label');if(lab)lab.insertAdjacentHTML('afterend','<label class="tutchk"><input type="checkbox" id="newHard"> Hard mode: half the starting money, higher upkeep, pickier citizens, more disasters, bigger rewards</label>');}
+{const _fc=foundCity;foundCity=function(name,sc,tut){try{localStorage.setItem('pc-hard-next',$('#newHard')&&$('#newHard').checked?'1':'0')}catch(e){}return _fc(name,sc,tut)}}
+setInterval(()=>{if(!G||atTitle||G.hardChk)return;G.hardChk=1;let f='0';try{f=localStorage.getItem('pc-hard-next')||'0';localStorage.removeItem('pc-hard-next')}catch(e){}if(f==='1'&&(G.day|0)<3){G.hard=1;G.money=Math.round(G.money*0.5);toast('Hard mode is on. Good luck, mayor.')}},1000);
+
+/* ---- UI: Mayor button (top bar) + panel with tabs, decision card above the toolbar ---- */
+(function(){const st=document.createElement('style');st.textContent=`#mayPanel{position:absolute;right:calc(12px + var(--sr,0px));top:calc(62px + var(--st,0px));z-index:7;padding:12px 14px;display:flex;flex-direction:column;gap:8px;width:min(360px,calc(100vw - 24px));max-height:calc(100% - var(--barH) - 90px);overflow:auto}
+#mayPanel h3{margin:0;font-family:var(--display);font-size:16px}#mayPanel .mtabs{display:flex;gap:4px;flex-wrap:wrap}#mayPanel .mtabs button{padding:3px 8px;font-size:12px}
+#mayPanel .mrow{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px solid rgba(127,127,127,.15)}#mayPanel .mrow small{color:var(--muted);display:block}
+#mayPanel .bar{height:6px;border-radius:3px;background:rgba(127,127,127,.25);overflow:hidden;margin-top:3px}#mayPanel .bar i{display:block;height:100%;background:#5cc46f}
+#decCard{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--barH) + var(--sb,0px) + 10px);z-index:8;width:min(420px,calc(100vw - 24px));padding:12px 14px}
+#decCard .dcw{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}#decCard p{margin:6px 0 10px;font-size:13.5px}#decCard .dcb{display:flex;gap:6px;flex-wrap:wrap}#decCard .dcb button{flex:1 1 120px;padding:7px 9px;font-size:12.5px;text-align:left}#decCard .dcb small{display:block;color:var(--muted);font-weight:400}`;document.head.appendChild(st);
+  const b=document.createElement('button');b.id='mayBtn';b.title='Mayor: goals, advisors, elections';b.setAttribute('aria-label','Mayor');
+  b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>';
+  const tb=$('#topBar');if(tb)tb.prepend(b);
+  const p=document.createElement('div');p.id='mayPanel';p.className='card';p.hidden=true;($('#app')||document.body).appendChild(p);
+  const c=document.createElement('div');c.id='decCard';c.className='card';c.hidden=true;($('#app')||document.body).appendChild(c);
+  b.onclick=()=>{p.hidden=!p.hidden;if(!p.hidden){for(const m of['#menu','#ovMenu','#feedPanel','#statPanel'])if($(m))$(m).hidden=true;myRender()}sfx('ui')};
+  canvas.addEventListener('pointerdown',()=>{p.hidden=true})})();
+function myRender(){const p=$('#mayPanel');if(!G){p.innerHTML='';return}const tab=MY.tab||'goals',pc=v=>Math.round(v*100)+'%';
+  let h=`<h3>Mayor of ${esc(G.name)}${G.hard?' · hard mode':''}</h3><div class="mtabs">${[['goals','Goals'],['now','Effects'],['elec','Election'],['nb','Neighbours'],['ach','Achievements']].map(([k,n])=>`<button data-mt="${k}" aria-pressed="${tab===k}">${n}</button>`).join('')}</div>`;
+  if(tab==='goals'){const i=(G.ms&&G.ms.i)|0;h+=`<div class="mrow"><span>${i} of ${MISS.length} goals done</span></div>`;
+    MISS.forEach((m,k)=>{if(k<i-2||k>i+3)return;h+=`<div class="mrow"><span>${k<i?'✓ ':k===i?'▶ ':''}<b>${esc(m[0])}</b><small>${esc(m[1])}</small></span><span>${fmt(Math.round(m[3]*(G.hard?1.5:1)))}</span></div>`})}
+  else if(tab==='now'){const L=fxLive();h+=L.length?L.map(e=>`<div class="mrow"><span><b>${esc(e.nm)}</b><small>${[e.h?(e.h>0?'+':'')+e.h+' happiness':'',e.m?(e.m>0?'+':'')+fmt(e.m)+' / month':'',e.d2||e.d3||e.d4||e.dO?'demand change':''].filter(Boolean).join(' · ')}</small></span><span>${e.until-myMo()} mo</span></div>`).join(''):'<div class="mrow"><span>No decisions in force. Advisors bring questions every few months.</span></div>';
+    h+=`<div class="mrow"><span>Questions answered</span><span>${(G.dec&&G.dec.n)|0}</span></div>`}
+  else if(tab==='elec'){const E=G.elec||{},left=E.next!=null?E.next-myMo():48;h+=`<div class="mrow"><span>Next election</span><span>${S.pop<500?'after 500 residents':left+' months'}</span></div>`;
+    h+=`<div class="mrow"><span>Promise<small>${E.promise?PROM[E.promise][1]:'Chosen 6 months before the vote'}</small></span><span>${E.promise?(PROM[E.promise][2](E)?'<span class="ok">On track</span>':'<span class="no">Not yet</span>'):'-'}</span></div>`;
+    h+=`<div class="mrow"><span>Wins / losses</span><span>${E.won|0} / ${E.lost|0}</span></div>`;if(E.last)h+=`<div class="mrow"><span>Last vote</span><span>${E.last.vote}%</span></div>`;
+    h+=`<div class="mrow"><span>Votes come from<small>happiness over the last year, your promise, the budget</small></span></div>`}
+  else if(tab==='nb'){nbInit();h+=`<div class="mrow"><span>Trade last month<small>${typeof hwConnected==='function'&&!hwConnected()?'Link your roads to the highway to trade':'Friendlier towns trade more'}</small></span><span>${fmt(G.myTr|0)}</span></div>`;
+    for(const n of G.nb)h+=`<div class="mrow" style="display:block"><b>${esc(n.nm)}</b> · ${n.pop.toLocaleString('en-US')} people<div class="bar"><i style="width:${Math.round(n.rel)}%;background:${n.rel>=60?'#5cc46f':n.rel>=35?'#e0a21b':'#e0574f'}"></i></div><small>Friendship ${Math.round(n.rel)}%</small></div>`}
+  else{const got=achGot();h+=`<div class="mrow"><span>${Object.keys(got).length} of ${ACH.length} unlocked</span></div>`+ACH.map(a=>`<div class="mrow"><span>${got[a[0]]?'🏆 ':'· '}<b>${esc(a[1])}</b><small>${esc(a[2])}</small></span></div>`).join('')}
+  p.innerHTML=h;p.querySelectorAll('[data-mt]').forEach(b=>b.onclick=()=>{MY.tab=b.dataset.mt;myRender();sfx('ui')})}
+
 /* ---------- boot ---------- */
 /* ---------- cloud saves (net_cloud.js) ----------
    Every city on this device is backed up to Firestore under a sync code (players/<code>/cities/<id>, the save

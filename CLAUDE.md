@@ -234,3 +234,35 @@ edit the PC file by hand.
   night. Each adds +0.4 happiness ("City pride", max +2).
   Zone buildings (`ZN`) leave their tiles EMPTY, so `bbOk` also refuses `ZN.cov`, free-placed footprints, curved
   road cover and transit corridors; zone growth skips a building that would stand on a billboard (`bbHits`).
+
+## Telecom (T.TEL = 32, `SV[32]`)
+
+- Sizes: 0 mobile tower, 1 5G tower, 2 internet exchange, 3 radio and TV mast, 4 warning siren, 5 data centre. The tool
+  definitions (`T.TEL`, `SV[32]`, `TOOLS` entry, `ICON.tel`) sit just before the toolbar is built (`TOOLS.forEach`);
+  the rest is the telecom block before boot. Drawn from boxes/cylinders in `telDraw` (`case T.TEL` in `buildTile0`);
+  blinking beacons and the turning siren horn are `funLive` groups (`telLive`), placed from `G.fp` when free-placed.
+- `telScan` (recompute wrapper) fills `cellC` / `netC` / `radC` / `sirC` / `telV` and the home shares `TEL.cell/net/rad`.
+  Effects: happiness parts, land value (+6 fibre, +3 signal), office demand, data centre jobs (needs `netC`).
+- Disasters: `disStart` wrapper wails the sirens (`telWail`, generated sound `telSound`) and posts a warning when the hit
+  point is in siren or radio reach; `disHit` wrapper: warned zone buildings drop one level instead of to 0, 40% of
+  warned services hold. Info view `telecom`.
+
+## People walking
+
+- `updatePeds`: drawn position `p.wx/wz` follows the path target with exponential smoothing (round corners), facing
+  `p.yawS` turns smoothly, speed eases in after stops (`p.v`). Side changes only at junction tiles (30%) or rarely
+  mid-block, after a kerb wait with head turns (`p.look`); `p.sideF` slides across the road. Side-step oncoming walkers
+  on the same tile and side (`PDG`). 22% of walkers bring a companion (`c.lead`, drawn beside the leader, not an agent,
+  removed with it via `p.dead`). `p.phone` raises the right arm.
+
+## Mayor's game (goals, advisors, elections, neighbours, festivals, achievements, hard mode)
+
+- Star button in `#topBar` opens `#mayPanel` (tabs Goals / Effects / Election / Neighbours / Achievements);
+  questions and campaign promises show in `#decCard` above the toolbar.
+- State in G: `G.mo` month counter (monthEnd wrapper), `G.ms.i` mission index (`MISS`), `G.fx` timed effects
+  (`fxAdd(nm,{h,m,d2,d3,d4,dO,mo})`, read by happyParts / computeDemand / monthly money), `G.dec` advisor questions
+  (`DECS`, every 2-4 months from 300 people), `G.elec` (every 48 months after 500 people; promise 6 months before,
+  vote from last year's happiness + promise + budget), `G.nb` three neighbour towns (trade money while
+  `hwConnected()`), `G.fest` festivals with fireworks (`fwTick`), `G.hard` (new-city checkbox `#newHard`, passed
+  through localStorage `pc-hard-next`: half money, upkeep x1.25, demand -0.05, extra disasters, rewards x1.5).
+- Achievements are per player in localStorage `pc-ach` (`ACH`, `achCheck` every 3 s).

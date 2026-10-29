@@ -940,10 +940,10 @@ window.__newHills=TERRAIN_ON;
 const TOOLS=[
  {id:'select',nm:'Select',key:'Esc',kind:'none',col:'#e8eef3',ct:'inspect'},
  {id:'road',nm:'Street',key:'1',kind:'line',col:'#9aa2ad',ct:'$10',rt:0},
- {id:'res',nm:'Homes',key:'2',kind:'rect',col:'#5cc46f',ct:'$5',t:T.RES,zs:1},
- {id:'com',nm:'Shops',key:'3',kind:'rect',col:'#4a90f0',ct:'$5',t:T.COM,zs:1},
- {id:'ind',nm:'Work',key:'4',kind:'rect',col:'#f0a531',ct:'$5',t:T.IND,zs:0},
- {id:'off',nm:'Offices',key:'',kind:'rect',col:'#a678e0',ct:'$5',t:T.COM,zs:10,hidden:1},
+ {id:'res',nm:'Homes',key:'2',kind:'rect',col:'#5cc46f',ct:'Free',t:T.RES,zs:1},
+ {id:'com',nm:'Shops',key:'3',kind:'rect',col:'#4a90f0',ct:'Free',t:T.COM,zs:1},
+ {id:'ind',nm:'Work',key:'4',kind:'rect',col:'#f0a531',ct:'Free',t:T.IND,zs:0},
+ {id:'off',nm:'Offices',key:'',kind:'rect',col:'#a678e0',ct:'Free',t:T.COM,zs:10,hidden:1},
  {id:'chain',nm:'Supply',key:'',kind:'single',col:'#c98a3a',t:26,sz:0},
  {id:'areas',nm:'Areas',key:'',kind:'none',col:'#6be08a',ct:'buy land'},
  {id:'dist',nm:'Districts',key:'',kind:'rect',col:'#ff8ad8',ct:'paint'},
@@ -6978,7 +6978,7 @@ function costFor(tl,i){
   const t=tiles[i];if(isEntry(i)||t.lock)return null;if(tl.id==='path')return t.t===T.EMPTY||t.t===T.TREE?5:null;if(tl.id==='tramtrack')return t.t===T.ROAD&&RI(t.l).v!==5&&!(G.tram&&G.tram[i])?40:null;
   switch(tl.id){
     case 'road':{const rc=RI(tl.rt||0).cost;if(t.t===T.EMPTY||t.t===T.TREE)return rc; if(t.t===T.RIVER)return rc+30; if(t.t>=2&&t.t<=4&&t.l===0)return rc; if(t.t===T.ROAD&&RI(t.l).v!==RI(tl.rt||0).v)return rc+(t.w?30:0); return null;}
-    case 'res':case 'com':case 'ind':case 'off': if(wetTile(i)&&t.t!==T.RIVER)return null; if(t.t===T.EMPTY||t.t===T.TREE)return 5; if(t.t>=2&&t.t<=4&&(t.t!==tl.t||(t.s|0)!==zsFor(i,tl)))return 5; return null;
+    case 'res':case 'com':case 'ind':case 'off': if(wetTile(i)&&t.t!==T.RIVER)return null; if(t.t===T.EMPTY||t.t===T.TREE)return 0; if(t.t>=2&&t.t<=4&&(t.t!==tl.t||(t.s|0)!==zsFor(i,tl)))return 0; return null;
     case 'dist': return t.t===T.RIVER&&!t.w||isEntry(i)?null:0;
     case 'rail':{if(t.t===T.EMPTY||t.t===T.TREE)return 25;if(t.t===T.RIVER)return 90;if(t.t===T.ROAD&&!t.w&&RI(t.l).v!==5&&!rxAt(i)){const x=i%N,z=(i/N)|0;if(!((isRoad(x+1,z)||isRoad(x-1,z))&&(isRoad(x,z+1)||isRoad(x,z-1))))return 80}return null}
     case 'rbt':return isJunction(i)&&RI(t.l).v!==5?(rbAt(i)?0:500):null;
@@ -9571,10 +9571,10 @@ relinkBig=function(){for(const t of ownTiles())if(t.t===T.PART)t.a=-1;
 {const _np=netPlan;netPlan=function(tl,A,B,C1,C2){const p=_np(tl,A,B,C1,C2);if(p.bad||!G||!G.fp)return p;for(const pc of p.pieces)for(const j of pc.geo.ext)if(fpCovered(j)||G.fp[j])return{bad:'Blocked by buildings. Bulldoze them first.'};return p}}
 /* ---- input ---- */
 canvas.addEventListener('pointerdown',e=>{if(!fpActive())return;if(e.button!==0)return;FP.ptrs.add(e.pointerId);if(FP.ptrs.size>1){FP.gest=null;fpGhost(null);return}
-  FP.gest={id:e.pointerId,sx:e.clientX,sy:e.clientY};FP.lx=e.clientX;FP.ly=e.clientY;fpHover(e.clientX,e.clientY)},true);
-canvas.addEventListener('pointermove',e=>{if(!fpActive()||FP.ptrs.size>1)return;if(!FP.gest&&e.pointerType!=='mouse')return;FP.lx=e.clientX;FP.ly=e.clientY;fpHover(e.clientX,e.clientY)},true);
+  FP.gest={id:e.pointerId,sx:e.clientX,sy:e.clientY};FP.gest0x=e.clientX;FP.gest0y=e.clientY;FP.lx=e.clientX;FP.ly=e.clientY;fpHover(e.clientX,e.clientY)},true);
+canvas.addEventListener('pointermove',e=>{if(!fpActive()||FP.ptrs.size>1)return;if(!FP.gest&&e.pointerType!=='mouse')return;if(e.pointerType!=='mouse'&&typeof UC!=='undefined'&&UC.centre)return;FP.lx=e.clientX;FP.ly=e.clientY;fpHover(e.clientX,e.clientY)},true);
 for(const ev of['pointerup','pointercancel'])canvas.addEventListener(ev,e=>{FP.ptrs.delete(e.pointerId);if(!FP.gest||e.pointerId!==FP.gest.id)return;FP.gest=null;
-  if(ev==='pointercancel'||!fpActive())return;fpHover(e.clientX,e.clientY);if(e.pointerType!=='mouse'&&window.UCfp){window.UCfp();return}if(fpPlace())fpHover(e.clientX,e.clientY);if(e.pointerType!=='mouse')fpGhost(null)},true);
+  if(ev==='pointercancel'||!fpActive())return;if(e.pointerType!=='mouse'&&typeof UC!=='undefined'&&UC.centre){if(Math.hypot(e.clientX-FP.gest0x,e.clientY-FP.gest0y)>10)return;UC.centre=false}fpHover(e.clientX,e.clientY);if(e.pointerType!=='mouse'&&window.UCfp){window.UCfp();return}if(fpPlace())fpHover(e.clientX,e.clientY);if(e.pointerType!=='mouse')fpGhost(null)},true);
 canvas.addEventListener('pointerleave',()=>{if(fpActive()&&!FP.gest){fpGhost(null);netTip(null)}});
 document.addEventListener('keydown',e=>{if(!fpActive()||e.target.tagName==='INPUT')return;if(e.key==='r'||e.key==='R'){FP.rot+=(e.shiftKey?-1:1)*Math.PI/12;fpHover(FP.lx,FP.ly);e.stopPropagation();e.preventDefault()}},true);
 /* Placement bar: rotate, face the road, snap to tiles */
@@ -11341,6 +11341,19 @@ function ucGo(){const p=UC.pend;if(!p)return;
   if(fpPlace()){UC.pend=null;fpGhost(null);try{netTip(null)}catch(e){}ucBar()}else ucBar()}
 /* called by the free placement input when a finger lifts */
 window.UCfp=function(){UC.pend={grid:false};try{netTip(null)}catch(e){}ucBar()};
+/* touch placement: the picked building waits at the screen centre (pan the map under it), a tap puts it on the tapped
+   spot, Build confirms; after building it comes back to the centre for the next one. Mouse keeps following the pointer. */
+(function(){let last=null,lk='',lt=0;
+  (function L(){requestAnimationFrame(L);try{
+    const on=G&&!atTitle&&fpActive()&&fpMoveSrc()<0&&(UC.touch||MOBILE);
+    if(!on){UC.centre=false;last=null;return}
+    const key=tool.t+':'+tool.sz;if(key!==last){last=key;UC.centre=true;lk=''}
+    if(!UC.centre||FP.ptrs.size>1)return;
+    const r=canvas.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.46,now=performance.now(),
+      k=[camera.position.x,camera.position.y,camera.position.z,FP.rot,FP.face].map(v=>typeof v==='number'?v.toFixed(3):v).join(',');
+    if(k===lk&&now-lt<500)return;lk=k;lt=now;FP.lx=cx;FP.ly=cy;fpHover(cx,cy);if(!UC.pend)window.UCfp();else ucBar()}catch(e){}})()})();
+{const _uc=ucCancel;ucCancel=function(){const c=UC.centre;_uc();if(c){UC.centre=false;$('#sizeMenu').hidden=true;setTool(TOOLS[0])}}}
+{const _ug=ucGo;ucGo=function(){const fp=UC.pend&&!UC.pend.grid;_ug();if(fp&&!UC.pend&&fpActive()&&(UC.touch||MOBILE)){UC.centre=true}}}
 {const _ap=apply;apply=function(tl,list){
   if(UC.touch&&!UC.inApply&&tl===tool&&ugBuildTool(tl)&&list&&list.length&&!(G&&G.edit)){
     UC.pend={grid:true,tl,list:[list[list.length-1]]};const q=UC.pend.list[0];
@@ -12035,6 +12048,8 @@ function myRender(){const p=$('#mayPanel');if(!G){p.innerHTML='';return}const ta
   else{const got=achGot();h+=`<div class="mrow"><span>${Object.keys(got).length} of ${ACH.length} unlocked</span></div>`+ACH.map(a=>`<div class="mrow"><span>${got[a[0]]?'🏆 ':'· '}<b>${esc(a[1])}</b><small>${esc(a[2])}</small></span></div>`).join('')}
   p.innerHTML=h;p.querySelectorAll('[data-mt]').forEach(b=>b.onclick=()=>{MY.tab=b.dataset.mt;myRender();sfx('ui')})}
 
+/* service buildings cost twice the listed price (zones are free: homes, shops, industry and offices are built by their owners) */
+for(const k in SV){for(const z of SV[k].sizes||[])if(z.cost)z.cost*=2}if(typeof refreshToolCosts==='function')refreshToolCosts();
 /* ---------- boot ---------- */
 /* ---------- cloud saves (net_cloud.js) ----------
    Every city on this device is backed up to Firestore under a sync code (players/<code>/cities/<id>, the save

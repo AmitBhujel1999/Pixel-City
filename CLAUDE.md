@@ -266,3 +266,12 @@ edit the PC file by hand.
   `hwConnected()`), `G.fest` festivals with fireworks (`fwTick`), `G.hard` (new-city checkbox `#newHard`, passed
   through localStorage `pc-hard-next`: half money, upkeep x1.25, demand -0.05, extra disasters, rewards x1.5).
 - Achievements are per player in localStorage `pc-ach` (`ACH`, `achCheck` every 3 s).
+
+## Prices and touch placement
+
+- Zoning (homes, shops, industry, offices) is free (`costFor` returns 0; zone cells along network roads never cost).
+  Every `SV` size cost is doubled once, just before boot (after all modules added their sizes), then `refreshToolCosts`.
+- Touch placement of free-placed buildings (net_ui scope, after `window.UCfp`): picking the tool puts the building at
+  the screen centre (`UC.centre`), panning moves the map under it, a tap (< 10 px) moves it to the tapped spot, Build
+  confirms and the next one returns to the centre; ✕ drops the tool. Mouse keeps following the pointer.
+  `UC`, `ucGo`, `ucCancel` live inside the net_ui scope, so code that uses them must sit there.

@@ -7530,7 +7530,7 @@ function newPed(trip){const R=a=>a[(Math.random()*a.length)|0];const kid=trip.ro
     longs:SC.cold||Math.random()<0.5,beard:!fem&&!kid&&Math.random()<0.3,heel:fem&&!kid&&!old&&Math.random()<0.55,bw:kid?1:fem?0.88+Math.random()*0.2:0.96+Math.random()*0.24,
     bt:kid||trip.role==='student'?'pack':W(fem?{purse:35,sbag:20,shop:trip.purpose==='shop'?40:15,pack:10,none:20}:{case:trip.purpose==='work'?40:15,pack:20,sbag:15,shop:trip.purpose==='shop'?35:10,none:35}),
     bc:R(['#3a2a1e','#1b1612','#7a2e2e','#2f3a45','#c9a45c','#5a4232','#e0577a','#3f6fd1','#f2f2ee']),shopC:R(['#c9a45c','#e0574f','#f2f2ee','#3fb58f']),
-    shoe:R(['#222222','#2f2f35','#f2f2f2','#5a4232','#8a8f99']),
+    shoe:R(['#222222','#2f2f35','#f2f2f2','#5a4232','#8a8f99']),phone:!kid&&Math.random()<(trip.role==='student'?0.4:old?0.08:0.22),
     bag:kid||trip.role==='student'?R(['#e0577a','#3f6fd1','#f2b134','#3fb58f']):trip.purpose==='shop'&&Math.random()<0.5?'#c9a45c':trip.purpose==='work'&&Math.random()<0.5?'#2f3a45':null})}
 const _B=new THREE.Matrix4(),_L=new THREE.Matrix4(),_T=new THREE.Matrix4(),_R=new THREE.Matrix4(),_S=new THREE.Vector3();
 const cnt={};for(const k in PM)cnt[k]=0;
@@ -7540,7 +7540,7 @@ function limb(name,x,y,z,ang,c){_L.copy(_B).multiply(_T.makeTranslation(x,y,z)).
 function pedBody(p,px,py,pz,yaw,sw,k){
     _q.setFromAxisAngle(_up,yaw);_B.compose(_p.set(px,py,pz),_q,_S.set(p.sc,p.sc,p.sc));
     const bw=p.bw||1,jk=p.top==='jacket'||p.top==='coat',slv=jk?p.jc:p.shirt,lowS=p.top!=='tee'||p.longs?slv:p.skin,skL=p.lo==='skirt'||p.lo==='dress',ft=skL&&p.heel?'heel':'shoe';
-    for(const s of[-1,1]){const r=s>0?'_r':'',la=-s*sw*0.5,aa=s*sw*0.45,lx=s*PLX*bw,ax=s*PSX*bw;
+    for(const s of[-1,1]){const r=s>0?'_r':'',la=-s*sw*0.5,aa=p.phone&&s>0?-0.95:s*sw*0.45,lx=s*PLX*bw,ax=s*PSX*bw;
       limb('leg_up'+r,lx,PHIP,0,la,skL?p.skin:p.pants);limb('leg_lo'+r,lx,PHIP,0,la,p.lo==='trousers'?p.pants:p.skin);limb(ft+r,lx,PHIP,0,la,p.shoe);
       limb('arm_up'+r,ax,PSHO,0,aa,slv);limb('arm_lo'+r,ax,PSHO,0,aa,lowS);limb('hand'+r,ax,PSHO,0,aa,p.skin)}
     if(p.bt==='purse'||p.bt==='case'||p.bt==='shop')limb(p.bt,-PSX*bw,PSHO,0,-sw*0.45,p.bt==='shop'?p.shopC:p.bc);
@@ -7574,28 +7574,53 @@ function dockPeds(dt){const X=-HALF,Z=HWZ;
     if((px-camera.position.x)**2+(pz-camera.position.z)**2>3600)continue;
     pedBody(p,px,p.y+(sw?Math.abs(Math.cos(p.ph))*0.003:0),pz,yaw,sw,i);}}
 const pcGuard=(k,f)=>{try{f()}catch(e){pcGuard[k]=(pcGuard[k]||0)+1;if(pcGuard[k]===1)console.error('[pc] '+k,e)}};
+/* people walk like people (human walking): ease in and out of stops, round corners (smoothed position and turn),
+   cross the road at junctions after stopping at the kerb and looking both ways (rarely mid-block), side-step people
+   coming the other way, some walk in pairs or families (companions follow a leader), some look at their phones. */
+function pedJ(i){let n=0;const x=i%N,z=(i/N)|0;for(const[dx,dz]of D4)if(inB(x+dx,z+dz)&&tiles[idx(x+dx,z+dz)].t===T.ROAD)n++;return n>=3}
+const PDG=new Map();
+function pedAng(a,b,k){let d=b-a;d=Math.atan2(Math.sin(d),Math.cos(d));return a+d*k}
 function updatePeds(dt){
   const wf=1-Math.min(0.7,W.rain*0.45+W.snow*0.4+(W.type==='storm'?0.25:0));
   const want=Math.min(MOBILE?140:PMAX,Math.floor(S.pop/6*wf),S.roads*2,Math.floor(PMAX*(0.15+0.85*dayLight)));
-  if(peds.length<want&&Math.random()<0.6){const tr=planTrip(false);if(tr)peds.push(newPed(tr))}
-  if(peds.length>want+6){const p=peds[peds.length-1];if(!sel||sel.a!==p)peds.pop()}
-  for(const k in cnt)cnt[k]=0;
+  if(peds.length<want&&Math.random()<0.6){const tr=planTrip(false);if(tr){const p=newPed(tr);peds.push(p);
+    if(p.role!=='kid'&&peds.length<want&&Math.random()<0.22){const c=newPed({role:p.role==='adult'&&Math.random()<0.3?'kid':p.role==='student'?'student':'adult',purpose:p.purpose});c.lead=p;c.path=p.path;c.k=0;c.from=p.from;c.to=p.to;c.fromCat=p.fromCat;c.toCat=p.toCat;c.person=makePerson(c.role);c.phone=false;peds.push(c)}}}
+  if(peds.length>want+6){const p=peds[peds.length-1];if(!sel||sel.a!==p){p.dead=1;peds.pop()}}
+  for(const k in cnt)cnt[k]=0;PDG.clear();const ks=1-Math.exp(-dt*7),now=performance.now()/1000;
   for(let k=peds.length-1;k>=0;k--){const p=peds[k];
+    if(p.lead){const L=p.lead;if(L.dead){p.dead=1;peds.splice(k,1);continue}if(L.wx===undefined)continue;
+      const yaw=L.yawS||0,rx=Math.cos(yaw),rz=-Math.sin(yaw),o=0.075*(L.sideF<0?-1:1),tx=L.wx-rx*o,tz=L.wz-rz*o;
+      if(p.wx===undefined||Math.abs(tx-p.wx)+Math.abs(tz-p.wz)>1){p.wx=tx;p.wz=tz}else{p.wx+=(tx-p.wx)*ks;p.wz+=(tz-p.wz)*ks}
+      p.wy=L.wy;p.pyaw=yaw;p.side=L.side;p.wait=L.wait;const walking=L.walking;if(walking)p.ph+=dt*(L.spdN||0.25)*38*(p.role==='kid'?1.3:1);
+      if((p.wx-camera.position.x)**2+(p.wz-camera.position.z)**2>3600&&!(sel&&sel.a===p))continue;
+      pedBody(p,p.wx,p.wy+(walking?Math.abs(Math.cos(p.ph))*0.003:0),p.wz,L.yawS2??yaw,walking?Math.sin(p.ph):0,k);continue}
     let a=p.path[p.k],b=p.path[p.k+1];
-    if(b===undefined||tiles[a].t!==T.ROAD||tiles[b].t!==T.ROAD){endAgent(p,b===undefined);peds.splice(k,1);continue}
+    if(b===undefined||tiles[a].t!==T.ROAD||tiles[b].t!==T.ROAD){p.dead=1;endAgent(p,b===undefined);peds.splice(k,1);continue}
+    if(p.sideF===undefined)p.sideF=p.side;
     let walking=true,arrived=false;
-    if(p.wait>0){p.wait-=dt;walking=false}
-    else{p.t+=dt*p.spd;p.ph+=dt*p.spd*38;
-      while(p.t>=1){p.t-=1;p.k++;if(p.k+1>=p.path.length){arrived=true;break}if(Math.random()<0.1)p.side*=-1;if(Math.random()<0.03){p.wait=1+Math.random()*3;p.face=Math.random()<0.5?1:-1}}}
-    if(arrived){endAgent(p,true);peds.splice(k,1);continue}
+    if(p.wait>0){p.wait-=dt;walking=false;p.v=0}
+    else{p.v=Math.min(1,(p.v||0)+dt*2.2);const sp=p.spd*p.v*(p.phone?0.82:1)*(1+0.07*Math.sin(now*0.7+p.ph*0.01));p.spdN=sp;p.t+=dt*sp;p.ph+=dt*sp*38;
+      while(p.t>=1){p.t-=1;p.k++;if(p.k+1>=p.path.length){arrived=true;break}
+        const nb=p.path[p.k];
+        if(Math.random()<(pedJ(nb)?0.3:0.012)){p.side*=-1;p.wait=0.7+Math.random()*1.8;p.look=p.wait;p.v=0}
+        else if(Math.random()<0.025){p.wait=1+Math.random()*3;p.face=Math.random()<0.5?1:-1;p.look=0}}}
+    if(arrived){p.dead=1;endAgent(p,true);peds.splice(k,1);continue}
+    p.walking=walking;
+    if(walking&&p.sideF!==p.side){const st=dt*(p.spdN||0.25)*2.6;p.sideF=Math.abs(p.side-p.sideF)<=st?p.side:p.sideF+Math.sign(p.side-p.sideF)*st}
     a=p.path[p.k];b=p.path[p.k+1];
     const ax=a%N,az=(a/N)|0,bx=b%N,bz=(b/N)|0,dx=bx-ax,dz=bz-az;
-    let px=ax+dx*p.t-HALF+0.5-dz*0.43*p.side,pz=az+dz*p.t-HALF+0.5+dx*0.43*p.side;const cq=cvPed(a,b,p.t,p.side);if(cq){px=cq[0];pz=cq[1]}
+    /* side-step: someone on the same tile and side coming the other way */
+    const dk=a*2+(p.side>0?1:0),hd=dx+dz*3,q=PDG.get(dk);if(q===undefined)PDG.set(dk,hd);p.dgT=q!==undefined&&q===-hd?0.08:0;p.dg=(p.dg||0)+(p.dgT-(p.dg||0))*ks;
+    const lat=0.43*p.sideF-p.dg*Math.sign(p.sideF||1);
+    let px=ax+dx*p.t-HALF+0.5-dz*lat,pz=az+dz*p.t-HALF+0.5+dx*lat;const cq=Math.abs(p.sideF)>0.99?cvPed(a,b,p.t,p.side):null;if(cq){px=cq[0];pz=cq[1]}
     const br=(tiles[a].w&&p.t<0.5)||(tiles[b].w&&p.t>=0.5);
-    let yaw=(dx||dz)?Math.atan2(dx,dz):0;if(dx||dz)p.pyaw=yaw;if(cq){yaw=cq[2];p.pyaw=yaw}if(!walking)yaw+=p.face*Math.PI/2;
+    if(p.wx===undefined||Math.abs(px-p.wx)+Math.abs(pz-p.wz)>1.2){p.wx=px;p.wz=pz;p.yawS=(dx||dz)?Math.atan2(dx,dz):0}
+    else{const ox=p.wx,oz=p.wz;p.wx+=(px-p.wx)*ks;p.wz+=(pz-p.wz)*ks;const mx=p.wx-ox,mz=p.wz-oz;if(walking&&mx*mx+mz*mz>1e-8)p.yawS=pedAng(p.yawS||0,Math.atan2(mx,mz),1-Math.exp(-dt*9))}
+    if(dx||dz)p.pyaw=p.yawS;
+    let yaw=p.yawS||0;if(!walking)yaw+=p.look>0?Math.sin(now*2.6+p.ph)*0.9:p.face*Math.PI/2;p.yawS2=yaw;if(p.look>0)p.look-=dt;
     const sw=walking&&dt>0?Math.sin(p.ph):0,bob=walking?Math.abs(Math.cos(p.ph))*0.003:0;
-    p.wx=px;p.wz=pz;p.wy=br?Math.max(0.075,surfY(px,pz)+0.035):0.075;if((px-camera.position.x)**2+(pz-camera.position.z)**2>3600&&!(sel&&sel.a===p))continue;
-    pedBody(p,px,p.wy+bob,pz,yaw,sw,k);
+    p.wy=br?Math.max(0.075,surfY(p.wx,p.wz)+0.035):0.075;if((p.wx-camera.position.x)**2+(p.wz-camera.position.z)**2>3600&&!(sel&&sel.a===p))continue;
+    pedBody(p,p.wx,p.wy+bob,p.wz,yaw,sw,k);
   }
   if(SC.ferry)pcGuard('dockPeds',()=>dockPeds(dt));
   for(const k in PM){PM[k].count=cnt[k];PM[k].instanceMatrix.needsUpdate=true;if(PM[k].instanceColor)PM[k].instanceColor.needsUpdate=true}

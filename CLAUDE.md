@@ -275,3 +275,13 @@ edit the PC file by hand.
   the screen centre (`UC.centre`), panning moves the map under it, a tap (< 10 px) moves it to the tapped spot, Build
   confirms and the next one returns to the centre; ✕ drops the tool. Mouse keeps following the pointer.
   `UC`, `ucGo`, `ucCancel` live inside the net_ui scope, so code that uses them must sit there.
+
+## Tornado and fireworks
+
+- Tornado (`torMake` / `torUpdate`, block before landmarks): two funnel shells (`torShell`, 30 rings x 24 sides,
+  vertices rebuilt each frame: flaring radius, ripples, sway, top lags behind travel `d.lx/lz`, rope-out at the end),
+  skewed streak texture scrolled for spin; dust skirt, wall cloud = instanced camera-facing quads (`torBill`, lit
+  Lambert so they darken in storms / at night); debris = instanced boxes; storm weather and a brown-noise roar start
+  with it. Path wanders (`d.hd`). 26 s life.
+- THREE.Points and Sprites do not draw in this game: use instanced camera-facing quads (fireworks `FW.g` too).
+  Call `setColorAt` before setting `count = 0`, or the colour buffer is created empty and everything renders black.

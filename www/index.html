@@ -6658,8 +6658,7 @@ function disNote(k,x,z,n){const i=idx(Math.floor(x+HALF),Math.floor(z+HALF));con
 function disStart(k,x,z){const g=new THREE.Group();scene.add(g);const d={k,x,z,t:0,g,n:0};
   if(k==='meteor'){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(0.6,1),new THREE.MeshBasicMaterial({color:'#ff9a3a'}));const tail=new THREE.Mesh(new THREE.ConeGeometry(0.55,4,10,1,true),new THREE.MeshBasicMaterial({color:'#ffcf6a',transparent:true,opacity:0.55,depthWrite:false}));
     tail.position.y=2.2;m.add(tail);g.add(m);d.m=m;d.dir=new THREE.Vector3(Math.random()-0.5,1,Math.random()-0.5).normalize();d.T=3}
-  else if(k==='tornado'){const c=new THREE.Mesh(new THREE.CylinderGeometry(1.4,0.18,5,16,1,true),new THREE.MeshLambertMaterial({color:'#5c5a58',transparent:true,opacity:0.72,side:THREE.DoubleSide,depthWrite:false}));c.position.y=2.5;g.add(c);d.m=c;
-    const a=Math.random()*Math.PI*2;d.vx=Math.cos(a);d.vz=Math.sin(a);d.T=22;d.hit=new Set()}
+  else if(k==='tornado'){const a=Math.random()*Math.PI*2;d.vx=Math.cos(a);d.vz=Math.sin(a);d.T=26;d.hit=new Set();torMake(d)}
   else{d.T=4;DIS.shake=4}
   DIS.act.push(d);if(k!=='meteor')disNoteLater(d);return d}
 function disNoteLater(d){d.noteAt=d.T*0.6}
@@ -6672,7 +6671,7 @@ function disUpdate(dt){camera.position.sub(DISO);DISO.set(0,0,0);if(DIS.shake>0)
         DIS.shake=1.5;recompute();S=stats();disNote('meteor',d.x,d.z,d.n)}
       if(d.fl){const q=(d.t-d.T)/1.5;d.fl.scale.setScalar(1+q*4);d.fl.material.opacity=Math.max(0,0.9-q)}
       if(d.t>d.T+1.6){disEnd(d,k)}continue}
-    if(d.k==='tornado'){if(speed===0)d.t-=dt;const v=1.25;d.x+=d.vx*v*dt*(speed?1:0);d.z+=d.vz*v*dt*(speed?1:0);d.m.position.set(d.x,Hs(d.x,d.z)+2.5,d.z);d.m.rotation.y+=dt*6;
+    if(d.k==='tornado'){if(speed===0)d.t-=dt;const v=1.25*(0.8+0.4*Math.sin(d.t*0.37));d.hd=(d.hd||0)+Math.sin(d.t*0.23+d.x*0.05)*0.35*dt;const hc=Math.cos(d.hd),hs=Math.sin(d.hd),mvx=d.vx*hc-d.vz*hs,mvz=d.vx*hs+d.vz*hc;d.mvx=mvx*(speed?1:0);d.mvz=mvz*(speed?1:0);d.x+=mvx*v*dt*(speed?1:0);d.z+=mvz*v*dt*(speed?1:0);torUpdate(d,dt);
       disNear(d.x,d.z,0.9,i=>{if(d.hit.has(i))return;d.hit.add(i);if(disHit(i))d.n++});
       if(d.noteAt!=null&&d.t>=d.noteAt){d.noteAt=null;disNote('tornado',d.x,d.z,d.n)}
       if(d.t>=d.T||Math.abs(d.x)>HALF||Math.abs(d.z)>HALF){recompute();S=stats();disEnd(d,k)}continue}
@@ -6683,6 +6682,65 @@ function disEnd(d,k){scene.remove(d.g);d.g.traverse(o=>{if(o.geometry)o.geometry
 {const ab=$('#archBtn');if(ab){const NM={mix:'mixed (European, American, Asian quarters)',eu:'European',us:'American',as:'Asian',classic:'classic'},ORD=['mix','eu','us','as','classic'];const al=()=>{ab.textContent='Buildings: '+NM[(G&&G.arch)||'mix']};setInterval(al,1500);al();ab.onclick=()=>{if(!G)return;const c=(G.arch)||'mix';G.arch=ORD[(ORD.indexOf(c)+1)%ORD.length];al();sfx('ui');buildAll();toast('Buildings: '+NM[G.arch])}}}
 {const b=$('#disBtn');{const tb=$('#tiltShBtn'),lb=$('#lookBtn'),sv=()=>{try{localStorage.setItem('pc-look',JSON.stringify(LOOK))}catch(e){}},ll=()=>{tb.textContent='Tilt-shift: '+(LOOK.tilt?'on':'off');lb.textContent='Colour: '+(LOOK.warm?'warm':'natural')};ll();tb.onclick=()=>{LOOK.tilt=!LOOK.tilt;sv();ll();applyGrade();sfx('ui')};lb.onclick=()=>{LOOK.warm=!LOOK.warm;sv();ll();applyGrade();sfx('ui')}}const lab=()=>{b.textContent='Disasters: '+(disOn()?'on':'off')};b.onclick=()=>{if(!G)return;G.disOff=disOn()?1:0;lab();sfx('ui')};
   setInterval(lab,2000);$('#disGo').onclick=()=>{if(!G)return;$('#menu').hidden=true;const k=['meteor','tornado','quake'][(Math.random()*3)|0];disStart(k,cam.target.x+(Math.random()-0.5)*6,cam.target.z+(Math.random()-0.5)*6)}}
+
+/* ---------- realistic tornado (tornado) ----------
+   ~400 m tall funnel (26 units) hanging from a dark rotating wall cloud: two see-through shells with skewed streak
+   textures that spin at different speeds, a radius that ripples and a body that sways and leans behind the direction
+   of travel. At the ground a swirling dust skirt and flying debris; a low wind roar while it lasts. Billboards are
+   instanced camera-facing quads (THREE.Sprite / Points do not draw in this game). All materials skip the terrain lift
+   (NO_TERRAIN) and sit on Hs() themselves. Touches down over 2.5 s and ropes out over the last 3 s. */
+const TOR={};
+function torTex(){if(TOR.f)return;const R=mulberry32(77);
+  let c=document.createElement('canvas');c.width=256;c.height=256;let x=c.getContext('2d');x.fillStyle='rgb(118,114,108)';x.fillRect(0,0,256,256);
+  for(let k=0;k<420;k++){const px=R()*256,w=1+R()*7,a=0.08+R()*0.4,lt=R()<0.45;x.fillStyle=lt?`rgba(214,208,198,${a})`:`rgba(40,38,37,${a})`;
+    for(const o of[-256,0,256]){x.save();x.translate(px+o,0);x.transform(1,0,-0.55,1,0,0);x.fillRect(0,R()*60,w,140+R()*200);x.restore()}}
+  x.globalCompositeOperation='destination-in';const g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(0.1,'rgba(0,0,0,0.9)');g.addColorStop(0.8,'rgba(0,0,0,0.95)');g.addColorStop(1,'rgba(0,0,0,0.25)');x.fillStyle=g;x.fillRect(0,0,256,256);
+  TOR.f=new THREE.CanvasTexture(c);TOR.f.wrapS=THREE.RepeatWrapping;
+  c=document.createElement('canvas');c.width=c.height=64;x=c.getContext('2d');
+  for(let k=0;k<14;k++){const px=20+R()*24,py=20+R()*24,rr=8+R()*16,gg=x.createRadialGradient(px,py,0,px,py,rr);gg.addColorStop(0,'rgba(255,255,255,0.35)');gg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gg;x.fillRect(0,0,64,64)}
+  TOR.d=new THREE.CanvasTexture(c);TOR.c=cloudTex(53)}
+function torBill(g,map,col,n,op){const m=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),new THREE.MeshLambertMaterial({map,color:col,emissive:col,emissiveIntensity:0.25,transparent:true,opacity:op,depthWrite:false,fog:true,side:THREE.DoubleSide}),n);
+  m.material.defines={NO_TERRAIN:''};m.frustumCulled=false;m.renderOrder=19;m.count=0;g.add(m);return m}
+const TORNR=30,TORNS=24,TORH=26;
+function torShell(g,col,op){const n=(TORNR+1)*(TORNS+1),geo=new THREE.BufferGeometry(),uv=new Float32Array(n*2),ix=[];
+  for(let r=0;r<=TORNR;r++)for(let s=0;s<=TORNS;s++){const k=r*(TORNS+1)+s;uv[k*2]=s/TORNS*2;uv[k*2+1]=1-r/TORNR;if(r<TORNR&&s<TORNS){const a=k,b=k+1,c=k+TORNS+1,d=c+1;ix.push(a,c,b,b,c,d)}}
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));geo.setIndex(ix);
+  const map=TOR.f.clone();map.needsUpdate=true;map.wrapS=THREE.RepeatWrapping;
+  const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map,color:col,transparent:true,opacity:op,depthWrite:false,side:THREE.DoubleSide,fog:true}));
+  m.material.defines={NO_TERRAIN:''};m.frustumCulled=false;m.renderOrder=18;g.add(m);return m}
+function torMake(d){torTex();try{if(W.type!=='storm'&&W.type!=='blizzard')setWeather('storm',true)}catch(e){}const g=d.g,R=Math.random;d.sh=[torShell(g,'#8e887f',0.85),torShell(g,'#c9c3b7',0.5)];
+  d.dust=torBill(g,TOR.d,'#8a7a62',160,0.85);d.deb=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshLambertMaterial({color:'#ffffff'}),48);d.deb.material.defines={NO_TERRAIN:''};d.deb.frustumCulled=false;g.add(d.deb);
+  const DC=['#6b5640','#8a8f96','#a37c52','#5c4632','#c9c2b4','#7d3b2f'],c=new THREE.Color();for(let k=0;k<48;k++)d.deb.setColorAt(k,c.set(DC[k%DC.length]));
+  d.wc=torBill(g,TOR.c,'#4d5157',70,0.92);
+  d.P=[];for(let k=0;k<160;k++)d.P.push({a:R()*6.283,h:R()*3,w:2.2+R()*2.5,s:1.1+R()*1.6,r0:0.5+R()*0.8});
+  d.Q=[];for(let k=0;k<48;k++)d.Q.push({a:R()*6.283,h:R()*8,r:0.8+R()*1.8,w:2+R()*2,v:0.6+R()*1.2,sz:0.03+R()*0.09,rx:R()*6,ry:R()*6});
+  d.C=[];for(let k=0;k<70;k++){const rr=Math.sqrt(R())*13;d.C.push({a:R()*6.283,r:rr,y:TORH-1+R()*2.5+rr*0.12,s:5+R()*6})}
+  d.lean=0;d.lx=0;d.lz=0;
+  if(AU.ctx&&AU.sfx&&AU.brown){try{const cx=AU.ctx,src=cx.createBufferSource(),lp=cx.createBiquadFilter(),e=cx.createGain();src.buffer=AU.brown;src.loop=true;lp.type='lowpass';lp.frequency.value=380;
+    src.connect(lp);lp.connect(e);e.connect(AU.master);e.gain.setValueAtTime(0.0001,cx.currentTime);e.gain.exponentialRampToValueAtTime(0.16,cx.currentTime+2.5);src.start();d.snd={src,e}}catch(e){}}}
+const _trm=new THREE.Matrix4(),_trp=new THREE.Vector3(),_trs=new THREE.Vector3(),_trq=new THREE.Quaternion(),_tre=new THREE.Euler();
+function torUpdate(d,dt){const T=d.t,y0=Hs(d.x,d.z),fin=Math.min(1,T/2.5)*Math.min(1,Math.max(0,(d.T-T)/3)),rope=1-Math.min(1,Math.max(0,(d.T-T)/3));
+  /* top lags behind the motion */
+  const tl=-(d.mvx||0)*3.2,tz=-(d.mvz||0)*3.2;d.lx+=(tl-d.lx)*Math.min(1,dt*0.6);d.lz+=(tz-d.lz)*Math.min(1,dt*0.6);
+  for(const[k,m]of d.sh.entries()){const P=m.geometry.attributes.position,K=k?1.18:1;
+    for(let r=0;r<=TORNR;r++){const v=r/TORNR,h=v*TORH*Math.max(0.15,fin),
+        rad=K*(1-rope*0.7)*(0.42+4.4*Math.pow(v,2.3)+0.4*Math.exp(-v*22))*(1+0.08*Math.sin(v*19-T*3.1)+0.05*Math.sin(v*41+T*5)),
+        bend=Math.pow(v,1.4),cx=d.lx*bend+Math.sin(T*0.55+v*3.5)*1.1*v*(1-v)*2+rope*Math.sin(v*9+T)*1.2*v,cz=d.lz*bend+Math.cos(T*0.43+v*3.1)*1.1*v*(1-v)*2;
+      for(let s=0;s<=TORNS;s++){const a=s/TORNS*6.283,q=r*(TORNS+1)+s;P.setXYZ(q,d.x+cx+Math.cos(a)*rad,y0+h,d.z+cz+Math.sin(a)*rad)}}
+    P.needsUpdate=true;m.geometry.computeVertexNormals();m.material.map.offset.x-=dt*(k?0.35:0.75);m.material.map.offset.y=-T*0.05;m.material.opacity=(k?0.5:0.88)*fin}
+  /* dust skirt: rises and widens as it spins */
+  let n=0;for(const p of d.P){p.a+=p.w*dt;p.h+=dt*(0.5+p.h*0.25);if(p.h>3.2){p.h=0;p.r0=0.4+Math.random()*0.6}
+    const rr=p.r0+p.h*0.8,s=p.s*(0.6+p.h*0.5)*fin;_trp.set(d.x+Math.cos(p.a)*rr,y0+p.h*0.7+0.2,d.z+Math.sin(p.a)*rr);_trm.compose(_trp,camera.quaternion,_trs.set(s,s,1));d.dust.setMatrixAt(n++,_trm)}
+  d.dust.count=n;d.dust.instanceMatrix.needsUpdate=true;d.dust.material.opacity=0.85*fin;
+  /* debris: orbits, climbs, thrown out at the top */
+  n=0;for(const q of d.Q){q.a+=q.w*dt;q.h+=q.v*dt;if(q.h>9){q.h=0;q.r=0.8+Math.random()*1.8}q.rx+=dt*3;q.ry+=dt*2;
+    const rr=q.r+q.h*0.35;_trp.set(d.x+Math.cos(q.a)*rr,y0+q.h,d.z+Math.sin(q.a)*rr);_trq.setFromEuler(_tre.set(q.rx,q.ry,0));const s=q.sz*fin;_trm.compose(_trp,_trq,_trs.set(s,s*0.4,s*1.6));d.deb.setMatrixAt(n++,_trm)}
+  d.deb.count=n;d.deb.instanceMatrix.needsUpdate=true;d.deb.instanceColor&&(d.deb.instanceColor.needsUpdate=true);
+  /* wall cloud: slow rotation round the top of the funnel */
+  n=0;for(const c of d.C){c.a+=dt*(0.25+1.2/(1+c.r));const s=c.s;_trp.set(d.x+d.lx+Math.cos(c.a)*c.r,y0+c.y,d.z+d.lz+Math.sin(c.a)*c.r);_trm.compose(_trp,camera.quaternion,_trs.set(s,s*0.6,1));d.wc.setMatrixAt(n++,_trm)}
+  d.wc.count=n;d.wc.instanceMatrix.needsUpdate=true;d.wc.material.opacity=0.92*Math.min(1,T/1.5)*Math.min(1,Math.max(0,(d.T-T)/2));
+  if(d.snd&&T>d.T-3&&!d.sndOff){d.sndOff=1;try{const cx=AU.ctx;d.snd.e.gain.setTargetAtTime(0.0001,cx.currentTime,0.8);d.snd.src.stop(cx.currentTime+3)}catch(e){}}}
+{const _de=disEnd;disEnd=function(d,k){if(d&&d.snd&&!d.sndOff){try{d.snd.src.stop()}catch(e){}}_de(d,k)}}
 
 /* ---------- landmarks (patch_monuments.py) ---------- */
 function monList(){const o=[];for(const i of OWNIDX){const t=tiles[i];if(t.t===T.MONU)o.push([i,SVI(31,t.l)])}return o}
@@ -11989,14 +12047,15 @@ function festStart(nm){const F=G.fest||(G.fest={next:0});F.cur={nm:nm||FESTS[(Ma
 function festTick(){const F=G.fest||(G.fest={next:myMo()+5});if(F.cur&&F.cur.until<=myMo())F.cur=null;if(!F.cur&&S.pop>=800&&myMo()>=F.next){F.next=myMo()+5+((Math.random()*4)|0);festStart()}}
 const FW={g:null,b:[],t:0};
 function fwTick(dt){const on=G&&G.fest&&G.fest.cur&&!atTitle,h=hour(),night=h<5||h>19;
-  if(!FW.g){const geo=new THREE.BufferGeometry(),n=60*24;geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(n*3),3));
-    FW.g=new THREE.Points(geo,new THREE.PointsMaterial({size:1.1,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));FW.g.frustumCulled=false;FW.g.renderOrder=21;scene.add(FW.g)}
-  FW.t-=dt;if(on&&night&&FW.t<=0&&FW.b.length<20&&speed){FW.t=0.35+Math.random()*0.6;const x=cam.target.x+(Math.random()-0.5)*30,z=cam.target.z+(Math.random()-0.5)*30,y=7+Math.random()*7,
+  if(!FW.g){const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d'),gr=x.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.3,'rgba(255,255,255,0.6)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,32,32);
+    FW.g=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}),60*20);
+    FW.g.material.defines={NO_TERRAIN:''};FW.g.frustumCulled=false;FW.g.renderOrder=21;FW.g.setColorAt(0,new THREE.Color());FW.g.count=0;scene.add(FW.g);FW.m=new THREE.Matrix4();FW.p=new THREE.Vector3();FW.s=new THREE.Vector3();FW.c=new THREE.Color()}
+  FW.t-=dt;if(on&&night&&FW.t<=0&&FW.b.length<20&&speed){FW.t=0.35+Math.random()*0.6;const sp=Math.min(40,cam.dist*0.5),x=cam.target.x+(Math.random()-0.5)*sp,z=cam.target.z+(Math.random()-0.5)*sp,y=Hs(x,z)+Math.min(14,cam.dist*0.12)+Math.random()*Math.min(8,cam.dist*0.1),
     col=new THREE.Color().setHSL(Math.random(),0.9,0.6),P=[];for(let k=0;k<60;k++){const u=Math.random()*2-1,a=Math.random()*6.283,r=Math.sqrt(1-u*u);P.push([r*Math.cos(a),u,r*Math.sin(a)])}FW.b.push({x,y,z,t:0,col,P});if(Math.random()<0.5)sfx('thunder')}
-  const pos=FW.g.geometry.attributes.position,cl=FW.g.geometry.attributes.color;let n=0;
-  for(let k=FW.b.length-1;k>=0;k--){const b=FW.b[k];b.t+=dt;if(b.t>2.4){FW.b.splice(k,1);continue}const r=b.t*3.2*(1-b.t*0.15),f=Math.max(0,1-b.t/2.4);
-    for(const p of b.P){if(n>=pos.count)break;pos.setXYZ(n,b.x+p[0]*r,b.y+p[1]*r-b.t*b.t*0.6,b.z+p[2]*r);cl.setXYZ(n,b.col.r*f,b.col.g*f,b.col.b*f);n++}}
-  for(let k=n;k<pos.count&&k<n+1;k++){}FW.g.geometry.setDrawRange(0,n);pos.needsUpdate=true;cl.needsUpdate=true;FW.g.visible=n>0}
+  let n=0;const max=60*20;
+  for(let k=FW.b.length-1;k>=0;k--){const b=FW.b[k];b.t+=dt;if(b.t>2.4){FW.b.splice(k,1);continue}const r=b.t*3.2*(1-b.t*0.15),f=Math.max(0,1-b.t/2.4),sz=0.55*(0.6+f*0.6);
+    for(const p of b.P){if(n>=max)break;FW.p.set(b.x+p[0]*r,b.y+p[1]*r-b.t*b.t*0.6,b.z+p[2]*r);FW.m.compose(FW.p,camera.quaternion,FW.s.set(sz,sz,1));FW.g.setMatrixAt(n,FW.m);FW.g.setColorAt(n,FW.c.setRGB(b.col.r*f,b.col.g*f,b.col.b*f));n++}}
+  FW.g.count=n;FW.g.instanceMatrix.needsUpdate=true;if(FW.g.instanceColor)FW.g.instanceColor.needsUpdate=true;FW.g.visible=n>0}
 
 /* ---- achievements: kept for the player across cities ---- */
 const ACH=[['tower','First signal','Build a mobile tower',()=>TEL.list.some(i=>tiles[i].l<=1)],['siren','Be prepared','Build a warning siren',()=>TEL.list.some(i=>tiles[i].l===4)],

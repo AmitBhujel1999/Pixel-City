@@ -1580,6 +1580,16 @@ function terrainH(x,z){
   if(x<-HALF+0.5&&!SC.ferry){const hd=Math.abs(z-hwZ(x));if(hd<7){const k=sstep(1.2,7,hd);h=h*k;if(hd<2.5)h=Math.max(h,0)}}
   return h;
 }
+/* outside highway sits on a graded road bed: the land along hwZ(x) west of the map is levelled to a smoothed height
+   (averaged along the road, never below water level) and blends back to the natural land within 9 units, so the road
+   strip (which samples terrainH) is never buried under the coarse landscape mesh (user screenshot 2026-10-29). */
+const HWBED=new Map();
+function hwBed(x){const k=Math.round(x*2);let v=HWBED.get(k);if(v!==undefined)return v;let s=0,n=0;
+  for(let j=-6;j<=6;j++){const xx=x+j*2.5;if(xx>-HALF+0.5)continue;s+=Math.max(0,HWT0(xx,hwZ(xx)));n++}
+  v=n?s/n:0;if(x>-HALF-14){const e=Math.max(0,HWT0(-HALF,hwZ(-HALF)));v+=(e-v)*sstep(-HALF-14,-HALF,x)}HWBED.set(k,v);return v}
+let HWT0=null;
+{HWT0=terrainH;const _t=terrainH;terrainH=function(x,z){const h=_t(x,z);if(SC.ferry||x>=-HALF)return h;const d=Math.abs(z-hwZ(x));if(d>9)return h;
+  const w=1-sstep(1.2,9,d);return h*(1-w)+hwBed(x)*w}}
 let FOREST=null;const HORIZ=6000;
 {
   const S0=N+440,SEG=MOBILE?220:380,geo=new THREE.PlaneGeometry(S0,S0,SEG,SEG);geo.rotateX(-Math.PI/2);
@@ -6701,7 +6711,7 @@ function torTex(){if(TOR.f)return;const R=mulberry32(77);
   TOR.d=new THREE.CanvasTexture(c);TOR.c=cloudTex(53)}
 function torBill(g,map,col,n,op){const m=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),new THREE.MeshLambertMaterial({map,color:col,emissive:col,emissiveIntensity:0.25,transparent:true,opacity:op,depthWrite:false,fog:true,side:THREE.DoubleSide}),n);
   m.material.defines={NO_TERRAIN:''};m.frustumCulled=false;m.renderOrder=19;m.count=0;g.add(m);return m}
-const TORNR=30,TORNS=24,TORH=26;
+const TORNR=36,TORNS=24,TORH=45;
 function torShell(g,col,op){const n=(TORNR+1)*(TORNS+1),geo=new THREE.BufferGeometry(),uv=new Float32Array(n*2),ix=[];
   for(let r=0;r<=TORNR;r++)for(let s=0;s<=TORNS;s++){const k=r*(TORNS+1)+s;uv[k*2]=s/TORNS*2;uv[k*2+1]=1-r/TORNR;if(r<TORNR&&s<TORNS){const a=k,b=k+1,c=k+TORNS+1,d=c+1;ix.push(a,c,b,b,c,d)}}
   geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));geo.setIndex(ix);
@@ -6711,21 +6721,21 @@ function torShell(g,col,op){const n=(TORNR+1)*(TORNS+1),geo=new THREE.BufferGeom
 function torMake(d){torTex();try{if(W.type!=='storm'&&W.type!=='blizzard')setWeather('storm',true)}catch(e){}const g=d.g,R=Math.random;d.sh=[torShell(g,'#8e887f',0.85),torShell(g,'#c9c3b7',0.5)];
   d.dust=torBill(g,TOR.d,'#8a7a62',160,0.85);d.deb=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshLambertMaterial({color:'#ffffff'}),48);d.deb.material.defines={NO_TERRAIN:''};d.deb.frustumCulled=false;g.add(d.deb);
   const DC=['#6b5640','#8a8f96','#a37c52','#5c4632','#c9c2b4','#7d3b2f'],c=new THREE.Color();for(let k=0;k<48;k++)d.deb.setColorAt(k,c.set(DC[k%DC.length]));
-  d.wc=torBill(g,TOR.c,'#4d5157',70,0.92);
+  d.wc=torBill(g,TOR.c,'#3b3f45',130,1);
   d.P=[];for(let k=0;k<160;k++)d.P.push({a:R()*6.283,h:R()*3,w:2.2+R()*2.5,s:1.1+R()*1.6,r0:0.5+R()*0.8});
   d.Q=[];for(let k=0;k<48;k++)d.Q.push({a:R()*6.283,h:R()*8,r:0.8+R()*1.8,w:2+R()*2,v:0.6+R()*1.2,sz:0.03+R()*0.09,rx:R()*6,ry:R()*6});
-  d.C=[];for(let k=0;k<70;k++){const rr=Math.sqrt(R())*13;d.C.push({a:R()*6.283,r:rr,y:TORH-1+R()*2.5+rr*0.12,s:5+R()*6})}
+  d.C=[];for(let k=0;k<130;k++){const rr=Math.sqrt(R())*18;d.C.push({a:R()*6.283,r:rr,y:TORH-4+R()*4+rr*0.12,s:10+R()*10})}
   d.lean=0;d.lx=0;d.lz=0;
   if(AU.ctx&&AU.sfx&&AU.brown){try{const cx=AU.ctx,src=cx.createBufferSource(),lp=cx.createBiquadFilter(),e=cx.createGain();src.buffer=AU.brown;src.loop=true;lp.type='lowpass';lp.frequency.value=380;
     src.connect(lp);lp.connect(e);e.connect(AU.master);e.gain.setValueAtTime(0.0001,cx.currentTime);e.gain.exponentialRampToValueAtTime(0.16,cx.currentTime+2.5);src.start();d.snd={src,e}}catch(e){}}}
 const _trm=new THREE.Matrix4(),_trp=new THREE.Vector3(),_trs=new THREE.Vector3(),_trq=new THREE.Quaternion(),_tre=new THREE.Euler();
 function torUpdate(d,dt){const T=d.t,y0=Hs(d.x,d.z),fin=Math.min(1,T/2.5)*Math.min(1,Math.max(0,(d.T-T)/3)),rope=1-Math.min(1,Math.max(0,(d.T-T)/3));
   /* top lags behind the motion */
-  const tl=-(d.mvx||0)*3.2,tz=-(d.mvz||0)*3.2;d.lx+=(tl-d.lx)*Math.min(1,dt*0.6);d.lz+=(tz-d.lz)*Math.min(1,dt*0.6);
+  const tl=-(d.mvx||0)*5,tz=-(d.mvz||0)*5;d.lx+=(tl-d.lx)*Math.min(1,dt*0.6);d.lz+=(tz-d.lz)*Math.min(1,dt*0.6);
   for(const[k,m]of d.sh.entries()){const P=m.geometry.attributes.position,K=k?1.18:1;
     for(let r=0;r<=TORNR;r++){const v=r/TORNR,h=v*TORH*Math.max(0.15,fin),
-        rad=K*(1-rope*0.7)*(0.42+4.4*Math.pow(v,2.3)+0.4*Math.exp(-v*22))*(1+0.08*Math.sin(v*19-T*3.1)+0.05*Math.sin(v*41+T*5)),
-        bend=Math.pow(v,1.4),cx=d.lx*bend+Math.sin(T*0.55+v*3.5)*1.1*v*(1-v)*2+rope*Math.sin(v*9+T)*1.2*v,cz=d.lz*bend+Math.cos(T*0.43+v*3.1)*1.1*v*(1-v)*2;
+        rad=K*(1-rope*0.7)*(0.42+6.5*Math.pow(v,2.4)+0.4*Math.exp(-v*30))*(1+0.08*Math.sin(v*19-T*3.1)+0.05*Math.sin(v*41+T*5)),
+        bend=Math.pow(v,1.4),cx=d.lx*bend+Math.sin(T*0.55+v*3.5)*1.8*v*(1-v)*2+rope*Math.sin(v*9+T)*1.2*v,cz=d.lz*bend+Math.cos(T*0.43+v*3.1)*1.8*v*(1-v)*2;
       for(let s=0;s<=TORNS;s++){const a=s/TORNS*6.283,q=r*(TORNS+1)+s;P.setXYZ(q,d.x+cx+Math.cos(a)*rad,y0+h,d.z+cz+Math.sin(a)*rad)}}
     P.needsUpdate=true;m.geometry.computeVertexNormals();m.material.map.offset.x-=dt*(k?0.35:0.75);m.material.map.offset.y=-T*0.05;m.material.opacity=(k?0.5:0.88)*fin}
   /* dust skirt: rises and widens as it spins */
@@ -6738,7 +6748,7 @@ function torUpdate(d,dt){const T=d.t,y0=Hs(d.x,d.z),fin=Math.min(1,T/2.5)*Math.m
   d.deb.count=n;d.deb.instanceMatrix.needsUpdate=true;d.deb.instanceColor&&(d.deb.instanceColor.needsUpdate=true);
   /* wall cloud: slow rotation round the top of the funnel */
   n=0;for(const c of d.C){c.a+=dt*(0.25+1.2/(1+c.r));const s=c.s;_trp.set(d.x+d.lx+Math.cos(c.a)*c.r,y0+c.y,d.z+d.lz+Math.sin(c.a)*c.r);_trm.compose(_trp,camera.quaternion,_trs.set(s,s*0.6,1));d.wc.setMatrixAt(n++,_trm)}
-  d.wc.count=n;d.wc.instanceMatrix.needsUpdate=true;d.wc.material.opacity=0.92*Math.min(1,T/1.5)*Math.min(1,Math.max(0,(d.T-T)/2));
+  d.wc.count=n;d.wc.instanceMatrix.needsUpdate=true;d.wc.material.opacity=Math.min(1,T/1.5)*Math.min(1,Math.max(0,(d.T-T)/2));
   if(d.snd&&T>d.T-3&&!d.sndOff){d.sndOff=1;try{const cx=AU.ctx;d.snd.e.gain.setTargetAtTime(0.0001,cx.currentTime,0.8);d.snd.src.stop(cx.currentTime+3)}catch(e){}}}
 {const _de=disEnd;disEnd=function(d,k){if(d&&d.snd&&!d.sndOff){try{d.snd.src.stop()}catch(e){}}_de(d,k)}}
 

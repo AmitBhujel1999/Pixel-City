@@ -282,6 +282,12 @@ edit the PC file by hand.
   vertices rebuilt each frame: flaring radius, ripples, sway, top lags behind travel `d.lx/lz`, rope-out at the end),
   skewed streak texture scrolled for spin; dust skirt, wall cloud = instanced camera-facing quads (`torBill`, lit
   Lambert so they darken in storms / at night); debris = instanced boxes; storm weather and a brown-noise roar start
-  with it. Path wanders (`d.hd`). 26 s life.
+  with it. Path wanders (`d.hd`). 26 s life. `TORH` 45 (~675 m tall), wall cloud 130 puffs low enough to hide the funnel's top rim.
 - THREE.Points and Sprites do not draw in this game: use instanced camera-facing quads (fireworks `FW.g` too).
   Call `setColorAt` before setting `count = 0`, or the colour buffer is created empty and everything renders black.
+
+## Highway outside the map
+
+- `terrainH` wrapper (before `HORIZ`): west of the map, land within 9 units of `hwZ(x)` blends to `hwBed(x)` (natural
+  height averaged along the road, >= 0, easing to the map-edge height over the last 14 units), flat core 1.2. The road
+  strip samples `terrainH`, so it now sits on a graded bed instead of disappearing under the coarse landscape mesh.

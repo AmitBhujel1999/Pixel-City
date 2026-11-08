@@ -350,3 +350,7 @@ edit the PC file by hand.
   draws shelters for the city's own lines (stop tiles are buildings: the shelter goes on the road tile beside them).
 - Benches `x_md_bench` (backless, long along local Z): tile roads opposite the street tree when `(x*7+z*3+k)%4===0`;
   network streets in `netDecor` every third tree gap, alternate sides.
+- Trees `tree_round` / `tree_tall` / `tree_pine` (+ `_lo`) and `bush` come from `trees_real.py` (old ones kept as
+  `models/tree_*.old.glb`). Parts: `leaf` (tinted per tree), `leaf2` (inner shade, `MODEL_COL.leaf2`), `trunk`. Far tree
+  LOD (`TI.loGeo`) only uses `leaf`, so `leaf2` simply hides at distance. `shrub()` draws the `bush` model.
+- `grassTex` is 1024 px with tufts on PC (pointer fine), 512 px on phones.

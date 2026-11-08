@@ -1,4 +1,4 @@
-# Pixel's City
+# Cityloom: A City Builder (was Pixel's City)
 
 The whole game is `www/index.html` (three.js r128 in `www/three.min.js`). Capacitor wraps `www/` as the Android app
 (`.github/workflows/main.yml`) and the iPhone app (`.github/workflows/ios.yml`).

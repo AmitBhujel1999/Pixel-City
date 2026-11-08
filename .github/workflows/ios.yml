@@ -1,4 +1,4 @@
-name: Build Pixel's City for iPhone
+name: Build Cityloom for iPhone
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
       - name: Name, icon and settings
         run: |
           P=ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Pixel's City" $P || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Pixel's City" $P
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cityloom" $P || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Cityloom" $P
           /usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" $P || true
           /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" $P || true
           /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" $P
@@ -63,6 +63,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: pixels-city-ios-${{ github.run_number }}
-          name: Pixel's City for iPhone, build ${{ github.run_number }}
+          name: Cityloom for iPhone, build ${{ github.run_number }}
           body: Unsigned iPhone app. Install it from a Windows PC with Sideloadly and a free Apple ID (it must be re-installed every 7 days).
           files: PixelsCity.ipa

@@ -1,6 +1,6 @@
 {
 	"appId": "com.ameet.pixelcity",
-	"appName": "Pixel City",
+	"appName": "Cityloom",
 	"webDir": "www",
 	"android": {
 		"backgroundColor": "#cfe4ec"

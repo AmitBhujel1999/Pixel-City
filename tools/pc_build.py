@@ -11,7 +11,7 @@ import base64, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WWW = os.path.join(ROOT, 'www')
-out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "Pixel's City.html")
+out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "Cityloom.html")
 
 html = open(os.path.join(WWW, 'index.html'), encoding='utf8').read()
 three = open(os.path.join(WWW, 'three.min.js'), encoding='utf8').read()

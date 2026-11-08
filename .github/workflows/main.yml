@@ -1,4 +1,4 @@
-name: Build Pixel's City APK
+name: Build Cityloom APK
 
 on:
   push:
@@ -31,12 +31,12 @@ jobs:
       - name: Copy the game into the Android project
         run: npx cap sync android
 
-      - name: Name the app Pixel's City and sign it with the permanent key
+      - name: Name the app Cityloom and sign it with the permanent key
         run: |
           python3 - <<'PY'
           import os, re
           p='android/app/src/main/res/values/strings.xml'; s=open(p).read()
-          s=re.sub(r'(<string name="(?:app_name|title_activity_main)">)[^<]*(</string>)', lambda m: m.group(1)+"Pixel\\'s City"+m.group(2), s)
+          s=re.sub(r'(<string name="(?:app_name|title_activity_main)">)[^<]*(</string>)', lambda m: m.group(1)+"Cityloom"+m.group(2), s)
           open(p,'w').write(s)
           p='android/app/build.gradle'; s=open(p).read()
           s=s.replace('applicationId "com.ameet.pixelcity"','applicationId "com.ameet.pixelscity"')
@@ -104,6 +104,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: pixels-city-${{ github.run_number }}
-          name: Pixel's City build ${{ github.run_number }}
-          body: Download PixelsCity.apk on your Android phone and open it to install. It installs next to the old Pixel City app.
+          name: Cityloom build ${{ github.run_number }}
+          body: Download PixelsCity.apk on your Android phone and open it to install. Cityloom (was Pixel's City) updates the installed app; saved cities stay.
           files: PixelsCity.apk

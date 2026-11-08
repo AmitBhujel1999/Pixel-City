@@ -355,3 +355,6 @@ edit the PC file by hand.
   separate double-sided leaf quads, `leaves()`), `leaf2` (inner shade mass, `MODEL_COL.leaf2`), `trunk`. Far tree
   LOD (`TI.loGeo`) only uses `leaf`, so `leaf2` simply hides at distance. `shrub()` draws the `bush` model.
 - `grassTex` is 1024 px with tufts on PC (pointer fine), 512 px on phones.
+- Sun path (`applyTime`): `sunDir` / `skyU.sunV` = (cos ang, el*0.72, 0.5), so the sun peaks at about 50 degrees to the
+  south (was nearly overhead). `dayLight=(el+0.12)/0.3`; hemisphere light gets +0.2 around el 0.12 (low sun) so
+  sunrise and late afternoon are not dark.

@@ -231,7 +231,9 @@ edit the PC file by hand.
 
 - `SHOPS` (24 brands: dentist, soda bar, ice cream, clothes, grocery, bakery, pharmacy, food places...) picked per shop
   lot by a hash of `tl.seed` (`shopOf`; COM with level, not offices `s >= 10`). `bname` shows "Brand (kind)".
-- `shopSigns` (adjTile wrapper, local frame: +z faces the road) measures the shadow-casting parts, then adds a shop-front
+- `shopSigns` (adjTile wrapper installed AFTER `lotParking`, so it measures the building after `lotMakeRoom` moved it
+  back; before, signs were left standing in the car park; local frame: +z faces the road) measures the big shadow-casting parts
+  (height >= 0.12, footprint >= 0.03: no cars, trees, tables; glass facade front when there is one); modern-district shops get no rooftop billboard, then adds a shop-front
   sign, a rooftop billboard on buildings lower than 0.9 and, for food (`SHOPS[k][5]`), a pole sign at the lot corner.
 - One atlas `SHOPAT` (2048², 4 x 16 panels of 512 x 128: panel 2k billboard, 2k+1 shop front, emoji icons) and one
   material `SHOPM` (emissive map; `applyTime` wrapper raises emissiveIntensity at night). Add brands at the end of
@@ -339,3 +341,7 @@ edit the PC file by hand.
   only get modern colours (RCOL override in `railTile`).
 - Fun attractions in modern districts: `buildTile` sets `MATMAP = FUNMD` while drawing a `T.FUN` tile and `mat()` swaps
   the old bright paint for the modern set (layout and animation unchanged). `MATMAP` is a `var` (mat runs early).
+- Street furniture: `prop_streetlight` / `prop_signal` are the modern ones from `modern_street.py` (graphite `pole`
+  material, `MODEL_COL.pole`); old ones kept as `models/prop_*.old.glb`. Road palette: asphalt `#5f6369` / `#5c6066`,
+  lines `#fbfbf8`, pavement `#d0cec8`, kerb `#c2c4c6` (was `#74787d`, `#f1f1ec`, `#b9bdc3`, `#9da1a7`).
+- Neon parts on `x_md_*` models use `mdNeonMat` (cyan) instead of the pink `neonMat`.

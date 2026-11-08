@@ -333,3 +333,9 @@ edit the PC file by hand.
   `PKMDCOL` = PARKCOL + corten / sail) and the stadium `x_md_stad_b` (no modern 3x3: the small stadium is not buildable, only old saves have it) (bowl, crowd and pitch reused from
   stadium.py / stadium_big.py, new `skin` material = `stSkin(team colour)`, white by day, glows at night via `winMats`).
   Famous stadiums keep their models.
+- `modern_transport.py`: `x_md_rail_plat(_mid)` (trains.py platform tile with old canopy parts dropped, same track and
+  platform heights) and `x_md_airport_domestic` / `x_md_airport_dom_land` (airport_domestic.py with the terminal and
+  tower parts dropped, `TERM_DROP`; airfield, stands and roads unchanged so jets and cars still line up). Cargo stations
+  only get modern colours (RCOL override in `railTile`).
+- Fun attractions in modern districts: `buildTile` sets `MATMAP = FUNMD` while drawing a `T.FUN` tile and `mat()` swaps
+  the old bright paint for the modern set (layout and animation unchanged). `MATMAP` is a `var` (mat runs early).

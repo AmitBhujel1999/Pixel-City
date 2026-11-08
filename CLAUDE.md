@@ -326,3 +326,6 @@ edit the PC file by hand.
   (red, blue, yellow, teal, track, steel...). Chimney smoke: `CEM.x_md_inl3a` and `em.push` in the power / garbage cases.
 - Glass on `x_md_*` uses `mdGlass` (tiles) / `zGlassMat(true)` (free zoning): lighter `#a3bccf` with sky reflection;
   the normal dark `archGlass` made the all-glass towers read as black.
+- `modern_chain.py`: supply-chain plants `x_md_ch_<kind>` (processing kinds only; fields, pasture, plantation, sand pit,
+  rig keep their models; `case T.CHAIN` swaps `nm` when the model exists) and specialised industry `x_md_z<forest|oil|ore><1-3>`
+  (zoneModel returns them for `t.t===4`, `s` 1/3/4 in modern districts; farming keeps `farmModel`).

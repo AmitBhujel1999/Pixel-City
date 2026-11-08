@@ -196,6 +196,26 @@ edit the PC file by hand.
   street (`hwRamps`: segments among the ramp nodes, junction and `G.hw.gn`) and the entry stub. `stats` skips their
   upkeep; before this a new Riverbend city paid $552 a month for a highway the player never built (user report).
 
+## Dual starting highway (new cities, `G.hw.d`)
+
+- New cities get two one-way highways (look 15) `HWD` 1.4 either side of the route line instead of one two-way
+  highway: eastbound on the +z (river) side, westbound on the city side (traffic keeps right). `hwOff(p,s)` gives the
+  carriageway point; the westbound side swings out by up to `HWB` near the interchange (`hwBump`, `hwW`). Old cities
+  (no `d`) keep the old two-way highway and ramps.
+- Piece 0 (west entry to the split node `x0+HWSPL`) stays two-way. Piece 1 forks at about 55 degrees: at a smaller
+  angle the opposite one-ways share tiles after the fork and the tile path (`bfs`) is cut.
+- The carriageways must not share tiles anywhere (netPlan "runs along another road too closely"), hence the 1.2 tile
+  median.
+- Interchange (`hwRampsD`, ramp nodes at `xi +- HWRO`): frontage street JW-M-JE, starter street from M (glowing end).
+  Westbound ramps leave and join on the right. Eastbound ramps drop into the wide median on the ground (stubs to XW /
+  XE), then fly over the westbound side as elevated ramps (elevated ramps need ~2 tiles of road-free ground to rise).
+  `NB.hwk` skips the wide-road side rule while these are built. Merge nodes get `setSig(j,{m:'none'})` (road
+  junctions default to timed lights). `G.hw.rn` lists the starter nodes for `hwFree`.
+- East end: two nodes, in (`HWY.eastN` / `eastJ`, westbound start) and out (`HWY.eastON` / `eastO`, eastbound end).
+  The drawn highway past your land is two look-15 strips; `hwThru` lanes are offset by `HWD`.
+- Junction drawing: where two highway arms run straight through a node (merge, split), the junction is highway asphalt
+  and keeps the through lane lines, with a dashed edge on the side where the other road joins.
+
 ## Roads department and road wear
 
 - `G.rwear` {tile: wear 0..1} grows each month in `rdMonth` (monthEnd wrapper): base + traffic (`jam`), dirt x1.6, highway
@@ -291,3 +311,18 @@ edit the PC file by hand.
 - `terrainH` wrapper (before `HORIZ`): west of the map, land within 9 units of `hwZ(x)` blends to `hwBed(x)` (natural
   height averaged along the road, >= 0, easing to the map-edge height over the last 14 units), flat core 1.2. The road
   strip samples `terrainH`, so it now sits on a graded bed instead of disappearing under the coarse landscape mesh.
+
+## Modern building style (`md`, Blender models `x_md_*`)
+
+- Models come from `Downloads/PixelCity-Blender/scripts`: `modern.py` (28 zone models, slots rl1..tw plus `b`
+  variants), `modern_civic.py` (`x_md_sv_<school|college|hosp|fire|police|garb><0-2>`, industry `x_md_inl1a..l3b`),
+  `modern_city.py` (`x_md_gov0-6`, `pow0-2`, `wat0-2`, `sew0-1`, `dth0-1`, `metro`). Run in the Blender GUI to watch
+  them build, or `-b` to export; then `tools/models.py add`.
+- `archStyle(i)` returns `'md'` for 1 in 4 Mixed districts (`(h>>>9)&3`), or for every tile with `G.arch==='md'`
+  (Buildings button cycles mix / eu / us / as / md / classic). Zone models use `ARCHMD` (own slot lists, incl. industry
+  `4:0`; specialised res / com / office subtypes fall back to the base lists). Free-zoning `zPick` adds `b` variants.
+- Services, government, power, water, sewage, death care and metro: each `buildTile0` case starts with
+  `if(archStyle(i)==='md'...)model(g,'x_md_...',MDSVC,...);break`. `MDSVC` holds the colours of the extra materials
+  (red, blue, yellow, teal, track, steel...). Chimney smoke: `CEM.x_md_inl3a` and `em.push` in the power / garbage cases.
+- Glass on `x_md_*` uses `mdGlass` (tiles) / `zGlassMat(true)` (free zoning): lighter `#a3bccf` with sky reflection;
+  the normal dark `archGlass` made the all-glass towers read as black.

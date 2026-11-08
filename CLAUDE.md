@@ -330,6 +330,6 @@ edit the PC file by hand.
   rig keep their models; `case T.CHAIN` swaps `nm` when the model exists) and specialised industry `x_md_z<forest|oil|ore><1-3>`
   (zoneModel returns them for `t.t===4`, `s` 1/3/4 in modern districts; farming keeps `farmModel`).
 - `modern_parks.py`: parks `x_md_park0..8` (trees from `models/md_park_trees.json`, merged into `PARKTREES`; colours
-  `PKMDCOL` = PARKCOL + corten / sail) and stadiums `x_md_stad_s` / `x_md_stad_b` (bowl, crowd and pitch reused from
+  `PKMDCOL` = PARKCOL + corten / sail) and the stadium `x_md_stad_b` (no modern 3x3: the small stadium is not buildable, only old saves have it) (bowl, crowd and pitch reused from
   stadium.py / stadium_big.py, new `skin` material = `stSkin(team colour)`, white by day, glows at night via `winMats`).
   Famous stadiums keep their models.

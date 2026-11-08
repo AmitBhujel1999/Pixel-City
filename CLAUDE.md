@@ -345,3 +345,8 @@ edit the PC file by hand.
   material, `MODEL_COL.pole`); old ones kept as `models/prop_*.old.glb`. Road palette: asphalt `#5f6369` / `#5c6066`,
   lines `#fbfbf8`, pavement `#d0cec8`, kerb `#c2c4c6` (was `#74787d`, `#f1f1ec`, `#b9bdc3`, `#9da1a7`).
 - Neon parts on `x_md_*` models use `mdNeonMat` (cyan) instead of the pink `neonMat`.
+- Bus stops: `clStopMesh` draws `x_md_busstop` (modern_street.py; `sign` = line colour) 0.57 from the stop tile centre
+  toward the first non-road side; meshes flagged `userData.sh` so `clDraw` does not dispose shared materials. `clDraw` also
+  draws shelters for the city's own lines (stop tiles are buildings: the shelter goes on the road tile beside them).
+- Benches `x_md_bench` (backless, long along local Z): tile roads opposite the street tree when `(x*7+z*3+k)%4===0`;
+  network streets in `netDecor` every third tree gap, alternate sides.

@@ -358,3 +358,6 @@ edit the PC file by hand.
 - Sun path (`applyTime`): `sunDir` / `skyU.sunV` = (cos ang, el*0.72, 0.5), so the sun peaks at about 50 degrees to the
   south (was nearly overhead). `dayLight=(el+0.12)/0.3`; hemisphere light gets +0.2 around el 0.12 (low sun) so
   sunrise and late afternoon are not dark.
+- 2026-11-09: the realistic tree update was rolled back at the user's request (lag when zooming / moving the camera on a
+  laptop): `tree_*` are the old models again (from `models/tree_*.old.glb`), the `bush` model is removed so `shrub()`
+  draws its old ball. `trees_real.py` is kept but not used.
